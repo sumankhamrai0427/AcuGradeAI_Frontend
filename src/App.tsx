@@ -61,6 +61,7 @@ import { GamificationHub } from './components/GamificationHub';
 import { ParentTeacherCommunication } from './components/ParentTeacherCommunication';
 import { FunZone } from './components/FunZone';
 import { LoginPage } from './components/LoginPage';
+import { LandingPage } from './components/LandingPage';
 import { ChildPinModal } from './components/ChildPinModal';
 import {
   getStoredTokens,
@@ -77,8 +78,8 @@ import {
 export default function App() {
   // ------------------------------------------------------------
   // Auth bootstrap. Nothing about the account is hardcoded anymore —
-  // this reads whatever tokens (if any) are already in localStorage and
-  // decides whether to show LoginPage or the app shell.
+  // this reads whatever tokens (if any) are already in sessionStorage and
+  // decides whether to show LandingPage or the app shell.
   // ------------------------------------------------------------
   const [authRole, setAuthRole] = useState<string | null>(() => {
     const tokens = getStoredTokens();
@@ -86,6 +87,7 @@ export default function App() {
     const payload = decodeTokenPayload(tokens.accessToken);
     return payload?.role ?? null;
   });
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
@@ -116,9 +118,11 @@ export default function App() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [pinModalTargetChild, setPinModalTargetChild] = useState<ChildAccount | null>(null);
 
-  const isAdminSession = authRole === 'ADMIN' || authRole === 'SUPER_ADMIN';
-  const isTeacherSession = authRole === 'TEACHER';
-  const isStudentSession = authRole === 'STUDENT';
+  const normalizedRole = (authRole || '').toUpperCase();
+  const isAdminSession = normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
+  const isTeacherSession = normalizedRole === 'TEACHER';
+  const isStudentSession = normalizedRole === 'STUDENT';
+  const isParentSession = normalizedRole === 'PARENT';
   const activeChild = parentAccount?.children.find((c) => c.id === activeChildId) || parentAccount?.children[0];
   const isParentActive = activePersona === 'parent';
   const isFreePlan = parentAccount?.subscriptionTier === 'free';
@@ -241,24 +245,21 @@ export default function App() {
       setBootstrapError(null);
       try {
         if (isAdminSession) {
-          // Admin accounts aren't parents — skip family data entirely and
-          // land straight on the admin panel.
           setActiveTab('admin');
         } else if (isTeacherSession) {
-          // Teacher accounts have their own portal view
           setActiveTab('ptc');
         } else if (isStudentSession) {
-          // Direct student session
           setActiveTab('arena');
-        } else {
+        } else if (isParentSession) {
           const children = await loadParentAndChildren();
           await loadGamification();
           if (children[0]) {
-            // parentAccount state may not have committed yet on first render;
-            // re-read via loadParentAndChildren's own values instead.
             const me = await parentApi.getMe();
             await loadCommunication(children, me.name, me.id);
           }
+        } else {
+          clearTokens();
+          setAuthRole(null);
         }
       } catch (err: any) {
         if (!cancelled) {
@@ -273,21 +274,21 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authRole, isAdminSession, isTeacherSession, isStudentSession]);
+  }, [authRole, isAdminSession, isTeacherSession, isStudentSession, isParentSession, loadParentAndChildren, loadGamification, loadCommunication]);
 
   // Reload learning path whenever the active child changes
   useEffect(() => {
-    if (activeChildId && !isAdminSession) {
-      loadLearningPath(activeChildId).catch(() => {});
+    if (activeChildId && isParentSession) {
+      loadLearningPath(activeChildId).catch(() => { });
     }
-  }, [activeChildId, isAdminSession, loadLearningPath]);
+  }, [activeChildId, isParentSession, loadLearningPath]);
 
   // ------------------------------------------------------------
   // Auth handlers
   // ------------------------------------------------------------
   const handleAuthenticated = (role: string) => {
-    setAuthRole(role);
+    setBootstrapError(null);
+    setAuthRole(role.toUpperCase());
   };
 
   const handleLogout = async () => {
@@ -299,6 +300,7 @@ export default function App() {
     }
     clearTokens();
     setAuthRole(null);
+    setAuthModalMode(null);
     setParentAccount(null);
     setActiveChildId(null);
     setExamHistory([]);
@@ -470,7 +472,7 @@ export default function App() {
         ? { ...prev, children: prev.children.map((c) => (c.id === activeChildId ? { ...c, xp, level } : c)) }
         : prev
     );
-    loadGamification().catch(() => {});
+    loadGamification().catch(() => { });
   };
 
   const getPageTitle = () => {
@@ -492,11 +494,25 @@ export default function App() {
   };
 
   // ------------------------------------------------------------
-  // Render: auth gate first, then a loading screen while the account
-  // bootstraps, then the app shell.
+  // Render: If not logged in, show the LandingPage. If the visitor
+  // clicks Login/Sign Up, show the LoginPage modal. Once authenticated,
+  // bootstrap the app shell.
   // ------------------------------------------------------------
   if (!authRole) {
-    return <LoginPage onAuthenticated={handleAuthenticated} />;
+    if (authModalMode) {
+      return (
+        <LoginPage
+          onAuthenticated={handleAuthenticated}
+          initialMode={authModalMode}
+          onClose={() => setAuthModalMode(null)}
+        />
+      );
+    }
+    return (
+      <LandingPage
+        onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
+      />
+    );
   }
 
   if (isBootstrapping) {
@@ -551,7 +567,7 @@ export default function App() {
               id: '', name: 'Admin', email: '', role: 'parent', subscriptionTier: 'free',
               children: [], createdAt: '',
             }}
-            onUpdateParentTier={() => {}}
+            onUpdateParentTier={() => { }}
             onResetChildQuota={handleResetDailyQuota}
           />
         </div>
@@ -616,9 +632,8 @@ export default function App() {
 
       {/* Left Sidebar (High Density Theme) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
-          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {/* Brand Header */}
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
@@ -667,11 +682,10 @@ export default function App() {
                   setActiveTab('arena');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === 'arena' && !activeSubmissionReport
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'arena' && !activeSubmissionReport
+                  ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                  }`}
               >
                 <Play className={`w-4 h-4 ${activeTab === 'arena' && !activeSubmissionReport ? 'text-white' : 'text-emerald-600'}`} />
                 <span>10-Mark Exam Arena</span>
@@ -684,19 +698,18 @@ export default function App() {
                   setActiveTab('learning-path');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === 'learning-path' && !activeSubmissionReport
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'learning-path' && !activeSubmissionReport
+                  ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Compass className={`w-4 h-4 ${activeTab === 'learning-path' && !activeSubmissionReport ? 'text-white' : 'text-indigo-600'}`} />
                   <span>Adaptive Learning Path</span>
                 </div>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${activeTab === 'learning-path' && !activeSubmissionReport ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'}`}>
+                {/* <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${activeTab === 'learning-path' && !activeSubmissionReport ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'}`}>
                   RAG
-                </span>
+                </span> */}
               </button>
 
               <button
@@ -706,11 +719,10 @@ export default function App() {
                   setActiveTab('gamification');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === 'gamification' && !activeSubmissionReport
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'gamification' && !activeSubmissionReport
+                  ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Trophy className={`w-4 h-4 ${activeTab === 'gamification' && !activeSubmissionReport ? 'text-white' : 'text-amber-500'}`} />
@@ -728,11 +740,10 @@ export default function App() {
                   setActiveTab('fun-zone');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  activeTab === 'fun-zone' && !activeSubmissionReport
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'fun-zone' && !activeSubmissionReport
+                  ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                  : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Smile className={`w-4 h-4 ${activeTab === 'fun-zone' && !activeSubmissionReport ? 'text-white' : 'text-pink-500'}`} />
@@ -750,11 +761,10 @@ export default function App() {
                     setActiveSubmissionReport(examHistory[0]);
                     setMobileSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    activeSubmissionReport
-                      ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                      : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeSubmissionReport
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                    }`}
                 >
                   <Award className={`w-4 h-4 ${activeSubmissionReport ? 'text-white' : 'text-amber-500'}`} />
                   <span>My Results & Analysis</span>
@@ -791,11 +801,10 @@ export default function App() {
                   setActiveTab('dashboard');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'dashboard' && !activeSubmissionReport
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'dashboard' && !activeSubmissionReport
+                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <BarChart3 className="w-4 h-4 text-indigo-600" />
                 <span>Family Dashboard</span>
@@ -826,11 +835,10 @@ export default function App() {
                   setActiveTab('ptc');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'ptc' && !activeSubmissionReport
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'ptc' && !activeSubmissionReport
+                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <MessageSquare className="w-4 h-4 text-sky-600" />
@@ -848,11 +856,10 @@ export default function App() {
                   setActiveTab('pricing');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'pricing'
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'pricing'
+                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <Sparkles className="w-4 h-4 text-indigo-500" />
                 <span>Subscription Plans</span>
@@ -869,11 +876,10 @@ export default function App() {
                   setActiveTab('arena');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'arena' && !activeSubmissionReport
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'arena' && !activeSubmissionReport
+                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <Play className="w-4 h-4 text-emerald-600" />
                 <span>10-Mark Exam Arena</span>
@@ -886,19 +892,18 @@ export default function App() {
                   setActiveTab('learning-path');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'learning-path' && !activeSubmissionReport
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'learning-path' && !activeSubmissionReport
+                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Compass className="w-4 h-4 text-indigo-600" />
                   <span>Adaptive Path</span>
                 </div>
-                <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded">
+                {/* <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded">
                   RAG
-                </span>
+                </span> */}
               </button>
 
               <button
@@ -908,15 +913,14 @@ export default function App() {
                   setActiveTab('gamification');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'gamification' && !activeSubmissionReport
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'gamification' && !activeSubmissionReport
+                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Trophy className="w-4 h-4 text-amber-500" />
-                  <span>Leaderboard & Badges</span>
+                  <span>Leaderboard</span>
                 </div>
                 <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">
                   Ranks
@@ -932,11 +936,10 @@ export default function App() {
                     setActiveTab('admin');
                     setMobileSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'admin'
-                      ? 'bg-amber-50 text-amber-800 font-semibold'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'admin'
+                    ? 'bg-amber-50 text-amber-800 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
                 >
                   <ShieldCheck className="w-4 h-4 text-amber-600" />
                   <span>Super Admin Panel</span>
@@ -954,11 +957,10 @@ export default function App() {
                   setActiveTab('blog');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'blog'
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'blog'
+                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <BookOpen className="w-4 h-4" />
                 <span>Curriculum Blog</span>
@@ -971,11 +973,10 @@ export default function App() {
                   setActiveTab('about');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'about'
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'about'
+                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <Info className="w-4 h-4" />
                 <span>About & Pedagogy</span>
@@ -988,11 +989,10 @@ export default function App() {
                   setActiveTab('legal');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'legal'
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'legal'
+                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
               >
                 <FileText className="w-4 h-4" />
                 <span>Policies & Disclaimers</span>
@@ -1067,9 +1067,8 @@ export default function App() {
               <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
                 <button
                   onClick={handleSwitchToParent}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-                    isParentActive ? 'bg-white shadow-2xs text-indigo-700' : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${isParentActive ? 'bg-white shadow-2xs text-indigo-700' : 'text-slate-600 hover:text-slate-900'
+                    }`}
                 >
                   Parent View
                 </button>
@@ -1077,11 +1076,10 @@ export default function App() {
                   <button
                     key={child.id}
                     onClick={() => handleSwitchToChild(child.id)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1 transition-all ${
-                      activePersona === 'child' && activeChildId === child.id
-                        ? 'bg-white shadow-2xs text-indigo-700'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1 transition-all ${activePersona === 'child' && activeChildId === child.id
+                      ? 'bg-white shadow-2xs text-indigo-700'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
                   >
                     <span>{child.avatar}</span>
                     <span>{child.name.split(' ')[0]}</span>
@@ -1135,9 +1133,8 @@ export default function App() {
                   <div className="p-1 space-y-0.5">
                     <button
                       onClick={handleSwitchToParent}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${
-                        isParentActive ? 'bg-indigo-50 text-indigo-900 font-semibold' : 'text-slate-700 hover:bg-slate-100'
-                      }`}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isParentActive ? 'bg-indigo-50 text-indigo-900 font-semibold' : 'text-slate-700 hover:bg-slate-100'
+                        }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <span className="text-base">👨‍👩‍👧‍👦</span>
@@ -1159,9 +1156,8 @@ export default function App() {
                         <button
                           key={child.id}
                           onClick={() => handleSwitchToChild(child.id)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${
-                            isSelected ? 'bg-indigo-50 text-indigo-900 font-semibold' : 'text-slate-700 hover:bg-slate-100'
-                          }`}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isSelected ? 'bg-indigo-50 text-indigo-900 font-semibold' : 'text-slate-700 hover:bg-slate-100'
+                            }`}
                         >
                           <div className="flex items-center gap-2.5">
                             <span className="text-base">{child.avatar}</span>

@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Board, 
-  ClassGrade, 
-  Subject, 
-  ExamDifficulty, 
-  Exam, 
-  ChildAccount, 
-  ParentAccount, 
-  ExamSubmission 
+import {
+  Board,
+  ClassGrade,
+  Subject,
+  ExamDifficulty,
+  Exam,
+  ChildAccount,
+  ParentAccount,
+  ExamSubmission
 } from '../types';
-import { 
-  BookOpen, 
-  Play, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
-  Flag, 
-  HelpCircle, 
-  Sparkles, 
-  ArrowRight, 
-  ArrowLeft, 
-  RotateCcw, 
-  Calculator, 
+import {
+  BookOpen,
+  Play,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Flag,
+  HelpCircle,
+  Sparkles,
+  ArrowRight,
+  ArrowLeft,
+  RotateCcw,
+  Calculator,
   Layers,
   Award,
   Zap
@@ -41,11 +41,11 @@ interface ExamArenaProps {
 
 const BOARDS: Board[] = ['CBSE', 'ICSE', 'ISC', 'UK-Cambridge', 'NCERT', 'NEET', 'IIT'];
 const GRADES: ClassGrade[] = [
-  'Class 5', 'Class 6', 'Class 7', 'Class 8', 
+  'Class 5', 'Class 6', 'Class 7', 'Class 8',
   'Class 9', 'Class 10', 'Class 11', 'Class 12'
 ];
 const SUBJECTS: Subject[] = [
-  'Mathematics', 'Physics', 'Chemistry', 'Biology', 
+  'Mathematics', 'Physics', 'Chemistry', 'Biology',
   'Science', 'Social Studies', 'English', 'Computer Science', 'Logical Reasoning'
 ];
 
@@ -224,11 +224,10 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
           <div className="flex items-center gap-3">
             {/* Timer */}
-            <div className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-sm font-mono font-bold ${
-              timeRemainingSeconds < 180 
-                ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse' 
-                : 'bg-slate-50 border-slate-200 text-slate-700'
-            }`}>
+            <div className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-sm font-mono font-bold ${timeRemainingSeconds < 180
+              ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse'
+              : 'bg-slate-50 border-slate-200 text-slate-700'
+              }`}>
               <Clock className="w-4 h-4" />
               <span>{formatTime(timeRemainingSeconds)}</span>
             </div>
@@ -237,9 +236,8 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             <button
               id="toggle-scratchpad-btn"
               onClick={() => setShowScratchpad(!showScratchpad)}
-              className={`p-2 rounded-xl border text-xs flex items-center gap-1.5 transition-colors ${
-                showScratchpad ? 'bg-amber-50 border-amber-300 text-amber-800 font-semibold' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`p-2 rounded-xl border text-xs flex items-center gap-1.5 transition-colors ${showScratchpad ? 'bg-amber-50 border-amber-300 text-amber-800 font-semibold' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
               title="Open Scratchpad / Calculation Notes"
             >
               <Calculator className="w-4 h-4" />
@@ -265,7 +263,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                 <Calculator className="w-3.5 h-3.5 text-amber-700" />
                 Working Scratchpad (Draft equations & steps)
               </span>
-              <button 
+              <button
                 onClick={() => setScratchpadNote('')}
                 className="text-[11px] text-amber-700 hover:underline"
               >
@@ -306,11 +304,10 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                   <button
                     id="flag-question-btn"
                     onClick={() => toggleFlagQuestion(currentQ.id)}
-                    className={`p-1.5 rounded-lg border text-xs flex items-center gap-1 transition-colors ${
-                      flaggedQuestions[currentQ.id]
-                        ? 'bg-amber-50 border-amber-300 text-amber-700'
-                        : 'border-slate-200 text-slate-400 hover:text-slate-600'
-                    }`}
+                    className={`p-1.5 rounded-lg border text-xs flex items-center gap-1 transition-colors ${flaggedQuestions[currentQ.id]
+                      ? 'bg-amber-50 border-amber-300 text-amber-700'
+                      : 'border-slate-200 text-slate-400 hover:text-slate-600'
+                      }`}
                     title="Flag for review"
                   >
                     <Flag className={`w-3.5 h-3.5 ${flaggedQuestions[currentQ.id] ? 'fill-amber-500 text-amber-500' : ''}`} />
@@ -336,15 +333,13 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                           key={oIdx}
                           id={`question-${currentQuestionIdx}-opt-${oIdx}`}
                           onClick={() => handleSelectAnswer(currentQ.id, letter)}
-                          className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
-                            isSelected
-                              ? 'bg-indigo-50/80 border-indigo-400 ring-2 ring-indigo-200 text-indigo-950 font-medium'
-                              : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700'
-                          }`}
+                          className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${isSelected
+                            ? 'bg-indigo-50/80 border-indigo-400 ring-2 ring-indigo-200 text-indigo-950 font-medium'
+                            : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700'
+                            }`}
                         >
-                          <div className={`w-5 h-5 rounded-full mt-0.5 border flex items-center justify-center shrink-0 text-xs font-bold transition-colors ${
-                            isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-500'
-                          }`}>
+                          <div className={`w-5 h-5 rounded-full mt-0.5 border flex items-center justify-center shrink-0 text-xs font-bold transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-500'
+                            }`}>
                             {letter}
                           </div>
                           <span className="text-sm sm:text-base leading-snug">{opt}</span>
@@ -538,10 +533,10 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             10 Questions • 10 Marks • Adaptive RAG Diagnostic
           </div>
           <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-3">
-            AI Exam Preparedness & Knowledge Assessment
+            Exam Preparedness & Knowledge Assessment
           </h1>
           <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-6">
-            Calibrated for Classes 5 to 12 across CBSE, ICSE, ISC, Cambridge, NCERT, NEET, and IIT. 
+            Calibrated for Classes 5 to 12 across CBSE, ICSE, ISC, Cambridge, NCERT, NEET, and IIT.
             Grounding your test in authentic syllabus runbooks with instant misconception analysis.
           </p>
 
@@ -615,11 +610,10 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                   id={`board-btn-${b}`}
                   type="button"
                   onClick={() => setSelectedBoard(b)}
-                  className={`py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all ${
-                    selectedBoard === b
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
+                  className={`py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all ${selectedBoard === b
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
                 >
                   {b}
                 </button>
@@ -639,11 +633,10 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                   id={`grade-btn-${g.replace(/\s+/g, '')}`}
                   type="button"
                   onClick={() => setSelectedGrade(g)}
-                  className={`py-2.5 px-2 rounded-xl border text-xs font-semibold transition-all ${
-                    selectedGrade === g
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
+                  className={`py-2.5 px-2 rounded-xl border text-xs font-semibold transition-all ${selectedGrade === g
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
                 >
                   {g}
                 </button>
@@ -687,11 +680,10 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                     id={`diff-btn-${d}`}
                     type="button"
                     onClick={() => setSelectedDifficulty(d)}
-                    className={`py-2 px-3 rounded-xl border text-left transition-all ${
-                      isSel
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className={`py-2 px-3 rounded-xl border text-left transition-all ${isSel
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
                   >
                     <div className="font-bold text-xs capitalize">{labels[d].title}</div>
                     <div className={`text-[10px] ${isSel ? 'text-slate-300' : 'text-slate-400'}`}>
@@ -706,10 +698,6 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
         {/* RAG Knowledge Blueprint Preview */}
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-8">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-800 mb-1">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
-            AI-RAG Knowledge Graph Grounding Blueprint
-          </div>
           <p className="text-xs text-slate-600 leading-relaxed">
             Generating 10 questions for <strong className="text-slate-900">{selectedGrade} {selectedBoard} {selectedSubject} ({selectedDifficulty.toUpperCase()})</strong>.
             Questions will synthesize Multiple Choice, Numericals, Objective Definitions, and Assertion-Reasoning cases.

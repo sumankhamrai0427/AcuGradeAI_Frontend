@@ -334,3 +334,11 @@ export interface ScienceJokeOrAnecdote {
 export type BrainBreakGameType = 'speed-math' | 'memory-match' | 'word-scramble' | 'particle-pop' | 'anecdote-vault';
 
 export type AppPersona = 'parent' | 'child';
+
+export interface MenuItemPermission {
+  id: number;
+  pageName: string;
+  pageRoute: string;
+  icon: string | null;
+  menuOrder: number;
+}

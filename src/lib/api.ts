@@ -1,10 +1,8 @@
 // src/lib/api.ts
 //
 // Single point of contact with the AcuGrade Python backend (see /backend).
-// Every component that needs server data should import from here rather
-// than calling fetch() directly — the two exceptions historically were
-// ExamArena.tsx and SuperAdminPanel.tsx, which called fetch('/api/...')
-// inline; both have been switched over to this client.
+// Uses sessionStorage for token storage to ensure clean authentication state
+// upon opening new sessions.
 
 const ACCESS_TOKEN_KEY = 'acugrade_access_token';
 const REFRESH_TOKEN_KEY = 'acugrade_refresh_token';
@@ -14,26 +12,77 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export interface MenuItemPermission {
+  id: number;
+  pageName: string;
+  pageRoute: string;
+  icon: string | null;
+  menuOrder: number;
+  isActive?: number | boolean;
+}
+
+export interface PageAccessItem {
+  id: number;
+  pageName: string;
+  pageRoute: string;
+  icon: string | null;
+  menuOrder: number;
+  isActive: number | boolean;
+}
+
+export interface RegistrationRole {
+  id: number;
+  roleName: string;
+  displayName: string;
+  description: string;
+  icon: string;
+  isActive: number | boolean;
+}
+
+export interface AuthResponseData {
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+    tokenType: string;
+    expiresIn: number;
+  };
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    roleId: number;
+    roleName: string;
+    role: string;
+    subscriptionTier?: string;
+    isActive: number | boolean;
+    createdAt?: string;
+  };
+  pageAccess: PageAccessItem[];
+}
+
 export function getStoredTokens(): AuthTokens | null {
-  const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+  const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_KEY);
   if (!accessToken || !refreshToken) return null;
   return { accessToken, refreshToken };
 }
 
 export function storeTokens(tokens: AuthTokens) {
-  localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+  sessionStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
 }
 
 export function clearTokens() {
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+  // Also clear legacy localStorage keys if present
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
-/** Decodes the role/subject out of a JWT without verifying it — verification
- * is the backend's job; the frontend only uses this to decide which UI to
- * render (e.g. parent vs admin shell). */
+/** Decodes the role/subject out of a JWT without verifying it */
 export function decodeTokenPayload(token: string): { sub: string; role: string; exp: number } | null {
   try {
     const [, payloadB64] = token.split('.');
@@ -70,20 +119,23 @@ async function tryRefreshToken(): Promise<boolean> {
     return false;
   }
   const data = await res.json();
-  storeTokens({ accessToken: data.data.accessToken, refreshToken: data.data.refreshToken });
-  return true;
+  const accessToken = data.data.accessToken || data.data.tokens?.accessToken;
+  const refreshToken = data.data.refreshToken || data.data.tokens?.refreshToken;
+  if (accessToken && refreshToken) {
+    storeTokens({ accessToken, refreshToken });
+    return true;
+  }
+  return false;
 }
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: unknown;
-  auth?: boolean; // defaults to true
+  auth?: boolean;
   isFormData?: boolean;
 }
 
-/** Core request helper: attaches the bearer token, retries exactly once
- * after a silent token refresh on 401 TOKEN_EXPIRED, and unwraps the
- * {success, data} / {success:false, error} envelope from utils/response.py. */
+/** Core request helper: attaches the bearer token, retries on 401 TOKEN_EXPIRED */
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, auth = true, isFormData = false } = options;
 
@@ -115,7 +167,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const json = await res.json().catch(() => ({}));
   if (!res.ok || json.success === false) {
     const code = json?.error?.code || 'UNKNOWN_ERROR';
-    const message = json?.error?.message || `Request failed with status ${res.status}`;
+    const message = json?.message || json?.error?.message || `Request failed with status ${res.status}`;
     throw new ApiError(code, message, res.status);
   }
   return json.data as T;
@@ -125,12 +177,15 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 // Auth
 // ------------------------------------------------------------
 export const authApi = {
-  register: (name: string, email: string, password: string) =>
-    request<{ user: any } & AuthTokens>('/api/v1/auth/register', { method: 'POST', body: { name, email, password }, auth: false }),
+  getRoles: () => request<RegistrationRole[]>('/api/v1/auth/roles', { auth: false }),
+  register: (name: string, email: string, password: string, role: string = 'PARENT') =>
+    request<AuthResponseData>('/api/v1/auth/register', { method: 'POST', body: { name, email, password, role }, auth: false }),
   login: (email: string, password: string) =>
-    request<{ user: any } & AuthTokens>('/api/v1/auth/login', { method: 'POST', body: { email, password }, auth: false }),
-  childLogin: (studentId: string, pin: string) =>
-    request<{ accessToken: string; studentId: string }>('/api/v1/auth/child-login', { method: 'POST', body: { studentId, pin } }),
+    request<AuthResponseData>('/api/v1/auth/login', { method: 'POST', body: { email, password }, auth: false }),
+  verifySession: () => request<{ valid: boolean; user: any; pageAccess: PageAccessItem[] }>('/api/v1/auth/verify'),
+  getMenuPermissions: () => request<{ role: string; menuItems: PageAccessItem[]; pageAccess: PageAccessItem[] }>('/api/v1/auth/menu-permissions'),
+  childLogin: (studentId: string | number, pin: string) =>
+    request<{ accessToken: string; studentId: number; pageAccess: PageAccessItem[] }>('/api/v1/auth/child-login', { method: 'POST', body: { studentId, pin } }),
   logout: (refreshToken: string) =>
     request<{ loggedOut: boolean }>('/api/v1/auth/logout', { method: 'POST', body: { refreshToken } }),
 };
@@ -142,15 +197,15 @@ export const parentApi = {
   getMe: () => request<any>('/api/v1/parents/me'),
   getChildren: () => request<any[]>('/api/v1/parents/me/children'),
   addChild: (payload: any) => request<any>('/api/v1/parents/me/children', { method: 'POST', body: payload }),
-  updateChild: (childId: string, payload: any) =>
+  updateChild: (childId: string | number, payload: any) =>
     request<any>(`/api/v1/parents/me/children/${childId}`, { method: 'PUT', body: payload }),
-  deleteChild: (childId: string) =>
+  deleteChild: (childId: string | number) =>
     request<{ deleted: boolean }>(`/api/v1/parents/me/children/${childId}`, { method: 'DELETE' }),
-  getChildOverview: (childId: string) =>
+  getChildOverview: (childId: string | number) =>
     request<{ child: any; recentExams: any[]; topicMastery: Record<string, number> }>(
       `/api/v1/parents/me/children/${childId}/overview`
     ),
-  getChildLearningPath: (childId: string) =>
+  getChildLearningPath: (childId: string | number) =>
     request<any[]>(`/api/v1/parents/me/children/${childId}/learning-path`),
 };
 
@@ -159,7 +214,7 @@ export const parentApi = {
 // ------------------------------------------------------------
 export const examApi = {
   generate: (payload: {
-    studentId: string; board: string; classGrade: string; subject: string; difficulty: string;
+    studentId: string | number; board: string; classGrade: string; subject: string; difficulty: string;
   }) => request<{ exam: any }>('/api/v1/exams/generate', { method: 'POST', body: payload }),
   submit: (examId: string, answers: Record<string, string>, timeTakenSeconds: number) =>
     request<{ submission: any; xpEarned: number; newlyUnlockedBadges: string[] }>(
@@ -186,7 +241,7 @@ export const runbookApi = {
 // ------------------------------------------------------------
 export const gamificationApi = {
   listBadges: () => request<any[]>('/api/v1/gamification/badges', { auth: false }),
-  awardXp: (studentId: string, amount: number, reason: string) =>
+  awardXp: (studentId: string | number, amount: number, reason: string) =>
     request<{ xp: number; level: number }>('/api/v1/gamification/award-xp', {
       method: 'POST', body: { studentId, amount, reason },
     }),
@@ -200,7 +255,7 @@ export const gamificationApi = {
 export const communicationApi = {
   listTeachers: () => request<any[]>('/api/v1/teachers'),
   listConversations: () => request<any[]>('/api/v1/conversations'),
-  createConversation: (teacherId: string, studentId: string) =>
+  createConversation: (teacherId: string | number, studentId: string | number) =>
     request<{ id: string }>('/api/v1/conversations', { method: 'POST', body: { teacherId, studentId } }),
   sendMessage: (conversationId: string, payload: any) =>
     request<any>(`/api/v1/conversations/${conversationId}/messages`, { method: 'POST', body: payload }),
@@ -223,7 +278,7 @@ export const subscriptionApi = {
 // ------------------------------------------------------------
 export const adminApi = {
   statistics: () => request<any>('/api/v1/admin/statistics', { auth: false }),
-  resetQuota: (studentId: string) =>
+  resetQuota: (studentId: string | number) =>
     request<{ reset: boolean }>(`/api/v1/admin/children/${studentId}/reset-quota`, { method: 'POST' }),
 };
 
