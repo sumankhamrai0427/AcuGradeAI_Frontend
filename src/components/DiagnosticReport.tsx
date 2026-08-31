@@ -1,0 +1,563 @@
+import React, { useState } from 'react';
+import { ExamSubmission, QuestionEvaluation } from '../types';
+import { 
+  Award, 
+  CheckCircle2, 
+  XCircle, 
+  TrendingUp, 
+  BookOpen, 
+  ExternalLink, 
+  ArrowRight, 
+  RotateCcw, 
+  Printer, 
+  Sparkles, 
+  AlertCircle, 
+  ChevronDown, 
+  ChevronUp, 
+  Clock, 
+  Layers,
+  HeartHandshake,
+  Compass,
+  MessageSquare,
+  Zap,
+  Share2,
+  Smile,
+  Gamepad2
+} from 'lucide-react';
+
+interface DiagnosticReportProps {
+  submission: ExamSubmission;
+  onRetakeOrNextExam: (board: string, classGrade: string, subject: string, difficulty: string) => void;
+  onBackToDashboard: () => void;
+  onNavigateToLearningPath?: () => void;
+  onNavigateToPTC?: () => void;
+  onNavigateToFunZone?: () => void;
+}
+
+export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
+  submission,
+  onRetakeOrNextExam,
+  onBackToDashboard,
+  onNavigateToLearningPath,
+  onNavigateToPTC,
+  onNavigateToFunZone
+}) => {
+  const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>({
+    // Expand incorrect questions by default to emphasize learning
+    ...submission.evaluations.reduce((acc, eq) => {
+      acc[eq.questionId] = !eq.isCorrect;
+      return acc;
+    }, {} as Record<string, boolean>)
+  });
+
+  const toggleQuestionExpand = (qId: string) => {
+    setExpandedQuestions((prev) => ({
+      ...prev,
+      [qId]: !prev[qId]
+    }));
+  };
+
+  const expandAll = (expand: boolean) => {
+    const nextState: Record<string, boolean> = {};
+    submission.evaluations.forEach((eq) => {
+      nextState[eq.questionId] = expand;
+    });
+    setExpandedQuestions(nextState);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const { analysis } = submission;
+  const nextExam = analysis.recommendedNextExam;
+
+  // Calculate XP earned from this exam
+  const baseXP = submission.marksObtained * 10;
+  const perfectBonus = submission.marksObtained === 10 ? 50 : 0;
+  const speedBonus = submission.timeTakenSeconds < 360 ? 25 : 0;
+  const totalExamXP = baseXP + perfectBonus + speedBonus + 30; // 30 streak XP
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      {/* Top Banner / Breadcrumb & Action bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 print:hidden">
+        <button
+          onClick={onBackToDashboard}
+          className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1.5"
+        >
+          ← Back to Parent & Child Dashboard
+        </button>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {onNavigateToLearningPath && (
+            <button
+              onClick={onNavigateToLearningPath}
+              className="px-3.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
+            >
+              <Compass className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Adaptive Learning Path</span>
+            </button>
+          )}
+
+          {onNavigateToPTC && (
+            <button
+              onClick={onNavigateToPTC}
+              className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
+            >
+              <Share2 className="w-3.5 h-3.5 text-slate-500" />
+              <span>Share with Teacher</span>
+            </button>
+          )}
+
+          <button
+            onClick={handlePrint}
+            className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Print / Save PDF</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Gamification Points Banner */}
+      <div className="bg-gradient-to-r from-amber-500 to-indigo-600 rounded-2xl p-4 text-white shadow-xs mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-xl shrink-0">
+            ⚡
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-white">Diagnostic Sprint Rewards Unlocked!</h3>
+            <p className="text-xs text-amber-100">
+              +{totalExamXP} AcuPoints (XP) awarded to candidate's global knowledge rank.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-bold bg-white/15 px-3 py-1.5 rounded-xl self-start sm:self-auto">
+          <span>+{baseXP} Marks</span>
+          {perfectBonus > 0 && <span>• +{perfectBonus} Perfect Bonus</span>}
+          {speedBonus > 0 && <span>• +{speedBonus} Velocity</span>}
+          <span>• +30 Daily Streak</span>
+        </div>
+      </div>
+
+      {/* Main Diagnostic Scoreboard Card */}
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                10-Mark Diagnostic Analytical Result
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                {submission.board} • {submission.classGrade}
+              </span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{submission.examTitle}</h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Candidate: <strong className="text-slate-800">{submission.studentName}</strong> • Tested Subject: <strong className="text-slate-800">{submission.subject}</strong> ({submission.difficulty.toUpperCase()})
+            </p>
+          </div>
+
+          {/* Score Indicator */}
+          <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 shrink-0">
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-indigo-600">
+                {submission.marksObtained}<span className="text-lg sm:text-xl text-slate-400 font-normal">/10</span>
+              </div>
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mt-0.5">
+                Marks Scored
+              </div>
+            </div>
+
+            <div className="h-10 w-px bg-slate-200" />
+
+            <div>
+              <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold ${
+                submission.marksObtained >= 8
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : submission.marksObtained >= 5
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-rose-100 text-rose-800'
+              }`}>
+                {analysis.overallBand}
+              </span>
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                <span>{Math.floor(submission.timeTakenSeconds / 60)}m {submission.timeTakenSeconds % 60}s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Evolutionary Pedagogical Insights */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* Strengths & Positive Traits */}
+          <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-2xl p-5">
+            <h3 className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-2 mb-3">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              Verified Concept Strengths
+            </h3>
+            <ul className="space-y-2">
+              {analysis.strengths.map((str, idx) => (
+                <li key={idx} className="text-xs text-emerald-950 flex items-start gap-2 leading-relaxed">
+                  <span className="text-emerald-500 font-bold mt-0.5">•</span>
+                  <span>{str}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Critical Gaps & Areas to Improve */}
+          <div className="bg-rose-50/60 border border-rose-200/80 rounded-2xl p-5">
+            <h3 className="text-xs font-bold text-rose-900 uppercase tracking-wider flex items-center gap-2 mb-3">
+              <AlertCircle className="w-4 h-4 text-rose-600" />
+              Identified Misconceptions & Growth Areas
+            </h3>
+            <ul className="space-y-2">
+              {analysis.areasToImprove.map((gap, idx) => (
+                <li key={idx} className="text-xs text-rose-950 flex items-start gap-2 leading-relaxed">
+                  <span className="text-rose-500 font-bold mt-0.5">•</span>
+                  <span>{gap}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Evolutionary K-Graph Topic Mastery Breakdown */}
+        {analysis.kGraphInsights && analysis.kGraphInsights.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-indigo-600" />
+              RAG Knowledge Graph (K-Graph) Concept Mastery Matrix
+            </h3>
+            <div className="space-y-3">
+              {analysis.kGraphInsights.map((kNode, idx) => {
+                const isMastered = kNode.status === 'mastered';
+                const isReinforce = kNode.status === 'reinforce';
+                return (
+                  <div key={idx} className="bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+                    <div className="flex items-center justify-between gap-4 mb-2">
+                      <span className="font-semibold text-xs text-slate-900">{kNode.topic}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                          isMastered 
+                            ? 'bg-emerald-100 text-emerald-800' 
+                            : isReinforce 
+                            ? 'bg-amber-100 text-amber-800' 
+                            : 'bg-rose-100 text-rose-800'
+                        }`}>
+                          {kNode.status.replace('_', ' ')}
+                        </span>
+                        <span className="text-xs font-bold text-slate-700">{kNode.masteryPercentage}%</span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden mb-2">
+                      <div 
+                        className={`h-full rounded-full transition-all ${
+                          isMastered ? 'bg-emerald-500' : isReinforce ? 'bg-amber-500' : 'bg-rose-500'
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(10, kNode.masteryPercentage))}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-600 italic">
+                      Action: {kNode.recommendedAction}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Evolutionary Learning Roadmap & Encouragement */}
+        <div className="mt-6 p-5 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-3">
+          <div>
+            <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5 mb-1">
+              <TrendingUp className="w-3.5 h-3.5 text-indigo-700" />
+              Evolutionary Next-Step Roadmap
+            </span>
+            <p className="text-xs text-indigo-900 leading-relaxed">{analysis.evolutionaryRoadmap}</p>
+          </div>
+
+          <div className="pt-3 border-t border-indigo-200/60">
+            <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5 mb-1">
+              <HeartHandshake className="w-3.5 h-3.5 text-indigo-700" />
+              Note for {submission.studentName} & Parents
+            </span>
+            <p className="text-xs text-indigo-900 leading-relaxed font-medium">{analysis.encouragementNote}</p>
+          </div>
+        </div>
+
+        {/* Encouraged Next Exam CTA */}
+        {nextExam && (
+          <div className="mt-6 p-5 rounded-2xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 block mb-1">
+                AI-RAG Recommended Next Level Exam
+              </span>
+              <h4 className="text-base font-bold">
+                {nextExam.classGrade} {nextExam.board} {nextExam.subject} ({nextExam.difficulty.toUpperCase()} Level)
+              </h4>
+              <p className="text-xs text-slate-300 mt-1 max-w-xl">
+                {nextExam.reason}
+              </p>
+            </div>
+
+            <button
+              id="take-next-level-exam-btn"
+              onClick={() => onRetakeOrNextExam(nextExam.board, nextExam.classGrade, nextExam.subject, nextExam.difficulty)}
+              className="px-6 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-xs sm:text-sm font-bold shadow-md flex items-center justify-center gap-2 shrink-0 transition-colors"
+            >
+              <span>Take Next Level Exam</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Brain Break & Fun Zone Banner */}
+      {onNavigateToFunZone && (
+        <div className="bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-pink-200/80 rounded-2xl p-4 sm:p-5 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-600 shrink-0">
+              <Smile className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-slate-900">Need a Quick Brain Break & Mental Recharge?</h4>
+              <p className="text-xs text-slate-600">
+                Play 30-second speed math duels, memory concept matches, or read funny science anecdotes & jokes!
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onNavigateToFunZone}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-700 hover:to-indigo-700 text-white text-xs font-bold shadow-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer"
+          >
+            <Gamepad2 className="w-4 h-4" />
+            <span>Open Brain Break Arcade</span>
+          </button>
+        </div>
+      )}
+
+      {/* Section: Comprehensive 10-Question Itemized Review */}
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-6">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">10-Question Itemized Review & AI Explanations</h2>
+            <p className="text-xs text-slate-500">Compare student choices with correct answers, step-by-step logic, and reference links</p>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              onClick={() => expandAll(true)}
+              className="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 font-medium"
+            >
+              Expand All
+            </button>
+            <button
+              onClick={() => expandAll(false)}
+              className="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 font-medium"
+            >
+              Collapse All
+            </button>
+          </div>
+        </div>
+
+        {/* 10 Question Accordion List */}
+        <div className="space-y-4">
+          {submission.evaluations.map((eq) => {
+            const isExpanded = !!expandedQuestions[eq.questionId];
+            return (
+              <div
+                key={eq.questionId}
+                className={`rounded-2xl border transition-all ${
+                  eq.isCorrect 
+                    ? 'border-emerald-200 bg-emerald-50/20' 
+                    : 'border-rose-200 bg-rose-50/20'
+                }`}
+              >
+                {/* Accordion Bar */}
+                <div
+                  onClick={() => toggleQuestionExpand(eq.questionId)}
+                  className="p-4 sm:p-5 flex items-center justify-between cursor-pointer select-none"
+                >
+                  <div className="flex items-center gap-3 pr-4">
+                    {eq.isCorrect ? (
+                      <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+                        ✓
+                      </div>
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs shrink-0">
+                        ✗
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-xs sm:text-sm text-slate-900">
+                          Q{eq.questionNumber}.
+                        </span>
+                        <span className="text-xs sm:text-sm text-slate-800 line-clamp-1 font-medium">
+                          {eq.questionText}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
+                        <span className="uppercase font-semibold">{eq.type}</span>
+                        <span>•</span>
+                        <span>{eq.topic}</span>
+                        <span>•</span>
+                        <span className={eq.isCorrect ? 'text-emerald-700 font-semibold' : 'text-rose-600 font-semibold'}>
+                          {eq.marksAwarded} / 1 Mark
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold hidden sm:inline-block ${
+                      eq.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    }`}>
+                      {eq.isCorrect ? 'Correct (+1.0)' : 'Incorrect (0.0)'}
+                    </span>
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className="px-4 sm:px-6 pb-6 pt-2 border-t border-slate-100/80 bg-white/70 rounded-b-2xl space-y-4">
+                    {/* Full Question Text */}
+                    <div className="text-xs sm:text-sm text-slate-900 whitespace-pre-line leading-relaxed font-medium bg-slate-50 p-3 rounded-xl">
+                      {eq.questionText}
+                    </div>
+
+                    {/* Options (if MCQ/Logical) */}
+                    {eq.options && eq.options.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {eq.options.map((opt, oIdx) => (
+                          <div
+                            key={oIdx}
+                            className={`p-2.5 rounded-xl border text-xs ${
+                              opt.trim().startsWith(eq.correctAnswer) || opt === eq.correctAnswer
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-950 font-semibold'
+                                : opt.trim().startsWith(eq.studentAnswer) || opt === eq.studentAnswer
+                                ? 'bg-rose-50 border-rose-300 text-rose-950'
+                                : 'bg-slate-50/50 border-slate-200 text-slate-600'
+                            }`}
+                          >
+                            {opt}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Answers Comparison */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="p-3 rounded-xl border border-slate-200 bg-white">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                          Candidate Selected Answer:
+                        </span>
+                        <span className={`text-xs sm:text-sm font-semibold ${eq.isCorrect ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          {eq.studentAnswer || '(No answer selected)'}
+                        </span>
+                      </div>
+
+                      <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                        <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block">
+                          Verified Correct Answer:
+                        </span>
+                        <span className="text-xs sm:text-sm font-bold text-emerald-900">
+                          {eq.correctAnswer}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Misconception Identified */}
+                    {eq.misconceptionIdentified && (
+                      <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950">
+                        <strong className="font-bold text-amber-900">Misconception Identified: </strong>
+                        {eq.misconceptionIdentified}
+                      </div>
+                    )}
+
+                    {/* Step-by-Step AI Explanation */}
+                    <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 text-xs text-indigo-950 space-y-1">
+                      <div className="font-bold text-indigo-900 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        Step-by-Step AI Derivation & Concept Explanation:
+                      </div>
+                      <p className="leading-relaxed whitespace-pre-line text-slate-800">{eq.explanation}</p>
+                    </div>
+
+                    {/* Question Reference Links */}
+                    {eq.referenceLinks && eq.referenceLinks.length > 0 && (
+                      <div className="pt-2">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                          Direct Study & Syllabus References for this Topic:
+                        </span>
+                        <div className="space-y-1.5">
+                          {eq.referenceLinks.map((ref, rIdx) => (
+                            <a
+                              key={rIdx}
+                              href={ref.url}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/30 transition-all text-xs group"
+                            >
+                              <div className="flex items-center gap-2">
+                                <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                                <span className="font-semibold text-slate-900 group-hover:text-indigo-600">{ref.title}</span>
+                                <span className="text-[10px] text-slate-400">({ref.source})</span>
+                              </div>
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Curated Study Resources Hub */}
+      {analysis.curatedStudyLinks && analysis.curatedStudyLinks.length > 0 && (
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
+          <div className="flex items-center gap-2 mb-2">
+            <BookOpen className="w-5 h-5 text-indigo-600" />
+            <h3 className="text-base font-bold text-slate-900">Curated Reference Links & Chapter Grasp Enhancers</h3>
+          </div>
+          <p className="text-xs text-slate-500 mb-6">
+            Official syllabus chapters, interactive simulations, and board exemplars recommended by our AI-RAG engine for {submission.studentName}.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {analysis.curatedStudyLinks.map((link, idx) => (
+              <a
+                key={idx}
+                href={link.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-indigo-50/40 hover:border-indigo-200 transition-all block group"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">{link.source}</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600" />
+                </div>
+                <div className="font-semibold text-sm text-slate-900 group-hover:text-indigo-900 mb-1">{link.title}</div>
+                <p className="text-xs text-slate-600 leading-snug">{link.description}</p>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
