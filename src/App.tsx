@@ -28,6 +28,8 @@ import {
   AlertTriangle,
   Lock,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   Play,
   Award,
@@ -116,6 +118,24 @@ export default function App() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('acugrade_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('acugrade_sidebar_collapsed', String(next));
+      } catch { }
+      return next;
+    });
+  };
+
   const [pinModalTargetChild, setPinModalTargetChild] = useState<ChildAccount | null>(null);
 
   const normalizedRole = (authRole || '').toUpperCase();
@@ -630,35 +650,54 @@ export default function App() {
         />
       )}
 
-      {/* Left Sidebar (High Density Theme) */}
+      {/* Left Sidebar (High Density Theme with Global Collapse / Expand) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
+        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
+          } ${mobileSidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full'}`}
       >
         {/* Brand Header */}
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div className={`p-4 border-b border-slate-100 flex items-center ${isSidebarCollapsed ? 'lg:flex-col lg:gap-2.5 justify-center' : 'justify-between'}`}>
           <div
-            className="flex items-center gap-2.5 cursor-pointer"
+            className="flex items-center gap-2.5 cursor-pointer min-w-0"
             onClick={() => {
               setActiveSubmissionReport(null);
               setActiveTab('dashboard');
               setMobileSidebarOpen(false);
             }}
+            title="AcuGrade AI — RAG K-Graph"
           >
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-xs">
+            <div className="w-8 h-8 min-w-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-xs">
               <span>Σ</span>
             </div>
-            <div>
+            <div className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
               <span className="font-bold text-lg tracking-tight italic text-slate-900">AcuGrade AI</span>
               <span className="block text-[10px] text-slate-400 font-semibold tracking-wider uppercase">RAG K-Graph</span>
             </div>
           </div>
-          <button
-            onClick={() => setMobileSidebarOpen(false)}
-            className="lg:hidden p-1 rounded-md text-slate-400 hover:text-slate-600"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="flex items-center gap-1">
+            {/* Single Desktop Toggle Button inside Sidebar with Rich Hover Effect */}
+            <button
+              id="desktop-sidebar-toggle"
+              onClick={toggleSidebar}
+              title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              className="hidden lg:flex p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 bg-slate-50/80 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 shadow-2xs hover:shadow-xs transition-all duration-200 hover:scale-105 active:scale-95 group cursor-pointer"
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+              ) : (
+                <ChevronLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+              )}
+            </button>
+
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setMobileSidebarOpen(false)}
+              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Navigation Sections (Dynamic Persona-Gated Navigation) */}
@@ -668,88 +707,97 @@ export default function App() {
             /* STUDENT / CHILD PERSONA SIDEBAR                              */
             /* ============================================================ */
             <>
-              <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest px-3 mb-2 mt-1 flex items-center justify-between">
-                <span>Student Arena</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold">
-                  {activeChild?.name}
-                </span>
-              </div>
+              {!isSidebarCollapsed ? (
+                <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest px-3 mb-2 mt-1 flex items-center justify-between">
+                  <span>Student Arena</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold">
+                    {activeChild?.name}
+                  </span>
+                </div>
+              ) : (
+                <div className="hidden lg:block my-2 border-t border-slate-100" title={`Student Arena (${activeChild?.name})`} />
+              )}
 
               <button
                 id="nav-sidebar-arena"
+                title="10-Mark Exam Arena"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('arena');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'arena' && !activeSubmissionReport
-                  ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
+                  } ${activeTab === 'arena' && !activeSubmissionReport
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
                   }`}
               >
-                <Play className={`w-4 h-4 ${activeTab === 'arena' && !activeSubmissionReport ? 'text-white' : 'text-emerald-600'}`} />
-                <span>10-Mark Exam Arena</span>
+                <Play className={`w-4 h-4 flex-shrink-0 ${activeTab === 'arena' && !activeSubmissionReport ? 'text-white' : 'text-emerald-600'}`} />
+                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>10-Mark Exam Arena</span>
               </button>
 
               <button
                 id="nav-sidebar-learning-path"
+                title="Adaptive Learning Path"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('learning-path');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'learning-path' && !activeSubmissionReport
-                  ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
+                  } ${activeTab === 'learning-path' && !activeSubmissionReport
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
                   }`}
               >
-                <div className="flex items-center gap-3">
-                  <Compass className={`w-4 h-4 ${activeTab === 'learning-path' && !activeSubmissionReport ? 'text-white' : 'text-indigo-600'}`} />
-                  <span>Adaptive Learning Path</span>
+                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
+                  <Compass className={`w-4 h-4 flex-shrink-0 ${activeTab === 'learning-path' && !activeSubmissionReport ? 'text-white' : 'text-indigo-600'}`} />
+                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Adaptive Learning Path</span>
                 </div>
-                {/* <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${activeTab === 'learning-path' && !activeSubmissionReport ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'}`}>
-                  RAG
-                </span> */}
               </button>
 
               <button
                 id="nav-sidebar-gamification"
+                title={`Ranks & Badges (Lvl ${activeChild?.level || 1})`}
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('gamification');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'gamification' && !activeSubmissionReport
-                  ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
+                  } ${activeTab === 'gamification' && !activeSubmissionReport
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
                   }`}
               >
-                <div className="flex items-center gap-3">
-                  <Trophy className={`w-4 h-4 ${activeTab === 'gamification' && !activeSubmissionReport ? 'text-white' : 'text-amber-500'}`} />
-                  <span>Ranks & Badges</span>
+                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
+                  <Trophy className={`w-4 h-4 flex-shrink-0 ${activeTab === 'gamification' && !activeSubmissionReport ? 'text-white' : 'text-amber-500'}`} />
+                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Ranks & Badges</span>
                 </div>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${activeTab === 'gamification' && !activeSubmissionReport ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isSidebarCollapsed ? 'lg:hidden' : ''} ${activeTab === 'gamification' && !activeSubmissionReport ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>
                   Lvl {activeChild?.level || 1}
                 </span>
               </button>
 
               <button
                 id="nav-sidebar-fun-zone"
+                title="Brain Breaks & Games"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('fun-zone');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'fun-zone' && !activeSubmissionReport
-                  ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                  : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
+                  } ${activeTab === 'fun-zone' && !activeSubmissionReport
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
                   }`}
               >
-                <div className="flex items-center gap-3">
-                  <Smile className={`w-4 h-4 ${activeTab === 'fun-zone' && !activeSubmissionReport ? 'text-white' : 'text-pink-500'}`} />
-                  <span>Brain Breaks & Games</span>
+                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
+                  <Smile className={`w-4 h-4 flex-shrink-0 ${activeTab === 'fun-zone' && !activeSubmissionReport ? 'text-white' : 'text-pink-500'}`} />
+                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Brain Breaks & Games</span>
                 </div>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${activeTab === 'fun-zone' && !activeSubmissionReport ? 'bg-white/20 text-white' : 'bg-pink-100 text-pink-700'}`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isSidebarCollapsed ? 'lg:hidden' : ''} ${activeTab === 'fun-zone' && !activeSubmissionReport ? 'bg-white/20 text-white' : 'bg-pink-100 text-pink-700'}`}>
                   Fun
                 </span>
               </button>
@@ -757,31 +805,37 @@ export default function App() {
               {examHistory.length > 0 && (
                 <button
                   id="nav-sidebar-results"
+                  title="My Results & Analysis"
                   onClick={() => {
                     setActiveSubmissionReport(examHistory[0]);
                     setMobileSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeSubmissionReport
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                  className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
+                    } ${activeSubmissionReport
+                      ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                      : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
                     }`}
                 >
-                  <Award className={`w-4 h-4 ${activeSubmissionReport ? 'text-white' : 'text-amber-500'}`} />
-                  <span>My Results & Analysis</span>
+                  <Award className={`w-4 h-4 flex-shrink-0 ${activeSubmissionReport ? 'text-white' : 'text-amber-500'}`} />
+                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>My Results & Analysis</span>
                 </button>
               )}
 
               {/* Student Quick Action to return to Parent View */}
-              <div className="pt-6 mt-4 border-t border-slate-100">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">
-                  Parent Access
-                </div>
+              <div className="pt-4 mt-4 border-t border-slate-100">
+                {!isSidebarCollapsed && (
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">
+                    Parent Access
+                  </div>
+                )}
                 <button
                   onClick={handleSwitchToParent}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 transition-colors border border-slate-200"
+                  title="Switch to Parent View"
+                  className={`w-full flex items-center rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 transition-colors border border-slate-200 ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 lg:py-2.5 px-3 py-2.5 gap-2.5' : 'px-3 py-2.5 gap-2.5'
+                    }`}
                 >
-                  <span>👨‍👩‍👧‍👦</span>
-                  <span>Switch to Parent View</span>
+                  <span className="text-base">👨‍👩‍👧‍👦</span>
+                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Switch to Parent View</span>
                 </button>
               </div>
             </>
@@ -790,139 +844,158 @@ export default function App() {
             /* PARENT PERSONA SIDEBAR                                       */
             /* ============================================================ */
             <>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-1">
-                Family & Management
-              </div>
+              {!isSidebarCollapsed ? (
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-1">
+                  Family & Management
+                </div>
+              ) : (
+                <div className="hidden lg:block my-2 border-t border-slate-100" title="Family & Management" />
+              )}
 
               <button
                 id="nav-sidebar-dashboard"
+                title="Family Dashboard"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('dashboard');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'dashboard' && !activeSubmissionReport
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
+                  } ${activeTab === 'dashboard' && !activeSubmissionReport
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
-                <BarChart3 className="w-4 h-4 text-indigo-600" />
-                <span>Family Dashboard</span>
+                <BarChart3 className="w-4 h-4 flex-shrink-0 text-indigo-600" />
+                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Family Dashboard</span>
               </button>
 
               <button
                 id="nav-sidebar-children"
+                title={`Child Profiles (${parentAccount.children.length})`}
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('dashboard');
                   setMobileSidebarOpen(false);
                 }}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                className={`w-full flex items-center py-2 rounded-md text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
+                  }`}
               >
-                <div className="flex items-center gap-3">
-                  <Users className="w-4 h-4" />
-                  <span>Child Profiles</span>
+                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
+                  <Users className="w-4 h-4 flex-shrink-0" />
+                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Child Profiles</span>
                 </div>
-                <span className="text-[10px] bg-slate-100 font-bold px-1.5 py-0.5 rounded text-slate-600">
+                <span className={`text-[10px] bg-slate-100 font-bold px-1.5 py-0.5 rounded text-slate-600 ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
                   {parentAccount.children.length}
                 </span>
               </button>
 
               <button
                 id="nav-sidebar-ptc"
+                title={`Parent-Teacher Hub (${messages.length} messages)`}
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('ptc');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'ptc' && !activeSubmissionReport
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
+                  } ${activeTab === 'ptc' && !activeSubmissionReport
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
-                <div className="flex items-center gap-3">
-                  <MessageSquare className="w-4 h-4 text-sky-600" />
-                  <span>Parent-Teacher Hub</span>
+                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
+                  <MessageSquare className="w-4 h-4 flex-shrink-0 text-sky-600" />
+                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Parent-Teacher Hub</span>
                 </div>
-                <span className="text-[10px] bg-sky-100 text-sky-700 font-bold px-1.5 py-0.5 rounded">
+                <span className={`text-[10px] bg-sky-100 text-sky-700 font-bold px-1.5 py-0.5 rounded ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
                   {messages.length}
                 </span>
               </button>
 
               <button
                 id="nav-sidebar-pricing"
+                title="Subscription Plans"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('pricing');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'pricing'
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
+                  } ${activeTab === 'pricing'
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
-                <Sparkles className="w-4 h-4 text-indigo-500" />
-                <span>Subscription Plans</span>
+                <Sparkles className="w-4 h-4 flex-shrink-0 text-indigo-500" />
+                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Subscription Plans</span>
               </button>
 
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-5">
-                Academic Progress & Tools
-              </div>
+              {!isSidebarCollapsed ? (
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-5">
+                  Academic Progress & Tools
+                </div>
+              ) : (
+                <div className="hidden lg:block my-3 border-t border-slate-100" title="Academic Progress & Tools" />
+              )}
 
               <button
                 id="nav-sidebar-arena"
+                title="10-Mark Exam Arena"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('arena');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'arena' && !activeSubmissionReport
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
+                  } ${activeTab === 'arena' && !activeSubmissionReport
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
-                <Play className="w-4 h-4 text-emerald-600" />
-                <span>10-Mark Exam Arena</span>
+                <Play className="w-4 h-4 flex-shrink-0 text-emerald-600" />
+                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>10-Mark Exam Arena</span>
               </button>
 
               <button
                 id="nav-sidebar-learning-path"
+                title="Adaptive Path"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('learning-path');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'learning-path' && !activeSubmissionReport
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
+                  } ${activeTab === 'learning-path' && !activeSubmissionReport
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
-                <div className="flex items-center gap-3">
-                  <Compass className="w-4 h-4 text-indigo-600" />
-                  <span>Adaptive Path</span>
+                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
+                  <Compass className="w-4 h-4 flex-shrink-0 text-indigo-600" />
+                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Adaptive Path</span>
                 </div>
-                {/* <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded">
-                  RAG
-                </span> */}
               </button>
 
               <button
                 id="nav-sidebar-gamification"
+                title="Leaderboard & Ranks"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('gamification');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'gamification' && !activeSubmissionReport
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
+                  } ${activeTab === 'gamification' && !activeSubmissionReport
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
-                <div className="flex items-center gap-3">
-                  <Trophy className="w-4 h-4 text-amber-500" />
-                  <span>Leaderboard</span>
+                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
+                  <Trophy className="w-4 h-4 flex-shrink-0 text-amber-500" />
+                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Leaderboard</span>
                 </div>
-                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">
+                <span className={`text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
                   Ranks
                 </span>
               </button>
@@ -931,71 +1004,83 @@ export default function App() {
               {isAdminSession && (
                 <button
                   id="nav-sidebar-admin"
+                  title="Super Admin Panel"
                   onClick={() => {
                     setActiveSubmissionReport(null);
                     setActiveTab('admin');
                     setMobileSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'admin'
-                    ? 'bg-amber-50 text-amber-800 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
+                    } ${activeTab === 'admin'
+                      ? 'bg-amber-50 text-amber-800 font-semibold'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                 >
-                  <ShieldCheck className="w-4 h-4 text-amber-600" />
-                  <span>Super Admin Panel</span>
+                  <ShieldCheck className="w-4 h-4 flex-shrink-0 text-amber-600" />
+                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Super Admin Panel</span>
                 </button>
               )}
 
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-5">
-                Pedagogy & Resources
-              </div>
+              {!isSidebarCollapsed ? (
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-5">
+                  Pedagogy & Resources
+                </div>
+              ) : (
+                <div className="hidden lg:block my-3 border-t border-slate-100" title="Pedagogy & Resources" />
+              )}
 
               <button
                 id="nav-sidebar-blog"
+                title="Curriculum Blog"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('blog');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'blog'
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
+                  } ${activeTab === 'blog'
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
-                <BookOpen className="w-4 h-4" />
-                <span>Curriculum Blog</span>
+                <BookOpen className="w-4 h-4 flex-shrink-0" />
+                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Curriculum Blog</span>
               </button>
 
               <button
                 id="nav-sidebar-about"
+                title="About & Pedagogy"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('about');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'about'
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
+                  } ${activeTab === 'about'
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
-                <Info className="w-4 h-4" />
-                <span>About & Pedagogy</span>
+                <Info className="w-4 h-4 flex-shrink-0" />
+                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>About & Pedagogy</span>
               </button>
 
               <button
                 id="nav-sidebar-legal"
+                title="Policies & Disclaimers"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('legal');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'legal'
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
+                  } ${activeTab === 'legal'
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
               >
-                <FileText className="w-4 h-4" />
-                <span>Policies & Disclaimers</span>
+                <FileText className="w-4 h-4 flex-shrink-0" />
+                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Policies & Disclaimers</span>
               </button>
             </>
           )}
@@ -1003,7 +1088,22 @@ export default function App() {
 
         {/* Bottom Current Plan Widget (High Density) */}
         <div className="p-3 border-t border-slate-100">
-          <div className="bg-slate-900 rounded-xl p-3.5 text-white space-y-2">
+          {/* Collapsed view on Desktop */}
+          {isSidebarCollapsed ? (
+            <div
+              onClick={() => isFreePlan ? setShowUpgradeModal(true) : setActiveTab('pricing')}
+              title={`Active Plan: ${parentAccount.subscriptionTier === 'free' ? 'Free Plan (1 Exam/Day)' : 'Unlimited Family Exams'} — Click to view`}
+              className="hidden lg:flex flex-col items-center justify-center p-2.5 bg-slate-900 rounded-xl text-white cursor-pointer hover:bg-slate-800 transition-colors shadow-2xs group"
+            >
+              <Sparkles className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
+              <span className="text-[9px] font-bold text-indigo-300 mt-1 uppercase">
+                {parentAccount.subscriptionTier === 'free' ? 'Free' : 'Pro'}
+              </span>
+            </div>
+          ) : null}
+
+          {/* Full view on Expanded Desktop / Mobile Drawer */}
+          <div className={`bg-slate-900 rounded-xl p-3.5 text-white space-y-2 ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
             <div className="flex items-center justify-between">
               <p className="text-[10px] text-slate-400 uppercase font-semibold">Active Plan</p>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-indigo-300 font-mono">
@@ -1047,6 +1147,7 @@ export default function App() {
         {/* Top Header Bar */}
         <header className="h-14 lg:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 flex-shrink-0 z-20">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            {/* Mobile-only Sidebar Toggle (hidden on desktop) */}
             <button
               id="mobile-sidebar-toggle"
               onClick={() => setMobileSidebarOpen(true)}
