@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   ParentAccount,
   ChildAccount,
@@ -115,6 +115,24 @@ export default function App() {
   const [showAddChildModal, setShowAddChildModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
+  const personaMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close persona dropdown when clicking anywhere outside
+  useEffect(() => {
+    if (!showPersonaMenu) return;
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (personaMenuRef.current && !personaMenuRef.current.contains(event.target as Node)) {
+        setShowPersonaMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showPersonaMenu]);
+
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     try {
@@ -1110,7 +1128,7 @@ export default function App() {
               </div>
             ) : null}
 
-            <div className="relative">
+            <div className="relative" ref={personaMenuRef}>
               <button
                 id="header-persona-switcher"
                 onClick={() => setShowPersonaMenu(!showPersonaMenu)}

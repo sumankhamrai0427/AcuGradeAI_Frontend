@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   GraduationCap, 
   UserCheck, 
@@ -37,6 +37,24 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenUpgradeModal,
 }) => {
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
+  const personaMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close persona dropdown when clicking anywhere outside
+  useEffect(() => {
+    if (!showPersonaMenu) return;
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (personaMenuRef.current && !personaMenuRef.current.contains(event.target as Node)) {
+        setShowPersonaMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showPersonaMenu]);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const activeChild = parentAccount.children.find((c) => c.id === activeChildId);
@@ -176,7 +194,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* Persona Switcher Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={personaMenuRef}>
               <button
                 id="persona-switcher-btn"
                 onClick={() => setShowPersonaMenu(!showPersonaMenu)}
