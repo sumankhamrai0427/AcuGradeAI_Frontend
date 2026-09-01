@@ -11,6 +11,7 @@ import {
   TeacherContact,
   ParentTeacherMessage,
   SharedDossier,
+  PTMSchedule,
   Board,
   ClassGrade,
   Subject,
@@ -109,9 +110,6 @@ export default function App() {
   const [learningNodes, setLearningNodes] = useState<LearningPathNode[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [teachers, setTeachers] = useState<TeacherContact[]>([]);
-  const [messages, setMessages] = useState<ParentTeacherMessage[]>([]);
-  const [sharedDossiers, setSharedDossiers] = useState<SharedDossier[]>([]);
 
   // Modals & UI States
   const [showAddChildModal, setShowAddChildModal] = useState(false);
@@ -147,6 +145,8 @@ export default function App() {
   const isParentActive = activePersona === 'parent';
   const isFreePlan = parentAccount?.subscriptionTier === 'free';
   const dailyQuotaUsed = activeChild ? activeChild.dailyExamsTakenToday : 0;
+  const totalFamilyXP = parentAccount?.children.reduce((acc, c) => acc + (c.xp || 0), 0) || 0;
+  const totalChildrenCount = parentAccount?.children.length || 0;
 
   // ------------------------------------------------------------
   // Data loading — replaces the old mock-data useState initializers.
@@ -199,60 +199,9 @@ export default function App() {
     setLearningNodes(nodes);
   }, []);
 
-  const loadCommunication = useCallback(async (children: ChildAccount[], parentName: string, parentId: string) => {
-    const teacherList: TeacherContact[] = (await communicationApi.listTeachers()).map((t: TeacherContact) => ({
-      ...t,
-      avatar: t.avatar || '🧑‍🏫',
-    }));
-    setTeachers(teacherList);
 
-    const conversations = await communicationApi.listConversations();
-    const flatMessages: ParentTeacherMessage[] = [];
-    for (const convo of conversations) {
-      const teacher = teacherList.find((t) => t.id === convo.teacherId);
-      const child = children.find((c) => c.id === convo.studentId);
-      for (const m of convo.messages) {
-        flatMessages.push({
-          id: m.id,
-          parentId,
-          parentName,
-          teacherId: convo.teacherId,
-          teacherName: teacher?.name || 'Teacher',
-          childId: convo.studentId,
-          childName: child?.name || 'Child',
-          senderRole: m.senderRole,
-          message: m.message,
-          timestamp: m.timestamp,
-          attachedSubmissionId: m.attachedSubmissionId,
-          actionItems: m.actionItems,
-          status: m.status,
-        });
-      }
-    }
-    setMessages(flatMessages);
 
-    const dossiers = await communicationApi.listDossiers();
-    setSharedDossiers(
-      dossiers.map((d: any) => {
-        const child = children.find((c) => c.id === d.studentId);
-        return {
-          id: d.id,
-          childId: d.studentId,
-          childName: child?.name || 'Child',
-          parentName,
-          shareToken: d.shareToken,
-          createdAt: d.createdAt,
-          expiresAt: d.expiresAt,
-          notes: d.notes,
-          recipients: d.recipients,
-          includedSubmissionsCount: d.includedSubmissionsCount,
-          status: d.status,
-        };
-      })
-    );
-  }, []);
-
-  // Full bootstrap once authenticated
+  // Full bootstrap once authenticated - ESSENTIAL SESSION ONLY (Zero Over-fetching)
   useEffect(() => {
     if (!authRole) {
       setIsBootstrapping(false);
@@ -271,12 +220,8 @@ export default function App() {
         } else if (isStudentSession) {
           setActiveTab('arena');
         } else if (isParentSession) {
-          const children = await loadParentAndChildren();
-          await loadGamification();
-          if (children[0]) {
-            const me = await parentApi.getMe();
-            await loadCommunication(children, me.name, me.id);
-          }
+          // Only fetch parent and children on login bootstrap (Super Fast Login!)
+          await loadParentAndChildren();
         } else {
           clearTokens();
           setAuthRole(null);
@@ -294,14 +239,21 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [authRole, isAdminSession, isTeacherSession, isStudentSession, isParentSession, loadParentAndChildren, loadGamification, loadCommunication]);
+  }, [authRole, isAdminSession, isTeacherSession, isStudentSession, isParentSession, loadParentAndChildren]);
 
-  // Reload learning path whenever the active child changes
+  // On-demand gamification loading (Only calls API when user navigates to Leaderboard/Gamification)
   useEffect(() => {
-    if (activeChildId && isParentSession) {
-      loadLearningPath(activeChildId).catch(() => { });
+    if (activeTab === 'gamification') {
+      loadGamification();
     }
-  }, [activeChildId, isParentSession, loadLearningPath]);
+  }, [activeTab, loadGamification]);
+
+  // On-demand learning path loading (Only calls API when user navigates to Learning Path)
+  useEffect(() => {
+    if (activeTab === 'learning-path' && activeChild) {
+      loadLearningPath(activeChild.id);
+    }
+  }, [activeTab, activeChild?.id, loadLearningPath]);
 
   // ------------------------------------------------------------
   // Auth handlers
@@ -385,46 +337,6 @@ export default function App() {
     topic: string;
   }) => {
     setActiveTab('arena');
-  };
-
-  // PTC: Sending messages
-  const handleSendMessage = async (newMessageData: {
-    teacherId: string;
-    teacherName: string;
-    childId: string;
-    childName: string;
-    message: string;
-    attachedSubmissionId?: string;
-    attachedSubmissionTitle?: string;
-    actionItems?: string[];
-  }) => {
-    const { id: conversationId } = await communicationApi.createConversation(
-      newMessageData.teacherId,
-      newMessageData.childId
-    );
-    await communicationApi.sendMessage(conversationId, {
-      message: newMessageData.message,
-      attachedSubmissionId: newMessageData.attachedSubmissionId,
-      actionItems: newMessageData.actionItems,
-    });
-    if (parentAccount) await loadCommunication(parentAccount.children, parentAccount.name, parentAccount.id);
-  };
-
-  // PTC: Create and share academic dossier
-  const handleCreateDossier = async (dossierData: {
-    childId: string;
-    childName: string;
-    parentName: string;
-    notes: string;
-    recipients: string[];
-    includedSubmissionsCount: number;
-  }) => {
-    await communicationApi.createDossier({
-      studentId: dossierData.childId,
-      notes: dossierData.notes,
-      recipients: dossierData.recipients,
-    });
-    if (parentAccount) await loadCommunication(parentAccount.children, parentAccount.name, parentAccount.id);
   };
 
   // Retake or jump to next exam
@@ -871,28 +783,8 @@ export default function App() {
               </button>
 
               <button
-                id="nav-sidebar-children"
-                title={`Child Profiles (${parentAccount.children.length})`}
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('dashboard');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2 rounded-md text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
-                  }`}
-              >
-                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
-                  <Users className="w-4 h-4 flex-shrink-0" />
-                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Child Profiles</span>
-                </div>
-                <span className={`text-[10px] bg-slate-100 font-bold px-1.5 py-0.5 rounded text-slate-600 ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
-                  {parentAccount.children.length}
-                </span>
-              </button>
-
-              <button
                 id="nav-sidebar-ptc"
-                title={`Parent-Teacher Hub (${messages.length} messages)`}
+                title="Parent-Teacher Hub"
                 onClick={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('ptc');
@@ -908,8 +800,8 @@ export default function App() {
                   <MessageSquare className="w-4 h-4 flex-shrink-0 text-sky-600" />
                   <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Parent-Teacher Hub</span>
                 </div>
-                <span className={`text-[10px] bg-sky-100 text-sky-700 font-bold px-1.5 py-0.5 rounded ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
-                  {messages.length}
+                <span className={`text-[10px] bg-sky-50 text-sky-700 font-bold px-1.5 py-0.5 rounded border border-sky-100 ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
+                  Live
                 </span>
               </button>
 
@@ -1192,15 +1084,31 @@ export default function App() {
 
           {/* Persona Menu & Actions */}
           <div className="flex items-center gap-3">
-            {/* XP and Streak Quick Badge */}
-            {activeChild && (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-full border border-amber-200 text-xs font-bold text-amber-800">
+            {/* Persona-Aware Quick Badge (Family Momentum for Parent, Personal Streak for Student) */}
+            {isParentActive ? (
+              <div
+                title={`Total Family Momentum: ${totalFamilyXP} XP across ${totalChildrenCount} registered child profile${totalChildrenCount === 1 ? '' : 's'}`}
+                className="hidden sm:flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full border border-indigo-200 text-xs font-bold text-indigo-800 shadow-2xs"
+              >
+                <Trophy className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Family: {totalFamilyXP} XP</span>
+                <span className="text-indigo-300">•</span>
+                <span>{totalChildrenCount} Profile{totalChildrenCount === 1 ? '' : 's'}</span>
+              </div>
+            ) : activeChild ? (
+              <div
+                title={`${activeChild.name}'s Learning Streak and Experience Points`}
+                className="hidden sm:flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-full border border-amber-200 text-xs font-bold text-amber-800 shadow-2xs"
+              >
                 <Flame className="w-3.5 h-3.5 text-amber-600" />
                 <span>{activeChild.streakDays || 0}d Streak</span>
                 <span className="text-amber-300">•</span>
                 <span>{activeChild.xp || 0} XP</span>
+                <span className="text-amber-700 font-bold text-[10px] bg-amber-100/80 px-1.5 py-0.5 rounded-sm">
+                  Lvl {activeChild.level || 1}
+                </span>
               </div>
-            )}
+            ) : null}
 
             <div className="relative">
               <button
@@ -1332,11 +1240,9 @@ export default function App() {
                   activeChildId={activeChildId}
                   onChildSelect={(cId) => {
                     setActiveChildId(cId);
-                    setActivePersona('child');
                   }}
                   onLaunchExamForChild={(cId) => {
                     setActiveChildId(cId);
-                    setActivePersona('child');
                     setActiveTab('arena');
                   }}
                   onOpenAddChildModal={() => setShowAddChildModal(true)}
@@ -1378,12 +1284,8 @@ export default function App() {
                 <ParentTeacherCommunication
                   parentAccount={parentAccount}
                   activeChild={activeChild}
-                  teachers={teachers}
-                  messages={messages}
-                  sharedDossiers={sharedDossiers}
                   recentSubmissions={examHistory}
-                  onSendMessage={handleSendMessage}
-                  onCreateDossier={handleCreateDossier}
+                  onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
                 />
               )}
 

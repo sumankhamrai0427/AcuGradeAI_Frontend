@@ -252,6 +252,20 @@ export interface SharedDossier {
   status: 'active' | 'revoked';
 }
 
+export interface PTMSchedule {
+  id: string;
+  parentId: string;
+  teacherId: string;
+  teacherName: string;
+  studentId: string;
+  studentName: string;
+  scheduledAt: string;
+  topic: string;
+  meetingLink?: string;
+  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+  createdAt: string;
+}
+
 export type SubscriptionTier = 'free' | 'scholar_pro' | 'genius_competitive';
 
 export interface ParentAccount {

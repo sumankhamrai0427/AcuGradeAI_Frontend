@@ -42,12 +42,31 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
   onNavigateToPTC,
   onNavigateToFunZone
 }) => {
-  const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>({
-    // Expand incorrect questions by default to emphasize learning
-    ...submission.evaluations.reduce((acc, eq) => {
+  const evaluations: QuestionEvaluation[] = submission?.evaluations || [];
+  
+  const analysis = submission?.analysis || {
+    overallBand: 'Proficient' as const,
+    masteryScorePercentage: (submission?.marksObtained || 0) * 10,
+    strengths: ['Core conceptual understanding', 'Grounded problem solving'],
+    areasToImprove: ['Timed speed', 'Complex multi-step questions'],
+    kGraphInsights: [],
+    evolutionaryRoadmap: 'Continue regular diagnostic sprints to maintain knowledge accretion.',
+    encouragementNote: 'Great effort on completing the diagnostic sprint!',
+    recommendedNextExam: {
+      board: submission?.board || 'CBSE',
+      classGrade: submission?.classGrade || 'Class 10',
+      subject: submission?.subject || 'Mathematics',
+      difficulty: 'medium' as const,
+      reason: 'Adaptive knowledge progression.'
+    },
+    curatedStudyLinks: []
+  };
+
+  const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>(() => {
+    return evaluations.reduce((acc, eq) => {
       acc[eq.questionId] = !eq.isCorrect;
       return acc;
-    }, {} as Record<string, boolean>)
+    }, {} as Record<string, boolean>);
   });
 
   const toggleQuestionExpand = (qId: string) => {
@@ -59,7 +78,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
 
   const expandAll = (expand: boolean) => {
     const nextState: Record<string, boolean> = {};
-    submission.evaluations.forEach((eq) => {
+    evaluations.forEach((eq) => {
       nextState[eq.questionId] = expand;
     });
     setExpandedQuestions(nextState);
@@ -69,13 +88,20 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
     window.print();
   };
 
-  const { analysis } = submission;
-  const nextExam = analysis.recommendedNextExam;
+  const nextExam = analysis.recommendedNextExam || {
+    board: submission?.board || 'CBSE',
+    classGrade: submission?.classGrade || 'Class 10',
+    subject: submission?.subject || 'Mathematics',
+    difficulty: 'medium' as const,
+    reason: 'Adaptive progression'
+  };
 
   // Calculate XP earned from this exam
-  const baseXP = submission.marksObtained * 10;
-  const perfectBonus = submission.marksObtained === 10 ? 50 : 0;
-  const speedBonus = submission.timeTakenSeconds < 360 ? 25 : 0;
+  const marksObtained = submission?.marksObtained || 0;
+  const timeTakenSeconds = submission?.timeTakenSeconds || 0;
+  const baseXP = marksObtained * 10;
+  const perfectBonus = marksObtained === 10 ? 50 : 0;
+  const speedBonus = timeTakenSeconds < 360 ? 25 : 0;
   const totalExamXP = baseXP + perfectBonus + speedBonus + 30; // 30 streak XP
 
   return (
@@ -370,7 +396,8 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
 
         {/* 10 Question Accordion List */}
         <div className="space-y-4">
-          {submission.evaluations.map((eq) => {
+          {evaluations.length > 0 ? (
+            evaluations.map((eq) => {
             const isExpanded = !!expandedQuestions[eq.questionId];
             return (
               <div
@@ -523,7 +550,12 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
                 )}
               </div>
             );
-          })}
+          })
+        ) : (
+          <div className="py-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-slate-100">
+            Itemized question breakdown will be synchronized with the diagnostic Knowledge Graph.
+          </div>
+        )}
         </div>
       </div>
 

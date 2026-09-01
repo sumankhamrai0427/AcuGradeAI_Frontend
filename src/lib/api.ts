@@ -262,6 +262,9 @@ export const communicationApi = {
   markRead: (messageId: string) => request<any>(`/api/v1/messages/${messageId}/read`, { method: 'PUT' }),
   createDossier: (payload: any) => request<any>('/api/v1/dossiers', { method: 'POST', body: payload }),
   listDossiers: () => request<any[]>('/api/v1/dossiers'),
+  schedulePTM: (payload: { teacherId: string | number; studentId: string | number; scheduledAt: string; topic: string }) =>
+    request<any>('/api/v1/ptm/schedule', { method: 'POST', body: payload }),
+  listPTMSchedules: () => request<any[]>('/api/v1/ptm/schedules'),
 };
 
 // ------------------------------------------------------------
