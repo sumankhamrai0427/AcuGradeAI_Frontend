@@ -26,7 +26,7 @@ import {
   Award,
   Zap
 } from 'lucide-react';
-import { examApi } from '../lib/api';
+import ApiServices from '../services/ApiServices';
 
 interface ExamArenaProps {
   parentAccount: ParentAccount;
@@ -129,7 +129,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
       // list can't be trusted as an input to exam personalization.
       if (!activeChildId) return;
 
-      const { exam } = await examApi.generate({
+      const { exam } = await ApiServices.generateExam({
         studentId: activeChildId,
         board: selectedBoard,
         classGrade: selectedGrade,
@@ -178,10 +178,9 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
       // there's nothing left for the client to round-trip or tamper with.
       // (This replaces the original flow, which sent the whole exam —
       // correctAnswer included — back to the server on every submission.)
-      const { submission } = await examApi.submit(
+      const { submission } = await ApiServices.submitExam(
         activeExam.id,
-        answers,
-        Math.max(10, totalSecondsSpent)
+        { answers, timeTakenSeconds: Math.max(10, totalSecondsSpent) }
       );
       onExamComplete(submission);
     } catch (err) {
@@ -205,22 +204,22 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
     const answeredCount = Object.keys(answers).filter((k) => answers[k]?.trim() !== '').length;
 
     return (
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-4 py-4">
         {/* Top Sticky Status Bar */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-4 mb-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center font-bold text-indigo-700">
+            <div className="w-10 h-10 rounded-xl bg-yellow-50 border border-yellow-300 flex items-center justify-center font-bold text-yellow-700">
               {currentQuestionIdx + 1}/{totalQuestions}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-900 text-sm sm:text-base">{activeExam.title}</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="font-semibold text-stone-900 text-sm sm:text-base">{activeExam.title}</span>
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-300">
                   10 Marks Total
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
-                Candidate: <span className="font-medium text-slate-700">{activeChild?.name}</span> ({activeExam.board} • {activeExam.classGrade})
+              <p className="text-xs text-stone-500">
+                Candidate: <span className="font-medium text-stone-700">{activeChild?.name}</span> ({activeExam.board} • {activeExam.classGrade})
               </p>
             </div>
           </div>
@@ -229,7 +228,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             {/* Timer */}
             <div className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-sm font-mono font-bold ${timeRemainingSeconds < 180
               ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse'
-              : 'bg-slate-50 border-slate-200 text-slate-700'
+              : 'bg-stone-50 border-stone-200 text-stone-700'
               }`}>
               <Clock className="w-4 h-4" />
               <span>{formatTime(timeRemainingSeconds)}</span>
@@ -239,7 +238,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             <button
               id="toggle-scratchpad-btn"
               onClick={() => setShowScratchpad(!showScratchpad)}
-              className={`p-2 rounded-xl border text-xs flex items-center gap-1.5 transition-colors ${showScratchpad ? 'bg-amber-50 border-amber-300 text-amber-800 font-semibold' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              className={`p-2 rounded-xl border text-xs flex items-center gap-1.5 transition-colors ${showScratchpad ? 'bg-amber-50 border-amber-300 text-amber-800 font-semibold' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
                 }`}
               title="Open Scratchpad / Calculation Notes"
             >
@@ -251,7 +250,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             <button
               id="finish-exam-btn"
               onClick={() => setShowConfirmSubmit(true)}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors"
+              className="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs sm:text-sm font-semibold shadow-xs transition-colors"
             >
               Submit 10 Marks
             </button>
@@ -278,30 +277,30 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
               value={scratchpadNote}
               onChange={(e) => setScratchpadNote(e.target.value)}
               placeholder="Jot down formulas, unit conversions, or calculations here (not graded)..."
-              className="w-full h-24 p-2.5 rounded-xl border border-amber-200 bg-white text-xs font-mono text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
+              className="w-full h-24 p-2.5 rounded-xl border border-amber-200 bg-white text-xs font-mono text-stone-800 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
             />
           </div>
         )}
 
         {/* Main Grid: Question Content + Question Palette */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Question Card (Col 1-3) */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-4 sm:p-6">
               {/* Question Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-900 text-white">
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-stone-900 text-white">
                     Question {currentQuestionIdx + 1}
                   </span>
-                  <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase">
+                  <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200 uppercase">
                     {currentQ.type}
                   </span>
-                  <span className="text-xs text-slate-400">•</span>
-                  <span className="text-xs text-slate-500 font-medium">Topic: {currentQ.topic}</span>
+                  <span className="text-xs text-stone-400">•</span>
+                  <span className="text-xs text-stone-500 font-medium">Topic: {currentQ.topic}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded-md">
+                  <span className="text-xs font-semibold text-stone-700 bg-stone-100 px-2 py-1 rounded-md">
                     1.0 Mark
                   </span>
                   <button
@@ -309,7 +308,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                     onClick={() => toggleFlagQuestion(currentQ.id)}
                     className={`p-1.5 rounded-lg border text-xs flex items-center gap-1 transition-colors ${flaggedQuestions[currentQ.id]
                       ? 'bg-amber-50 border-amber-300 text-amber-700'
-                      : 'border-slate-200 text-slate-400 hover:text-slate-600'
+                      : 'border-stone-200 text-stone-400 hover:text-stone-600'
                       }`}
                     title="Flag for review"
                   >
@@ -319,7 +318,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
               </div>
 
               {/* Question Statement */}
-              <div className="text-slate-900 text-base sm:text-lg font-medium leading-relaxed mb-6 whitespace-pre-line">
+              <div className="text-stone-900 text-base sm:text-lg font-medium leading-relaxed mb-4 whitespace-pre-line">
                 {currentQ.questionText}
               </div>
 
@@ -337,11 +336,11 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                           id={`question-${currentQuestionIdx}-opt-${oIdx}`}
                           onClick={() => handleSelectAnswer(currentQ.id, letter)}
                           className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${isSelected
-                            ? 'bg-indigo-50/80 border-indigo-400 ring-2 ring-indigo-200 text-indigo-950 font-medium'
-                            : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700'
+                            ? 'bg-yellow-50/80 border-yellow-400 ring-2 ring-yellow-200 text-yellow-950 font-medium'
+                            : 'bg-white border-stone-200 hover:bg-stone-50 hover:border-stone-300 text-stone-700'
                             }`}
                         >
-                          <div className={`w-5 h-5 rounded-full mt-0.5 border flex items-center justify-center shrink-0 text-xs font-bold transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-500'
+                          <div className={`w-5 h-5 rounded-full mt-0.5 border flex items-center justify-center shrink-0 text-xs font-bold transition-colors ${isSelected ? 'bg-yellow-400 border-yellow-400 text-white' : 'border-stone-300 bg-white text-stone-500'
                             }`}>
                             {letter}
                           </div>
@@ -355,7 +354,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                 {/* Numerical Input */}
                 {currentQ.type === 'numerical' && (
                   <div className="space-y-2">
-                    <label className="block text-xs font-semibold text-slate-600">
+                    <label className="block text-xs font-semibold text-stone-600">
                       Enter numerical value (Exact integer or decimal):
                     </label>
                     <div className="flex gap-2">
@@ -365,17 +364,17 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                         value={answers[currentQ.id] || ''}
                         onChange={(e) => handleSelectAnswer(currentQ.id, e.target.value)}
                         placeholder="e.g. 6 or -8 or 3.14"
-                        className="flex-1 max-w-sm px-4 py-3 rounded-xl border border-slate-300 text-slate-900 font-mono text-base focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                        className="flex-1 max-w-sm px-4 py-3 rounded-xl border border-stone-300 text-stone-900 font-mono text-base focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
                       />
                     </div>
-                    <p className="text-[11px] text-slate-400">Do not include variable units unless requested.</p>
+                    <p className="text-[11px] text-stone-400">Do not include variable units unless requested.</p>
                   </div>
                 )}
 
                 {/* Objective Short Answer */}
                 {currentQ.type === 'objective' && (
                   <div className="space-y-2">
-                    <label className="block text-xs font-semibold text-slate-600">
+                    <label className="block text-xs font-semibold text-stone-600">
                       Write your specific objective answer / key term:
                     </label>
                     <input
@@ -384,25 +383,25 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                       value={answers[currentQ.id] || ''}
                       onChange={(e) => handleSelectAnswer(currentQ.id, e.target.value)}
                       placeholder="e.g. Total Internal Reflection or Pascal"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-300 text-slate-900 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      className="w-full px-4 py-3 rounded-xl border border-stone-300 text-stone-900 text-sm sm:text-base focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
                     />
                   </div>
                 )}
               </div>
 
               {/* Navigation Footer Controls */}
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-stone-100">
                 <button
                   id="prev-question-btn"
                   disabled={currentQuestionIdx === 0}
                   onClick={() => setCurrentQuestionIdx((p) => Math.max(0, p - 1))}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-stone-200 text-xs sm:text-sm font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Previous
                 </button>
 
-                <div className="text-xs text-slate-500 font-medium hidden sm:block">
+                <div className="text-xs text-stone-500 font-medium hidden sm:block">
                   {answeredCount} of {totalQuestions} Questions Answered
                 </div>
 
@@ -410,7 +409,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                   <button
                     id="next-question-btn"
                     onClick={() => setCurrentQuestionIdx((p) => Math.min(totalQuestions - 1, p + 1))}
-                    className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold shadow-xs"
+                    className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-semibold shadow-xs"
                   >
                     Next
                     <ArrowRight className="w-4 h-4" />
@@ -419,7 +418,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                   <button
                     id="submit-final-exam-btn"
                     onClick={() => setShowConfirmSubmit(true)}
-                    className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-xs"
+                    className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs sm:text-sm font-semibold shadow-xs"
                   >
                     Submit 10 Marks
                     <CheckCircle2 className="w-4 h-4" />
@@ -431,10 +430,10 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
           {/* Right Palette (Col 4) */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sticky top-24">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3 flex items-center justify-between">
+            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-4 sticky top-24">
+              <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3 flex items-center justify-between">
                 <span>Question Palette</span>
-                <span className="text-[11px] text-indigo-600 font-semibold">{answeredCount}/10</span>
+                <span className="text-[11px] text-yellow-600 font-semibold">{answeredCount}/10</span>
               </h3>
 
               {/* 10-Question Grid */}
@@ -444,10 +443,10 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                   const isAnswered = !!answers[q.id]?.trim();
                   const isFlagged = !!flaggedQuestions[q.id];
 
-                  let btnBg = 'bg-slate-100 text-slate-700 hover:bg-slate-200';
-                  if (isAnswered) btnBg = 'bg-emerald-600 text-white font-bold';
+                  let btnBg = 'bg-stone-100 text-stone-700 hover:bg-stone-200';
+                  if (isAnswered) btnBg = 'bg-yellow-400 text-stone-900 font-bold';
                   if (isFlagged) btnBg = 'bg-amber-400 text-amber-950 font-bold';
-                  if (isCurrent) btnBg = 'bg-indigo-600 text-white ring-2 ring-indigo-300 ring-offset-2 font-bold';
+                  if (isCurrent) btnBg = 'bg-yellow-400 text-stone-900 ring-2 ring-yellow-300 ring-offset-2 font-bold';
 
                   return (
                     <button
@@ -466,13 +465,13 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
               </div>
 
               {/* Legend */}
-              <div className="space-y-1.5 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+              <div className="space-y-1.5 pt-3 border-t border-stone-100 text-[11px] text-stone-500">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-md bg-emerald-600"></span>
+                  <span className="w-3 h-3 rounded-md bg-yellow-400"></span>
                   <span>Answered ({answeredCount})</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-md bg-slate-200"></span>
+                  <span className="w-3 h-3 rounded-md bg-stone-200"></span>
                   <span>Unanswered ({totalQuestions - answeredCount})</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -486,14 +485,14 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
         {/* Submit Confirmation Modal */}
         {showConfirmSubmit && (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
+          <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-100 animate-in fade-in zoom-in-95 duration-150">
+              <div className="w-12 h-12 rounded-xl bg-yellow-50 border border-yellow-200 flex items-center justify-center text-yellow-600 mb-4">
                 <Award className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Submit 10-Mark Diagnostic?</h3>
-              <p className="text-xs sm:text-sm text-slate-600 mb-4">
-                You have answered <span className="font-semibold text-slate-900">{answeredCount} out of {totalQuestions} questions</span>.
+              <h3 className="text-lg font-bold text-stone-900 mb-2">Submit 10-Mark Diagnostic?</h3>
+              <p className="text-xs sm:text-sm text-stone-600 mb-4">
+                You have answered <span className="font-semibold text-stone-900">{answeredCount} out of {totalQuestions} questions</span>.
                 {totalQuestions - answeredCount > 0 && (
                   <span className="text-amber-600 block mt-1 font-medium">
                     ⚠️ You have {totalQuestions - answeredCount} unanswered questions that will receive 0 marks.
@@ -505,7 +504,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                 <button
                   id="cancel-submit-modal-btn"
                   onClick={() => setShowConfirmSubmit(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  className="px-4 py-2 rounded-xl border border-stone-200 text-xs sm:text-sm font-semibold text-stone-700 hover:bg-stone-50"
                 >
                   Continue Test
                 </button>
@@ -513,7 +512,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                   id="confirm-submit-exam-btn"
                   disabled={isSubmitting}
                   onClick={handleSubmitExam}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-xs disabled:opacity-60"
+                  className="px-5 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs sm:text-sm font-semibold shadow-xs disabled:opacity-60"
                 >
                   {isSubmitting ? 'Evaluating AI RAG...' : 'Yes, Submit & View Analytics'}
                 </button>
@@ -527,18 +526,18 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
   // Configuration & Exam Setup Screen
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-6">
       {/* Hero Welcome Banner */}
-      <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-10 shadow-lg mb-8 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-yellow-900 via-stone-900 to-yellow-950 text-white rounded-2xl p-5 sm:p-8 shadow-lg mb-6 relative overflow-hidden">
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-200 border border-yellow-400/30 mb-4">
             <Zap className="w-3.5 h-3.5 text-amber-400" />
             10 Questions • 10 Marks • Adaptive RAG Diagnostic
           </div>
           <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-3">
             Exam Preparedness & Knowledge Assessment
           </h1>
-          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-6">
+          <p className="text-stone-300 text-xs sm:text-sm leading-relaxed mb-6">
             Calibrated for Classes 5 to 12 across CBSE, ICSE, ISC, Cambridge, NCERT, NEET, and IIT.
             Grounding your test in authentic syllabus runbooks with instant misconception analysis.
           </p>
@@ -547,19 +546,19 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
           <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/15 text-xs sm:text-sm">
             <span className="text-xl">{activeChild?.avatar || '👦'}</span>
             <div>
-              <span className="text-slate-300 text-[11px] block">Active Candidate Persona:</span>
+              <span className="text-stone-300 text-[11px] block">Active Candidate Persona:</span>
               <span className="font-semibold text-white">{activeChild?.name} ({activeChild?.classGrade} • {activeChild?.targetBoard})</span>
             </div>
           </div>
         </div>
 
         {/* Decorative Background Accents */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-indigo-500/20 via-transparent to-transparent opacity-70 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-yellow-500/20 via-transparent to-transparent opacity-70 pointer-events-none" />
       </div>
 
       {/* Free Plan Daily Quota Notice */}
       {hasReachedDailyLimit && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
@@ -578,7 +577,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             </button>
             <button
               onClick={onOpenUpgradeModal}
-              className="px-4 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 shadow-xs transition-colors"
+              className="px-4 py-1.5 rounded-xl bg-yellow-400 text-stone-900 text-xs font-semibold hover:bg-yellow-700 shadow-xs transition-colors"
             >
               Upgrade to Unlimited
             </button>
@@ -587,46 +586,46 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
       )}
 
       {/* Exam Configuration Form */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 sm:p-6">
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-stone-100">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Configure 10-Mark Diagnostic Exam</h2>
-            <p className="text-xs text-slate-500">Select board, grade, subject, and target challenge level</p>
+            <h2 className="text-lg font-bold text-stone-900">Configure 10-Mark Diagnostic Exam</h2>
+            <p className="text-xs text-stone-500">Select board, grade, subject, and target challenge level</p>
           </div>
           <div className="text-right">
-            <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+            <span className="text-xs font-semibold text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-200">
               10 Questions • 10 Marks
             </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {isStudentPersona ? (
             /* Student View: Auto-locked Enrolled Syllabus Banner (Zero friction!) */
-            <div className="md:col-span-2 bg-gradient-to-r from-indigo-50/90 via-purple-50/70 to-indigo-50/90 rounded-2xl p-4 sm:p-5 border border-indigo-100/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+            <div className="md:col-span-2 bg-gradient-to-r from-yellow-50/90 via-amber-50/70 to-yellow-50/90 rounded-2xl p-4 sm:p-5 border border-yellow-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
               <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-xs border border-indigo-100 shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-xs border border-yellow-200 shrink-0">
                   {activeChild?.avatar || '🎓'}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900">{activeChild?.name}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-600 text-white">
+                    <span className="text-sm font-bold text-stone-900">{activeChild?.name}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-400 text-stone-900">
                       Enrolled Student
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 mt-1 flex items-center gap-2 flex-wrap">
-                    <span>Curriculum Board: <strong className="text-indigo-950 font-bold">{selectedBoard}</strong></span>
-                    <span className="text-slate-300">•</span>
-                    <span>Grade / Class: <strong className="text-indigo-950 font-bold">{selectedGrade}</strong></span>
+                  <p className="text-xs text-stone-600 mt-1 flex items-center gap-2 flex-wrap">
+                    <span>Curriculum Board: <strong className="text-yellow-950 font-bold">{selectedBoard}</strong></span>
+                    <span className="text-stone-300">•</span>
+                    <span>Grade / Class: <strong className="text-yellow-950 font-bold">{selectedGrade}</strong></span>
                   </p>
                 </div>
               </div>
-              <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end justify-between gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-indigo-100">
-                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end justify-between gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-yellow-200">
+                <span className="text-[11px] font-semibold text-yellow-700 bg-yellow-50 px-2.5 py-0.5 rounded-full border border-yellow-300">
                   ✓ Ready for Practice
                 </span>
-                <span className="text-[10px] text-slate-400">Adaptive 10-Mark Challenge</span>
+                <span className="text-[10px] text-stone-400">Adaptive 10-Mark Challenge</span>
               </div>
             </div>
           ) : (
@@ -641,7 +640,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
               {/* Board Selector */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
                   1. Target Curriculum / Exam Board
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -652,8 +651,8 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                       type="button"
                       onClick={() => setSelectedBoard(b)}
                       className={`py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all ${selectedBoard === b
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-yellow-400 text-stone-900 border-yellow-400 shadow-2xs'
+                        : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
                         }`}
                     >
                       {b}
@@ -664,7 +663,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
               {/* Grade / Class Selector */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
                   2. Student Class / Grade (Class 5 to 12)
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -675,8 +674,8 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                       type="button"
                       onClick={() => setSelectedGrade(g)}
                       className={`py-2.5 px-2 rounded-xl border text-xs font-semibold transition-all ${selectedGrade === g
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-yellow-400 text-stone-900 border-yellow-400 shadow-2xs'
+                        : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
                         }`}
                     >
                       {g}
@@ -689,14 +688,14 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
           {/* Subject Selector */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
               3. Subject
             </label>
             <select
               id="subject-dropdown-select"
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value as Subject)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-slate-800 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+              className="w-full px-4 py-3 rounded-xl border border-stone-300 bg-white text-stone-800 text-sm font-medium focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
             >
               {SUBJECTS.map((s) => (
                 <option key={s} value={s}>{s}</option>
@@ -706,7 +705,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
           {/* Difficulty Level */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
               4. Exam Level
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -724,12 +723,12 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                     type="button"
                     onClick={() => setSelectedDifficulty(d)}
                     className={`py-2 px-3 rounded-xl border text-left transition-all ${isSel
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
+                      : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
                       }`}
                   >
                     <div className="font-bold text-xs capitalize">{labels[d].title}</div>
-                    <div className={`text-[10px] ${isSel ? 'text-slate-300' : 'text-slate-400'}`}>
+                    <div className={`text-[10px] ${isSel ? 'text-stone-300' : 'text-stone-400'}`}>
                       {labels[d].subtitle}
                     </div>
                   </button>
@@ -740,24 +739,24 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
         </div>
 
         {/* RAG Knowledge Blueprint Preview */}
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-8">
-          <p className="text-xs text-slate-600 leading-relaxed">
-            Generating 10 questions for <strong className="text-slate-900">{selectedGrade} {selectedBoard} {selectedSubject} ({selectedDifficulty.toUpperCase()})</strong>.
+        <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 mb-8">
+          <p className="text-xs text-stone-600 leading-relaxed">
+            Generating 10 questions for <strong className="text-stone-900">{selectedGrade} {selectedBoard} {selectedSubject} ({selectedDifficulty.toUpperCase()})</strong>.
             Questions will synthesize Multiple Choice, Numericals, Objective Definitions, and Assertion-Reasoning cases.
           </p>
         </div>
 
         {/* Action Button */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-          <div className="text-xs text-slate-500">
-            Estimated duration: <strong className="text-slate-800">15 minutes</strong> • 10 Marks
+          <div className="text-xs text-stone-500">
+            Estimated duration: <strong className="text-stone-800">15 minutes</strong> • 10 Marks
           </div>
 
           <button
             id="start-exam-generate-btn"
             disabled={isGenerating}
             onClick={handleStartExam}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 font-bold text-sm shadow-md shadow-yellow-200 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
           >
             {isGenerating ? (
               <>

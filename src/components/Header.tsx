@@ -64,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({
   const dailyLimit = isFreePlan ? 1 : 'Unlimited';
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo & Brand */}
@@ -73,17 +73,17 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-3 cursor-pointer select-none"
             onClick={() => setCurrentView(isParentActive ? 'parent-dashboard' : 'exam-arena')}
           >
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm ring-2 ring-indigo-100">
+            <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center text-white shadow-sm ring-2 ring-yellow-100">
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-lg text-slate-900 tracking-tight">AcuGrade<span className="text-indigo-600">.AI</span></span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <span className="font-bold text-lg text-stone-900 tracking-tight">SahajPath<span className="text-yellow-600">.AI</span></span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-300">
                   RAG K-Graph
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 hidden sm:block">Class 5–12 Adaptive Board Prep (10-Mark Diagnostic)</p>
+              <p className="text-[11px] text-stone-500 hidden sm:block">Class 5–12 Adaptive Board Prep (10-Mark Diagnostic)</p>
             </div>
           </div>
 
@@ -94,8 +94,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setCurrentView('exam-arena')}
               className={`px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
                 currentView === 'exam-arena'
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
               }`}
             >
               Exam Arena
@@ -106,8 +106,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setCurrentView('learning-path')}
               className={`px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 currentView === 'learning-path'
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
               }`}
             >
               <span>Learning Path</span>
@@ -118,8 +118,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setCurrentView('gamification')}
               className={`px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 currentView === 'gamification'
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
               }`}
             >
               <span>Leaderboard & Badges</span>
@@ -130,8 +130,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setCurrentView('ptc-hub')}
               className={`px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 currentView === 'ptc-hub'
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
               }`}
             >
               <span>Parent-Teacher Hub</span>
@@ -142,8 +142,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setCurrentView('parent-dashboard')}
               className={`px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
                 currentView === 'parent-dashboard'
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
               }`}
             >
               Family Hub
@@ -154,8 +154,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setCurrentView('subscription-plans')}
               className={`px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
                 currentView === 'subscription-plans'
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
               }`}
             >
               Plans
@@ -167,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({
               className={`px-2 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors flex items-center gap-1 ${
                 currentView === 'super-admin'
                   ? 'bg-amber-50 text-amber-800 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
@@ -198,29 +198,29 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 id="persona-switcher-btn"
                 onClick={() => setShowPersonaMenu(!showPersonaMenu)}
-                className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 rounded-full sm:rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 transition-all text-xs shadow-2xs group cursor-pointer"
+                className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 rounded-full sm:rounded-xl border border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50 transition-all text-xs shadow-2xs group cursor-pointer"
                 title={isParentActive ? `Parent Account (${parentAccount.name})` : `Active Student (${activeChild?.name})`}
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-50 to-purple-50 border border-indigo-100 flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-50 to-amber-50 border border-yellow-200 flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
                   {isParentActive ? '👨‍👩‍👧‍👦' : activeChild?.avatar || '👤'}
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-150" />
+                <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-stone-600 transition-transform duration-150" />
               </button>
 
               {/* Persona Menu */}
               {showPersonaMenu && (
                 <div 
                   id="persona-dropdown-modal"
-                  className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+                  className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
                 >
-                  <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50/60 rounded-t-2xl">
+                  <div className="px-4 py-2.5 border-b border-stone-100 bg-stone-50/60 rounded-t-2xl">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold text-xs shrink-0">
                         {parentAccount.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-slate-900 truncate">{parentAccount.name}</p>
-                        <p className="text-[10px] text-slate-400 truncate">{parentAccount.email || 'Parent Account'}</p>
+                        <p className="text-xs font-bold text-stone-900 truncate">{parentAccount.name}</p>
+                        <p className="text-[10px] text-stone-400 truncate">{parentAccount.email || 'Parent Account'}</p>
                       </div>
                     </div>
                   </div>
@@ -234,21 +234,21 @@ export const Header: React.FC<HeaderProps> = ({
                         setCurrentView('parent-dashboard');
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${
-                        isParentActive ? 'bg-indigo-50 text-indigo-900 font-semibold' : 'text-slate-700 hover:bg-slate-100'
+                        isParentActive ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <span className="text-lg">👨‍👩‍👧‍👦</span>
                         <div>
-                          <div className="font-medium text-slate-900">Parent Dashboard</div>
-                          <div className="text-[10px] text-slate-500">Full family analytics & sub-accounts</div>
+                          <div className="font-medium text-stone-900">Parent Dashboard</div>
+                          <div className="text-[10px] text-stone-500">Full family analytics & sub-accounts</div>
                         </div>
                       </div>
-                      {isParentActive && <CheckCircle className="w-4 h-4 text-indigo-600" />}
+                      {isParentActive && <CheckCircle className="w-4 h-4 text-yellow-600" />}
                     </button>
 
-                    <div className="my-1 border-t border-slate-100 px-3 py-1">
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Children Profiles</p>
+                    <div className="my-1 border-t border-stone-100 px-3 py-1">
+                      <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider">Children Profiles</p>
                     </div>
 
                     {/* Children Items */}
@@ -263,22 +263,22 @@ export const Header: React.FC<HeaderProps> = ({
                             setCurrentView('exam-arena');
                           }}
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${
-                            isSelected ? 'bg-indigo-50 text-indigo-900 font-semibold' : 'text-slate-700 hover:bg-slate-100'
+                            isSelected ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
                             <span className="text-lg">{child.avatar}</span>
                             <div>
-                              <div className="font-medium text-slate-900">{child.name}</div>
-                              <div className="text-[10px] text-slate-500">
+                              <div className="font-medium text-stone-900">{child.name}</div>
+                              <div className="text-[10px] text-stone-500">
                                 {child.classGrade} • {child.targetBoard} • Avg {child.averageScore}/10
                               </div>
                             </div>
                           </div>
                           {isSelected ? (
-                            <CheckCircle className="w-4 h-4 text-indigo-600" />
+                            <CheckCircle className="w-4 h-4 text-yellow-600" />
                           ) : (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-slate-100 text-slate-600 font-mono">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-stone-100 text-stone-600 font-mono">
                               PIN: {child.pin}
                             </span>
                           )}
@@ -294,7 +294,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="mobile-nav-toggle"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+              className="md:hidden p-2 rounded-lg text-stone-600 hover:bg-stone-100"
             >
               <Users className="w-5 h-5" />
             </button>
@@ -303,13 +303,13 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-3 border-t border-slate-200 space-y-1">
+          <div className="md:hidden py-3 border-t border-stone-200 space-y-1">
             <button
               onClick={() => {
                 setCurrentView('exam-arena');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
             >
               10-Mark Exam Arena
             </button>
@@ -318,7 +318,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setCurrentView('learning-path');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
             >
               Adaptive Learning Path
             </button>
@@ -327,7 +327,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setCurrentView('gamification');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
             >
               Leaderboard & Badges
             </button>
@@ -336,7 +336,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setCurrentView('ptc-hub');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
             >
               Parent-Teacher Academic Bridge
             </button>
@@ -345,7 +345,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setCurrentView('parent-dashboard');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
             >
               Parent & Child Portal
             </button>
@@ -354,7 +354,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setCurrentView('subscription-plans');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
             >
               Subscriptions & Upgrades
             </button>
@@ -363,7 +363,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setCurrentView('blog-section');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
             >
               Blog & Study Guides
             </button>
@@ -372,7 +372,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setCurrentView('about-us');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-100"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-stone-700 hover:bg-stone-100"
             >
               About Us & Pedagogy
             </button>
@@ -381,7 +381,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setCurrentView('disclaimer');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-100"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-stone-700 hover:bg-stone-100"
             >
               Disclaimer
             </button>
@@ -390,7 +390,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setCurrentView('policies');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-100"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-stone-700 hover:bg-stone-100"
             >
               Privacy & Child Safety Policies
             </button>

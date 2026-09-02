@@ -5,35 +5,35 @@ export const LegalSection: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
       <div className="text-center max-w-2xl mx-auto mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-stone-100 text-stone-700 border border-stone-200 mb-3">
           <ShieldCheck className="w-3.5 h-3.5" />
           Trust & Compliance
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight">
           Disclaimer, Privacy Policy & Terms of Service
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-2">
+        <p className="text-xs sm:text-sm text-stone-500 mt-2">
           Last Updated: March 2026 • Built for student safety, parental oversight, and syllabus integrity.
         </p>
       </div>
 
-      <div className="space-y-8 bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-sm text-slate-700 text-xs sm:text-sm leading-relaxed">
+      <div className="space-y-8 bg-white rounded-3xl border border-stone-200 p-6 sm:p-10 shadow-sm text-stone-700 text-xs sm:text-sm leading-relaxed">
         {/* Academic Disclaimer */}
         <section>
           <div className="flex items-center gap-2 mb-2">
-            <AlertCircle className="w-4 h-4 text-amber-600" />
-            <h2 className="text-base font-bold text-slate-900">1. Academic & Diagnostic Disclaimer</h2>
+            <AlertCircle className="w-4 h-4 text-sky-600" />
+            <h2 className="text-base font-bold text-stone-900">1. Academic & Diagnostic Disclaimer</h2>
           </div>
           <p>
-            AcuGrade is a supplementary educational diagnostic assessment platform. All 10-mark sprint examinations, AI step-by-step solutions, and topic mastery ratings are generated using Retrieval-Augmented Generation (RAG) calibrated against published public syllabi of CBSE, ICSE, ISC, Cambridge Assessment International Education, NCERT, and competitive exam guidelines (NEET/IIT-JEE). AcuGrade is an independent educational platform and is not officially affiliated with or endorsed by CISCE, CBSE, Cambridge University Press & Assessment, or NTA. Diagnostic scores should be used as formative practice indicators alongside regular school instruction.
+            SahajPath is a supplementary educational diagnostic assessment platform. All 10-mark sprint examinations, AI step-by-step solutions, and topic mastery ratings are generated using Retrieval-Augmented Generation (RAG) calibrated against published public syllabi of CBSE, ICSE, ISC, Cambridge Assessment International Education, NCERT, and competitive exam guidelines (NEET/IIT-JEE). SahajPath is an independent educational platform and is not officially affiliated with or endorsed by CISCE, CBSE, Cambridge University Press & Assessment, or NTA. Diagnostic scores should be used as formative practice indicators alongside regular school instruction.
           </p>
         </section>
 
         {/* Child Safety and Privacy */}
-        <section className="pt-6 border-t border-slate-100">
+        <section className="pt-6 border-t border-stone-100">
           <div className="flex items-center gap-2 mb-2">
-            <Lock className="w-4 h-4 text-indigo-600" />
-            <h2 className="text-base font-bold text-slate-900">2. Student Privacy & Parental Oversight</h2>
+            <Lock className="w-4 h-4 text-yellow-600" />
+            <h2 className="text-base font-bold text-stone-900">2. Student Privacy & Parental Oversight</h2>
           </div>
           <p>
             Protecting school children (Classes 5 to 12) is our foremost priority. Child sub-accounts are strictly created, monitored, and mediated by a verified parent or legal guardian master account. We do not sell student response logs or personal information to third parties. Exam responses are utilized solely to construct student-specific knowledge graph mastery charts and to provide targeted educational reference links.
@@ -41,10 +41,10 @@ export const LegalSection: React.FC = () => {
         </section>
 
         {/* Subscription & Fair Use */}
-        <section className="pt-6 border-t border-slate-100">
+        <section className="pt-6 border-t border-stone-100">
           <div className="flex items-center gap-2 mb-2">
-            <FileText className="w-4 h-4 text-emerald-600" />
-            <h2 className="text-base font-bold text-slate-900">3. Subscription Tiers & Fair Use</h2>
+            <FileText className="w-4 h-4 text-yellow-600" />
+            <h2 className="text-base font-bold text-stone-900">3. Subscription Tiers & Fair Use</h2>
           </div>
           <p>
             The Free Tier provides 1 full 10-mark diagnostic exam per day per child sub-account. Scholar Pro and Genius tiers offer unlimited tests subject to standard fair use API constraints. Parents may cancel or modify recurring subscriptions at any time with immediate effect.

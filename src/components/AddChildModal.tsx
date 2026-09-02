@@ -49,16 +49,16 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-100 animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-4 border-b border-stone-100 mb-6">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Create Child Sub-Account</h3>
-            <p className="text-xs text-slate-500">Each child gets their own login PIN, board profile, and diagnostic tracker</p>
+            <h3 className="text-lg font-bold text-stone-900">Create Child Sub-Account</h3>
+            <p className="text-xs text-stone-500">Each child gets their own login PIN, board profile, and diagnostic tracker</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600"
+            className="p-1.5 rounded-lg border border-stone-200 text-stone-400 hover:text-stone-600"
           >
             <X className="w-4 h-4" />
           </button>
@@ -67,7 +67,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Avatar Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-2">Select Avatar</label>
+            <label className="block text-xs font-semibold text-stone-700 mb-2">Select Avatar</label>
             <div className="flex items-center gap-2">
               {AVATARS.map((a) => (
                 <button
@@ -75,7 +75,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
                   type="button"
                   onClick={() => setAvatar(a)}
                   className={`w-10 h-10 rounded-xl border text-xl flex items-center justify-center transition-all ${
-                    avatar === a ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200' : 'border-slate-200 hover:bg-slate-50'
+                    avatar === a ? 'border-yellow-400 bg-yellow-50 ring-2 ring-yellow-200' : 'border-stone-200 hover:bg-stone-50'
                   }`}
                 >
                   {a}
@@ -85,24 +85,24 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Child / Student Full Name</label>
+            <label className="block text-xs font-semibold text-stone-700 mb-1">Child / Student Full Name</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Aarav Sharma or Sara Jenkins"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Class / Grade</label>
+              <label className="block text-xs font-semibold text-stone-700 mb-1">Class / Grade</label>
               <select
                 value={classGrade}
                 onChange={(e) => setClassGrade(e.target.value as ClassGrade)}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
               >
                 {GRADES.map((g) => (
                   <option key={g} value={g}>{g}</option>
@@ -111,11 +111,11 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Target Curriculum Board</label>
+              <label className="block text-xs font-semibold text-stone-700 mb-1">Target Curriculum Board</label>
               <select
                 value={targetBoard}
                 onChange={(e) => setTargetBoard(e.target.value as Board)}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
               >
                 {BOARDS.map((b) => (
                   <option key={b} value={b}>{b}</option>
@@ -125,18 +125,18 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">School Name (Optional)</label>
+            <label className="block text-xs font-semibold text-stone-700 mb-1">School Name (Optional)</label>
             <input
               type="text"
               value={schoolName}
               onChange={(e) => setSchoolName(e.target.value)}
               placeholder="e.g. Delhi Public School or St. Xavier's"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-stone-700 mb-1">
               Child Login PIN (4 Digits)
             </label>
             <input
@@ -146,24 +146,24 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
               placeholder="1234"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-sm tracking-widest focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 font-mono text-sm tracking-widest focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-stone-400 mt-1">
               Your child can use this simple PIN to log into their student arena directly.
             </p>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              className="px-4 py-2 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 shadow-xs"
+              className="px-5 py-2 rounded-xl bg-yellow-400 text-stone-900 text-xs font-semibold hover:bg-yellow-700 shadow-xs"
             >
               Create Child Profile
             </button>

@@ -274,7 +274,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
       const gap = ana.areasToImprove?.[0] || 'Foundational problem-solving';
       return `Diagnostic analysis indicates high retention in ${str}, with targeted remediation recommended in ${gap}.`;
     } else {
-      return `AcuGrade RAG engine is ready for ${activeChild?.name || 'your student'}. Launch a 10-mark diagnostic sprint to map their adaptive Knowledge Graph.`;
+      return `SahajPath RAG engine is ready for ${activeChild?.name || 'your student'}. Launch a 10-mark diagnostic sprint to map their adaptive Knowledge Graph.`;
     }
   }, [weakTopics, strongTopics, examHistory, activeChild]);
 
@@ -291,7 +291,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
         const resolvedSub = resolveSubjectForTopic(topicName, idx === 0 ? 'Mathematics' : idx === 1 ? 'Physics' : 'English');
         const diff: ExamDifficulty = idx === 0 ? 'hard' : idx === 1 ? 'medium' : 'simple';
         const diffLabel = idx === 0 ? 'Hard' : idx === 1 ? 'Medium' : 'Easy';
-        const diffColor = idx === 0 ? 'bg-red-100 text-red-700' : idx === 1 ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700';
+        const diffColor = idx === 0 ? 'bg-red-100 text-red-700' : idx === 1 ? 'bg-teal-100 text-teal-700' : 'bg-yellow-100 text-yellow-700';
 
         return {
           subject: resolvedSub,
@@ -319,7 +319,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
         topic: 'Ray Optics & Light Refraction',
         difficulty: 'medium' as ExamDifficulty,
         tag: `${board} Calibration`,
-        badgeColor: 'bg-blue-100 text-blue-700',
+        badgeColor: 'bg-teal-100 text-teal-700',
         badgeText: 'Medium',
       },
       {
@@ -327,7 +327,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
         topic: 'Pattern Recognition & Series Alpha',
         difficulty: 'simple' as ExamDifficulty,
         tag: 'Foundation Prep',
-        badgeColor: 'bg-emerald-100 text-emerald-700',
+        badgeColor: 'bg-yellow-100 text-yellow-700',
         badgeText: 'Easy',
       }
     ];
@@ -368,71 +368,71 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
       {/* High Density Bento Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left 8 Columns: Metrics, Evolutionary Progress Graph, and Child Sub-Accounts */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        <div className="lg:col-span-8 flex flex-col gap-4">
           {/* Top 3 High Density Metric Cards (100% Dynamic) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-              <p className="text-xs text-slate-500 mb-1">Overall Readiness</p>
-              <p className="text-2xl font-bold text-emerald-600">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+              <p className="text-[11px] text-stone-500 mb-0.5">Overall Readiness</p>
+              <p className="text-xl font-bold text-yellow-600">
                 {overallReadinessPct > 0 ? `${overallReadinessPct}%` : 'Calibrating'}
               </p>
-              <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
-                <span className={deltaIsPositive ? 'text-emerald-600 font-semibold' : 'text-rose-600 font-semibold'}>
+              <p className="text-[10px] text-stone-400 mt-1 flex items-center gap-1">
+                <span className={deltaIsPositive ? 'text-yellow-600 font-semibold' : 'text-rose-600 font-semibold'}>
                   {deltaText}
                 </span>
               </p>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-              <p className="text-xs text-slate-500 mb-1">Exams Completed</p>
-              <p className="text-2xl font-bold text-indigo-600">{totalFamilyExams}</p>
-              <p className="text-[10px] text-slate-400 mt-2">
+            <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+              <p className="text-[11px] text-stone-500 mb-0.5">Exams Completed</p>
+              <p className="text-xl font-bold text-yellow-600">{totalFamilyExams}</p>
+              <p className="text-[10px] text-stone-400 mt-1">
                 Across {totalChildren} Registered Sub-Account{totalChildren === 1 ? '' : 's'}
               </p>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-              <p className="text-xs text-slate-500 mb-1">AI Learning Speed</p>
-              <p className="text-2xl font-bold text-amber-600">
+            <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+              <p className="text-[11px] text-stone-500 mb-0.5">AI Learning Speed</p>
+              <p className="text-xl font-bold text-amber-600">
                 {learningSpeedTier}
               </p>
-              <p className="text-[10px] text-slate-400 mt-2">
+              <p className="text-[10px] text-stone-400 mt-1">
                 {benchmarkSubtitle}
               </p>
             </div>
           </div>
 
           {/* Evolutionary Progress Graph (100% Dynamic Graph) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 flex flex-col shadow-xs">
-            <div className="flex flex-wrap justify-between items-center gap-2 mb-6">
+          <div className="bg-white border border-stone-200 rounded-xl p-4 flex flex-col shadow-xs">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
               <div>
-                <h2 className="font-bold text-base text-slate-800 flex items-center gap-2">
+                <h2 className="font-bold text-base text-stone-800 flex items-center gap-2">
                   <span>Evolutionary Progress Graph</span>
-                  <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                  <span className="text-[10px] font-semibold text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded border border-yellow-300">
                     Smart Growth Tracker
                   </span>
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">Daily, weekly & monthly score progression across 10-mark diagnostic tests</p>
+                <p className="text-xs text-stone-400 mt-0.5">Daily, weekly & monthly score progression across 10-mark diagnostic tests</p>
               </div>
 
-              <div className="flex gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <div className="flex gap-1 bg-stone-100 p-0.5 rounded-lg border border-stone-200">
                 <button
                   onClick={() => setTimeframe('day')}
-                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'day' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'day' ? 'bg-yellow-400 text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-900'
                     }`}
                 >
                   Day
                 </button>
                 <button
                   onClick={() => setTimeframe('week')}
-                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'week' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'week' ? 'bg-yellow-400 text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-900'
                     }`}
                 >
                   Week
                 </button>
                 <button
                   onClick={() => setTimeframe('month')}
-                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'month' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'month' ? 'bg-yellow-400 text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-900'
                     }`}
                 >
                   Month
@@ -441,7 +441,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             </div>
 
             {/* Dynamic Step Graph */}
-            <div className="pt-6 pb-2 px-4 flex items-end justify-between gap-4 h-36 border-b border-slate-100">
+            <div className="pt-4 pb-2 px-2 flex items-end justify-between gap-3 h-32 border-b border-stone-100">
               {graphBars.map((bar, idx) => {
                 const hasData = bar.pct !== null;
                 const scorePct = hasData ? bar.pct : null;
@@ -452,23 +452,23 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                     {hasData ? (
                       <div
                         className={`w-full rounded-t-lg relative transition-all duration-300 ${isLatestWithData
-                            ? 'bg-indigo-500 group-hover:bg-indigo-600 shadow-xs'
-                            : 'bg-indigo-200 group-hover:bg-indigo-300'
+                            ? 'bg-yellow-500 group-hover:bg-yellow-400 shadow-xs'
+                            : 'bg-yellow-200 group-hover:bg-yellow-300'
                           }`}
                         style={{ height: `${Math.max(10, Math.min(100, scorePct as number))}%` }}
                       >
-                        <div className={`absolute -top-2 right-1/2 translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-xs flex items-center justify-center ${isLatestWithData ? 'bg-indigo-600' : 'bg-indigo-400'
+                        <div className={`absolute -top-2 right-1/2 transtone-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-xs flex items-center justify-center ${isLatestWithData ? 'bg-yellow-400' : 'bg-yellow-400'
                           }`}>
                           <div className="w-1.5 h-1.5 rounded-full bg-white" />
                         </div>
                       </div>
                     ) : (
                       // Empty state for intervals without exams: flat dashed baseline (no floating dots!)
-                      <div className="w-full h-1 bg-slate-100 rounded-full border-t border-dashed border-slate-200 group-hover:bg-slate-200 transition-colors mb-0.5" />
+                      <div className="w-full h-1 bg-stone-100 rounded-full border-t border-dashed border-stone-200 group-hover:bg-stone-200 transition-colors mb-0.5" />
                     )}
                     <span className={`text-[10px] mt-2 font-semibold transition-colors ${hasData
-                        ? (isLatestWithData ? 'font-bold text-indigo-700' : 'text-slate-700')
-                        : 'text-slate-300'
+                        ? (isLatestWithData ? 'font-bold text-yellow-700' : 'text-stone-700')
+                        : 'text-stone-300'
                       }`}>
                       {bar.label} {hasData ? `(${scorePct}%)` : '(—)'}
                     </span>
@@ -478,31 +478,31 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             </div>
 
             {/* Dynamic AI Observation Callout */}
-            <div className="mt-5 p-3.5 bg-indigo-50/80 rounded-xl flex items-center gap-3 border border-indigo-100">
-              <div className="p-2 bg-indigo-100 rounded-lg text-indigo-700 shrink-0">
+            <div className="mt-3 p-3 bg-yellow-50/80 rounded-xl flex items-center gap-2.5 border border-yellow-200">
+              <div className="p-2 bg-yellow-100 rounded-lg text-yellow-700 shrink-0">
                 <Sparkles className="w-4 h-4" />
               </div>
-              <p className="text-xs text-indigo-950 font-medium leading-relaxed">
+              <p className="text-xs text-yellow-950 font-medium leading-relaxed">
                 <strong>Smart Mentor's Advice:</strong> {aiObservationMessage}
               </p>
             </div>
           </div>
 
           {/* Children Sub-Accounts Section */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-base text-slate-800 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-indigo-600" />
+                <h3 className="font-bold text-base text-stone-800 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-yellow-600" />
                   <span>Candidate Sub-Accounts & Active Personas</span>
                 </h3>
-                <p className="text-xs text-slate-400">Independent credentials, target boards, and syllabus tracking</p>
+                <p className="text-xs text-stone-400">Independent credentials, target boards, and syllabus tracking</p>
               </div>
 
               <button
                 id="add-child-btn-dashboard"
                 onClick={onOpenAddChildModal}
-                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all"
+                className="px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Child Sub-Account</span>
@@ -517,32 +517,32 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                   <div
                     key={child.id}
                     id={`child-card-${child.id}`}
-                    className={`bg-white rounded-2xl border transition-all p-5 shadow-xs relative ${isChildActive
-                        ? 'border-indigo-500 ring-2 ring-indigo-100 bg-white'
-                        : 'border-slate-200 hover:border-slate-300'
+                    className={`bg-white rounded-xl border transition-all p-4 shadow-xs relative ${isChildActive
+                        ? 'border-yellow-500 ring-2 ring-yellow-100 bg-white'
+                        : 'border-stone-200 hover:border-stone-300'
                       }`}
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-2xl">
+                        <div className="w-11 h-11 rounded-xl bg-yellow-50 border border-yellow-200 flex items-center justify-center text-2xl">
                           {child.avatar}
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <h4 className="font-bold text-sm text-slate-900">{child.name}</h4>
+                            <h4 className="font-bold text-sm text-stone-900">{child.name}</h4>
                             {isChildActive && (
-                              <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.2 rounded border border-indigo-200">
+                              <span className="text-[10px] bg-yellow-50 text-yellow-700 font-bold px-1.5 py-0.2 rounded border border-yellow-300">
                                 Active
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-500 mt-0.5">{child.schoolName || 'School Student'}</p>
+                          <p className="text-xs text-stone-500 mt-0.5">{child.schoolName || 'School Student'}</p>
                           <div className="flex items-center gap-1.5 mt-1">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-50 text-yellow-700">
                               {child.classGrade}
                             </span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-100 text-stone-700">
                               {child.targetBoard}
                             </span>
                           </div>
@@ -551,7 +551,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
                       <button
                         onClick={() => handleStartEdit(child)}
-                        className="p-1 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-700"
+                        className="p-1 rounded-md border border-stone-200 hover:bg-stone-50 text-stone-400 hover:text-stone-700"
                         title="Edit Child Profile & PIN"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -559,38 +559,38 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                     </div>
 
                     {/* PIN and Stats */}
-                    <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-slate-50 rounded-xl text-center text-xs mb-3 border border-slate-100">
+                    <div className="grid grid-cols-3 gap-2 py-1.5 px-2 bg-stone-50 rounded-xl text-center text-xs mb-2 border border-stone-100">
                       <div>
-                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Average</span>
-                        <span className="font-bold text-indigo-600">{child.averageScore}/10</span>
+                        <span className="text-[10px] text-stone-400 uppercase font-semibold block">Average</span>
+                        <span className="font-bold text-yellow-600">{child.averageScore}/10</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Tests</span>
-                        <span className="font-bold text-slate-800">{child.totalExamsTaken}</span>
+                        <span className="text-[10px] text-stone-400 uppercase font-semibold block">Tests</span>
+                        <span className="font-bold text-stone-800">{child.totalExamsTaken}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">PIN</span>
-                        <span className="font-mono font-bold text-slate-700">{child.pin}</span>
+                        <span className="text-[10px] text-stone-400 uppercase font-semibold block">PIN</span>
+                        <span className="font-mono font-bold text-stone-700">{child.pin}</span>
                       </div>
                     </div>
 
                     {/* Topic Mastery (Live from K-Graph engine) */}
                     {child.topicMastery && Object.keys(child.topicMastery).length > 0 ? (
                       <div className="mb-3 space-y-1.5">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
                           Topic Mastery (K-Graph)
                         </span>
                         {Object.entries(child.topicMastery).slice(0, 2).map(([topic, pct]) => {
                           const numPct = Number(pct);
                           return (
                             <div key={topic} className="text-xs">
-                              <div className="flex justify-between text-slate-600 mb-0.5 text-[11px]">
+                              <div className="flex justify-between text-stone-600 mb-0.5 text-[11px]">
                                 <span className="truncate max-w-[140px] font-medium">{topic}</span>
-                                <span className="font-bold text-slate-800">{numPct}%</span>
+                                <span className="font-bold text-stone-800">{numPct}%</span>
                               </div>
-                              <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="w-full h-1 bg-stone-100 rounded-full overflow-hidden">
                                 <div
-                                  className={`h-full rounded-full transition-all duration-300 ${numPct >= 80 ? 'bg-emerald-500' : numPct >= 60 ? 'bg-amber-500' : 'bg-rose-500'
+                                  className={`h-full rounded-full transition-all duration-300 ${numPct >= 80 ? 'bg-yellow-500' : numPct >= 60 ? 'bg-amber-500' : 'bg-rose-500'
                                     }`}
                                   style={{ width: `${numPct}%` }}
                                 />
@@ -600,7 +600,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                         })}
                       </div>
                     ) : (
-                      <div className="mb-3 py-1.5 px-2 bg-slate-50 rounded-lg text-[10px] text-slate-400 text-center">
+                      <div className="mb-3 py-1.5 px-2 bg-stone-50 rounded-lg text-[10px] text-stone-400 text-center">
                         No topic mastery recorded yet. Take an exam to map K-Graph.
                       </div>
                     )}
@@ -610,8 +610,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                       <button
                         onClick={() => onChildSelect(child.id)}
                         className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${isChildActive
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                            ? 'bg-yellow-50 text-yellow-700 border border-yellow-300'
+                            : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
                           }`}
                       >
                         {isChildActive ? 'Selected' : 'Select Candidate'}
@@ -622,7 +622,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                           onChildSelect(child.id);
                           onLaunchExamForChild(child.id);
                         }}
-                        className="py-1.5 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                        className="py-1.5 px-3 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center gap-1 transition-all"
                       >
                         <Play className="w-3 h-3 fill-white" />
                         <span>Start Test</span>
@@ -636,12 +636,12 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
         </div>
 
         {/* Right 4 Columns: Dynamic Recommended Exams and Recent Results Ledger */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
+        <div className="lg:col-span-4 flex flex-col gap-4">
           {/* Dynamic Recommended Exams Widget */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col shadow-xs">
+          <div className="bg-white border border-stone-200 rounded-xl p-4 flex flex-col shadow-xs">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold text-sm text-slate-800">Recommended Exams</h2>
-              <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+              <h2 className="font-bold text-sm text-stone-800">Recommended Exams</h2>
+              <span className="text-[10px] font-semibold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded">
                 Adaptive
               </span>
             </div>
@@ -649,21 +649,21 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             <div className="space-y-2.5">
               {dynamicRecommendations.map((rec) => {
                 const subjectColorClass =
-                  rec.subject === 'English' ? 'text-purple-600' :
-                    rec.subject === 'Physics' ? 'text-blue-600' :
+                  rec.subject === 'English' ? 'text-amber-600' :
+                    rec.subject === 'Physics' ? 'text-teal-600' :
                       rec.subject === 'Chemistry' ? 'text-teal-600' :
-                        rec.subject === 'Biology' ? 'text-emerald-600' :
+                        rec.subject === 'Biology' ? 'text-yellow-600' :
                           rec.subject === 'Computer Science' ? 'text-cyan-600' :
                             rec.subject === 'Social Studies' ? 'text-amber-700' :
                               rec.subject === 'Logical Reasoning' ? 'text-pink-600' :
-                                rec.subject === 'Science' ? 'text-emerald-600' :
-                                  'text-indigo-600';
+                                rec.subject === 'Science' ? 'text-yellow-600' :
+                                  'text-yellow-600';
 
                 return (
                   <div
                     key={`${rec.subject}-${rec.topic}`}
                     onClick={() => onLaunchExamForChild(activeChildId || parentAccount.children[0]?.id)}
-                    className="p-3 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-slate-50 cursor-pointer transition-all"
+                    className="p-3 border border-stone-100 rounded-xl hover:border-yellow-300 hover:bg-stone-50 cursor-pointer transition-all"
                   >
                     <div className="flex justify-between items-start mb-1">
                       <span className={`text-[10px] font-bold uppercase tracking-tight ${subjectColorClass}`}>
@@ -673,10 +673,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                         {rec.badgeText}
                       </span>
                     </div>
-                    <p className="text-xs font-semibold mb-1.5 text-slate-900">{rec.topic}</p>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                    <p className="text-xs font-semibold mb-1.5 text-stone-900">{rec.topic}</p>
+                    <div className="flex items-center gap-2 text-[10px] text-stone-500">
                       <span>10 Questions (10 Marks)</span>
-                      <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                      <span className="w-1 h-1 bg-stone-300 rounded-full" />
                       <span>{rec.tag}</span>
                     </div>
                   </div>
@@ -686,7 +686,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
             <button
               onClick={() => onLaunchExamForChild(activeChildId || parentAccount.children[0]?.id)}
-              className="w-full mt-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+              className="w-full mt-4 py-2 bg-stone-900 text-white text-xs font-bold rounded-lg hover:bg-stone-800 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
             >
               <Play className="w-3.5 h-3.5 fill-white" />
               <span>Browse All Subjects & Launch Arena</span>
@@ -694,10 +694,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
           </div>
 
           {/* Recent Results Ledger (100% Dynamic) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col shadow-xs">
+          <div className="bg-white border border-stone-200 rounded-xl p-4 flex flex-col shadow-xs">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold text-sm text-slate-800">Recent Results</h2>
-              <span className="text-[10px] text-slate-400">{examHistory.length} Recorded</span>
+              <h2 className="font-bold text-sm text-stone-800">Recent Results</h2>
+              <span className="text-[10px] text-stone-400">{examHistory.length} Recorded</span>
             </div>
 
             <div className="space-y-3">
@@ -706,35 +706,35 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                   <div
                     key={sub.id}
                     onClick={() => onViewSubmissionReport(sub)}
-                    className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100"
+                    className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-stone-50 cursor-pointer transition-colors border border-transparent hover:border-stone-100"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${sub.marksObtained >= 8
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          ? 'bg-yellow-50 text-yellow-600 border border-yellow-300'
                           : sub.marksObtained >= 5
-                            ? 'bg-indigo-50 text-indigo-600 border border-indigo-200'
+                            ? 'bg-yellow-50 text-yellow-600 border border-yellow-300'
                             : 'bg-rose-50 text-rose-600 border border-rose-200'
                         }`}>
                         {sub.marksObtained}/10
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-slate-900 truncate">{sub.examTitle}</p>
-                        <p className="text-[10px] text-slate-400">
+                        <p className="text-xs font-bold text-stone-900 truncate">{sub.examTitle}</p>
+                        <p className="text-[10px] text-stone-400">
                           {sub.studentName} • {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </p>
                       </div>
                     </div>
 
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <ChevronRight className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                   </div>
                 ))
               ) : (
-                <div className="py-6 text-center text-slate-400 text-xs space-y-2">
-                  <BarChart3 className="w-8 h-8 mx-auto text-slate-300" />
+                <div className="py-6 text-center text-stone-400 text-xs space-y-2">
+                  <BarChart3 className="w-8 h-8 mx-auto text-stone-300" />
                   <p>No exams completed yet.</p>
                   <button
                     onClick={() => onLaunchExamForChild(activeChildId || parentAccount.children[0]?.id)}
-                    className="text-xs text-indigo-600 font-semibold hover:underline"
+                    className="text-xs text-yellow-600 font-semibold hover:underline"
                   >
                     Launch First 10-Mark Diagnostic →
                   </button>
@@ -747,30 +747,30 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
       {/* Edit Child Modal */}
       {selectedChildForEdit && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-            <h3 className="text-base font-bold text-slate-900 mb-1">Edit Child Sub-Account</h3>
-            <p className="text-xs text-slate-500 mb-5">Update student class, target board, school name, and child login PIN</p>
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-100 animate-in fade-in zoom-in-95 duration-150">
+            <h3 className="text-base font-bold text-stone-900 mb-1">Edit Child Sub-Account</h3>
+            <p className="text-xs text-stone-500 mb-5">Update student class, target board, school name, and child login PIN</p>
 
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Child Name</label>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Child Name</label>
                 <input
                   type="text"
                   required
                   value={editFormData.name || ''}
                   onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-lg border border-stone-300 text-xs focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Class / Grade</label>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">Class / Grade</label>
                   <select
                     value={editFormData.classGrade}
                     onChange={(e) => setEditFormData({ ...editFormData, classGrade: e.target.value as ClassGrade })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300 text-xs focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
                   >
                     {GRADES.map((g) => (
                       <option key={g} value={g}>{g}</option>
@@ -779,11 +779,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Target Board</label>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">Target Board</label>
                   <select
                     value={editFormData.targetBoard}
                     onChange={(e) => setEditFormData({ ...editFormData, targetBoard: e.target.value as Board })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    className="w-full px-3 py-2 rounded-lg border border-stone-300 text-xs focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
                   >
                     {BOARDS.map((b) => (
                       <option key={b} value={b}>{b}</option>
@@ -793,39 +793,39 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">School Name (Optional)</label>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">School Name (Optional)</label>
                 <input
                   type="text"
                   value={editFormData.schoolName || ''}
                   onChange={(e) => setEditFormData({ ...editFormData, schoolName: e.target.value })}
                   placeholder="e.g. Delhi Public School or St. Paul's"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-lg border border-stone-300 text-xs focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Child Login PIN (4 Digits)</label>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Child Login PIN (4 Digits)</label>
                 <input
                   type="text"
                   maxLength={4}
                   required
                   value={editFormData.pin || ''}
                   onChange={(e) => setEditFormData({ ...editFormData, pin: e.target.value.replace(/\D/g, '') })}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-xs tracking-widest focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-lg border border-stone-300 font-mono text-xs tracking-widest focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
                 <button
                   type="button"
                   onClick={() => setSelectedChildForEdit(null)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  className="px-3 py-1.5 rounded-lg border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 shadow-xs"
+                  className="px-4 py-1.5 rounded-lg bg-yellow-400 text-stone-900 text-xs font-semibold hover:bg-yellow-700 shadow-xs"
                 >
                   Save Changes
                 </button>

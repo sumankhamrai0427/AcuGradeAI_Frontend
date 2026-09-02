@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Lock, X, Loader2, AlertCircle } from 'lucide-react';
 import { ChildAccount } from '../types';
-import { authApi } from '../lib/api';
+import ApiServices from '../services/ApiServices';
 
 interface ChildPinModalProps {
   child: ChildAccount | null;
@@ -83,7 +83,7 @@ export const ChildPinModal: React.FC<ChildPinModalProps> = ({
     setError(null);
 
     try {
-      await authApi.childLogin(child.id, pin);
+      await ApiServices.childLogin({ studentId: child.id, pin });
       onSuccess(child.id);
     } catch (err: any) {
       setError(err?.message || 'Incorrect 4-digit PIN. Please try again.');
@@ -97,13 +97,13 @@ export const ChildPinModal: React.FC<ChildPinModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div
-        className={`bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all ${
+        className={`bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-stone-100 overflow-hidden transform transition-all ${
           shake ? 'animate-bounce' : 'animate-in fade-in zoom-in-95 duration-200'
         }`}
       >
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 text-white text-center relative">
+        <div className="bg-gradient-to-br from-yellow-500 to-yellow-800 p-6 text-white text-center relative">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
@@ -116,14 +116,14 @@ export const ChildPinModal: React.FC<ChildPinModalProps> = ({
           </div>
 
           <h3 className="text-lg font-bold tracking-tight">Enter Student PIN</h3>
-          <p className="text-xs text-indigo-100 mt-0.5">
+          <p className="text-xs text-yellow-100 mt-0.5">
             Switching to <span className="font-semibold text-white">{child.name}</span> ({child.classGrade} • {child.targetBoard})
           </p>
         </div>
 
         <div className="p-6 space-y-5">
           <div className="text-center">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-stone-500">
               Please enter the 4-digit security PIN set by the parent.
             </p>
           </div>
@@ -147,8 +147,8 @@ export const ChildPinModal: React.FC<ChildPinModalProps> = ({
                   error
                     ? 'border-red-400 bg-red-50/50 text-red-600 focus:border-red-500'
                     : digit
-                    ? 'border-indigo-600 bg-indigo-50/30 text-indigo-900 shadow-2xs'
-                    : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-indigo-500 focus:bg-white'
+                    ? 'border-yellow-400 bg-yellow-50/30 text-yellow-900 shadow-2xs'
+                    : 'border-stone-200 bg-stone-50 text-stone-900 focus:border-yellow-500 focus:bg-white'
                 }`}
               />
             ))}
@@ -165,7 +165,7 @@ export const ChildPinModal: React.FC<ChildPinModalProps> = ({
             <button
               onClick={() => submitPin(pinDigits.join(''))}
               disabled={isLoading || pinDigits.some((d) => !d)}
-              className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+              className="w-full py-2.5 px-4 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
             >
               {isLoading ? (
                 <>
@@ -183,7 +183,7 @@ export const ChildPinModal: React.FC<ChildPinModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-full py-2 text-xs text-slate-500 hover:text-slate-700 font-medium transition-colors"
+              className="w-full py-2 text-xs text-stone-500 hover:text-stone-700 font-medium transition-colors"
             >
               Cancel
             </button>

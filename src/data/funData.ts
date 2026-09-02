@@ -343,13 +343,13 @@ export interface MemoryCard {
 
 export const MEMORY_CARD_PAIRS: { pairKey: string; name: string; formula: string; icon: string; color: string }[] = [
   { pairKey: 'einstein', name: 'Einstein Mass-Energy', formula: 'E = mc²', icon: '⚡', color: 'bg-amber-100 text-amber-900 border-amber-300' },
-  { pairKey: 'water', name: 'Water Molecule', formula: 'H₂O', icon: '💧', color: 'bg-blue-100 text-blue-900 border-blue-300' },
+  { pairKey: 'water', name: 'Water Molecule', formula: 'H₂O', icon: '💧', color: 'bg-teal-100 text-teal-900 border-teal-300' },
   { pairKey: 'newton', name: 'Newton’s 2nd Law', formula: 'F = m · a', icon: '🍎', color: 'bg-red-100 text-red-900 border-red-300' },
-  { pairKey: 'circle', name: 'Circle Area', formula: 'A = π · r²', icon: '⭕', color: 'bg-emerald-100 text-emerald-900 border-emerald-300' },
-  { pairKey: 'pythagoras', name: 'Pythagorean Theorem', formula: 'a² + b² = c²', icon: '📐', color: 'bg-purple-100 text-purple-900 border-purple-300' },
+  { pairKey: 'circle', name: 'Circle Area', formula: 'A = π · r²', icon: '⭕', color: 'bg-yellow-100 text-yellow-900 border-yellow-300' },
+  { pairKey: 'pythagoras', name: 'Pythagorean Theorem', formula: 'a² + b² = c²', icon: '📐', color: 'bg-amber-100 text-amber-900 border-amber-300' },
   { pairKey: 'mitochondria', name: 'Cell Powerhouse', formula: 'Mitochondria (ATP)', icon: '🔋', color: 'bg-teal-100 text-teal-900 border-teal-300' },
   { pairKey: 'ohms', name: 'Ohm’s Law', formula: 'V = I · R', icon: '💡', color: 'bg-orange-100 text-orange-900 border-orange-300' },
-  { pairKey: 'gravity', name: 'Gravitational Potential', formula: 'U = m · g · h', icon: '🌍', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' }
+  { pairKey: 'gravity', name: 'Gravitational Potential', formula: 'U = m · g · h', icon: '🌍', color: 'bg-yellow-100 text-yellow-900 border-yellow-300' }
 ];
 
 export interface ScienceScrambleWord {

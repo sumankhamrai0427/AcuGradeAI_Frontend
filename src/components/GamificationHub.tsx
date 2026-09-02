@@ -97,47 +97,47 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
   const unlockedBadgesCount = allBadges.filter(b => earnedBadgeIds.includes(b.id)).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Top Gamification Status Banner */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white border border-stone-200 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-3xl shrink-0 shadow-2xs">
+          <div className="w-16 h-16 rounded-2xl bg-yellow-50 border border-yellow-200 flex items-center justify-center text-3xl shrink-0 shadow-2xs">
             {activeChild.avatar}
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{activeChild.name}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-stone-900">{activeChild.name}</h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
                 <Crown className="w-3.5 h-3.5 text-amber-600" />
                 Level {childLevel} Scholar
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-stone-500 mt-1">
               {activeChild.classGrade} • {activeChild.targetBoard} • {activeChild.schoolName || 'School Student'}
             </p>
           </div>
         </div>
 
         {/* XP Progress Meter */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 min-w-[280px]">
+        <div className="bg-stone-50 border border-stone-200/80 rounded-xl p-3.5 min-w-[280px]">
           <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="font-bold text-slate-700 flex items-center gap-1">
+            <span className="font-bold text-stone-700 flex items-center gap-1">
               <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               <span>{childXP} AcuPoints (XP)</span>
             </span>
-            <span className="text-[11px] text-slate-400 font-semibold">
+            <span className="text-[11px] text-stone-400 font-semibold">
               Next Level: {nextLevelXP} XP
             </span>
           </div>
 
-          <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden mb-1">
+          <div className="w-full h-2.5 bg-stone-200 rounded-full overflow-hidden mb-1">
             <div 
-              className="h-full bg-gradient-to-r from-amber-500 to-indigo-600 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full transition-all duration-500"
               style={{ width: `${progressToNextLevel}%` }}
             />
           </div>
 
-          <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+          <div className="flex justify-between text-[10px] text-stone-400 font-medium">
             <span>Level {childLevel}</span>
             <span>{progressToNextLevel}% completed</span>
             <span>Level {childLevel + 1}</span>
@@ -146,54 +146,54 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
       </div>
 
       {/* 4 Gamification Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-400 mb-1">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+          <div className="flex items-center justify-between text-stone-400 mb-1">
             <span className="text-xs font-semibold">Daily Streak</span>
             <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
           </div>
           <p className="text-2xl font-bold text-amber-600">{activeChild.streakDays} Days</p>
-          <span className="text-[10px] text-slate-400 font-semibold">+30 XP per active day</span>
+          <span className="text-[10px] text-stone-400 font-semibold">+30 XP per active day</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-400 mb-1">
+        <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+          <div className="flex items-center justify-between text-stone-400 mb-1">
             <span className="text-xs font-semibold">Badges Earned</span>
-            <Trophy className="w-4 h-4 text-indigo-600" />
+            <Trophy className="w-4 h-4 text-yellow-600" />
           </div>
-          <p className="text-2xl font-bold text-indigo-600">{unlockedBadgesCount} / {allBadges.length}</p>
-          <span className="text-[10px] text-indigo-600 font-semibold">Trophies & Milestones</span>
+          <p className="text-2xl font-bold text-yellow-600">{unlockedBadgesCount} / {allBadges.length}</p>
+          <span className="text-[10px] text-yellow-600 font-semibold">Trophies & Milestones</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-400 mb-1">
+        <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+          <div className="flex items-center justify-between text-stone-400 mb-1">
             <span className="text-xs font-semibold">Average Sprint Score</span>
-            <Target className="w-4 h-4 text-emerald-500" />
+            <Target className="w-4 h-4 text-yellow-500" />
           </div>
-          <p className="text-2xl font-bold text-emerald-600">{activeChild.averageScore}/10</p>
-          <span className="text-[10px] text-emerald-600 font-semibold">Across {activeChild.totalExamsTaken} Sprints</span>
+          <p className="text-2xl font-bold text-yellow-600">{activeChild.averageScore}/10</p>
+          <span className="text-[10px] text-yellow-600 font-semibold">Across {activeChild.totalExamsTaken} Sprints</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-400 mb-1">
+        <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
+          <div className="flex items-center justify-between text-stone-400 mb-1">
             <span className="text-xs font-semibold">{isStudentPersona ? 'Cohort Rank' : 'Global Rank'}</span>
-            <Crown className="w-4 h-4 text-purple-500" />
+            <Crown className="w-4 h-4 text-amber-500" />
           </div>
-          <p className="text-2xl font-bold text-purple-600">{currentStudentRank}</p>
-          <span className="text-[10px] text-purple-600 font-semibold">
+          <p className="text-2xl font-bold text-amber-600">{currentStudentRank}</p>
+          <span className="text-[10px] text-amber-600 font-semibold">
             {isStudentPersona ? `In ${activeChild.targetBoard} (${activeChild.classGrade})` : `Across All Registrations`}
           </span>
         </div>
       </div>
 
       {/* Main Tab Bar */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-stone-200 pb-2">
         <button
           onClick={() => setActiveTab('leaderboard')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
             activeTab === 'leaderboard'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-yellow-400 text-stone-900 shadow-xs'
+              : 'text-stone-600 hover:bg-stone-100'
           }`}
         >
           <Trophy className="w-4 h-4" />
@@ -204,8 +204,8 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
           onClick={() => setActiveTab('badges')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
             activeTab === 'badges'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 hover:bg-slate-100'
+              ? 'bg-yellow-400 text-stone-900 shadow-xs'
+              : 'text-stone-600 hover:bg-stone-100'
           }`}
         >
           <Award className="w-4 h-4" />
@@ -217,24 +217,24 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
       {activeTab === 'leaderboard' && (
         <div className="space-y-4">
           {/* Leaderboard Filters */}
-          <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="bg-white border border-stone-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
             {isStudentPersona ? (
               /* Student View: No Board/Grade Dropdowns, Only Global Search + Enrolled Cohort Indicator */
               <div className="flex items-center gap-3 flex-wrap flex-1">
                 {/* Search */}
                 <div className="relative min-w-[240px] flex-1 sm:flex-initial">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     placeholder={`Search ${activeChild.classGrade} students or school...`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-stone-200 text-xs bg-stone-50 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-yellow-500"
                   />
                 </div>
 
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200/80 text-xs font-bold text-indigo-900 shadow-2xs">
-                  <Users className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-50 border border-yellow-300/80 text-xs font-bold text-yellow-900 shadow-2xs">
+                  <Users className="w-3.5 h-3.5 text-yellow-600 shrink-0" />
                   <span>Cohort: {activeChild.classGrade} • {activeChild.targetBoard}</span>
                 </div>
               </div>
@@ -243,23 +243,23 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
               <div className="flex items-center gap-3 flex-wrap flex-1">
                 {/* Search */}
                 <div className="relative min-w-[200px]">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     placeholder="Search student or school..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-stone-200 text-xs bg-stone-50 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-yellow-500"
                   />
                 </div>
 
                 {/* Board */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-slate-500">Board:</span>
+                  <span className="text-xs font-semibold text-stone-500">Board:</span>
                   <select
                     value={boardFilter}
                     onChange={(e) => setBoardFilter(e.target.value as any)}
-                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+                    className="px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs bg-white text-stone-800 focus:outline-hidden focus:ring-1 focus:ring-yellow-500"
                   >
                     <option value="all">All Boards</option>
                     <option value="CBSE">CBSE</option>
@@ -274,11 +274,11 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
 
                 {/* Grade */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-slate-500">Grade:</span>
+                  <span className="text-xs font-semibold text-stone-500">Grade:</span>
                   <select
                     value={gradeFilter}
                     onChange={(e) => setGradeFilter(e.target.value as any)}
-                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+                    className="px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs bg-white text-stone-800 focus:outline-hidden focus:ring-1 focus:ring-yellow-500"
                   >
                     <option value="all">All Classes</option>
                     <option value="Class 5">Class 5</option>
@@ -294,14 +294,14 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
               </div>
             )}
 
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-stone-400">
               Showing {filteredLeaderboard.length} candidates
             </span>
           </div>
 
           {/* Leaderboard Table / Cards */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-            <div className="divide-y divide-slate-100">
+          <div className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden">
+            <div className="divide-y divide-stone-100">
               {filteredLeaderboard.map((entry, index) => {
                 const isTop1 = entry.rank === 1;
                 const isTop2 = entry.rank === 2;
@@ -311,8 +311,8 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
                 return (
                   <div
                     key={entry.studentId}
-                    className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                      isSelf ? 'bg-indigo-50/70 hover:bg-indigo-50 border-l-4 border-l-indigo-600' : 'hover:bg-slate-50/80'
+                    className={`p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                      isSelf ? 'bg-yellow-50/70 hover:bg-yellow-50 border-l-4 border-l-yellow-600' : 'hover:bg-stone-50/80'
                     }`}
                   >
                     {/* Rank & Student Details */}
@@ -323,7 +323,7 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
                             🥇
                           </span>
                         ) : isTop2 ? (
-                          <span className="w-7 h-7 rounded-full bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs flex items-center justify-center shadow-2xs">
+                          <span className="w-7 h-7 rounded-full bg-stone-200 border border-stone-300 text-stone-800 font-bold text-xs flex items-center justify-center shadow-2xs">
                             🥈
                           </span>
                         ) : isTop3 ? (
@@ -331,29 +331,29 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
                             🥉
                           </span>
                         ) : (
-                          <span className="font-bold text-xs text-slate-400">
+                          <span className="font-bold text-xs text-stone-400">
                             #{entry.rank}
                           </span>
                         )}
                       </div>
 
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-xl shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-xl shrink-0">
                         {entry.avatar}
                       </div>
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-sm text-slate-900 truncate">{entry.studentName}</span>
+                          <span className="font-bold text-sm text-stone-900 truncate">{entry.studentName}</span>
                           {isSelf && (
-                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-600 text-white">
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-yellow-400 text-stone-900">
                               You
                             </span>
                           )}
-                          <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                          <span className="text-[10px] font-semibold text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
                             {entry.classGrade} • {entry.targetBoard}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 truncate mt-0.5">
+                        <p className="text-xs text-stone-400 truncate mt-0.5">
                           {entry.schoolName || 'School Candidate'}
                         </p>
                       </div>
@@ -362,16 +362,16 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
                     {/* Stats & XP Pill */}
                     <div className="flex items-center gap-4 self-end sm:self-center shrink-0">
                       <div className="text-right hidden sm:block">
-                        <span className="text-xs font-bold text-slate-800 block">{entry.averageScore}/10 Avg</span>
-                        <span className="text-[10px] text-slate-400 font-medium">{entry.examsCompleted} sprints • {entry.streakDays}d streak</span>
+                        <span className="text-xs font-bold text-stone-800 block">{entry.averageScore}/10 Avg</span>
+                        <span className="text-[10px] text-stone-400 font-medium">{entry.examsCompleted} sprints • {entry.streakDays}d streak</span>
                       </div>
 
-                      <div className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-right shadow-2xs">
-                        <span className="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                      <div className="bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-right shadow-2xs">
+                        <span className="text-xs font-bold text-yellow-600 flex items-center gap-1">
                           <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                           {entry.xp} XP
                         </span>
-                        <span className="text-[10px] font-semibold text-slate-400 block">Lvl {entry.level}</span>
+                        <span className="text-[10px] font-semibold text-stone-400 block">Lvl {entry.level}</span>
                       </div>
                     </div>
                   </div>
@@ -381,31 +381,31 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
           </div>
 
           {/* XP & Rewards Calculation Guide */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-            <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <div className="bg-white border border-stone-200 rounded-xl p-4 shadow-xs">
+            <h3 className="font-bold text-xs text-stone-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-amber-500" />
               <span>How to Earn AcuPoints (XP) & Climb the Ranks</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="font-bold text-slate-900 block mb-1">🎯 Correct Answers</span>
-                <p className="text-slate-500">+10 XP for every question answered correctly in 10-mark sprints.</p>
+              <div className="p-3 bg-stone-50 rounded-xl border border-stone-100">
+                <span className="font-bold text-stone-900 block mb-1">🎯 Correct Answers</span>
+                <p className="text-stone-500">+10 XP for every question answered correctly in 10-mark sprints.</p>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="font-bold text-slate-900 block mb-1">🏆 Perfect 10/10 Bonus</span>
-                <p className="text-slate-500">+50 XP bonus for scoring full marks with zero misconception slips.</p>
+              <div className="p-3 bg-stone-50 rounded-xl border border-stone-100">
+                <span className="font-bold text-stone-900 block mb-1">🏆 Perfect 10/10 Bonus</span>
+                <p className="text-stone-500">+50 XP bonus for scoring full marks with zero misconception slips.</p>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="font-bold text-slate-900 block mb-1">🔥 Daily Streak Power</span>
-                <p className="text-slate-500">+30 XP daily multiplier for consecutive diagnostic test days.</p>
+              <div className="p-3 bg-stone-50 rounded-xl border border-stone-100">
+                <span className="font-bold text-stone-900 block mb-1">🔥 Daily Streak Power</span>
+                <p className="text-stone-500">+30 XP daily multiplier for consecutive diagnostic test days.</p>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="font-bold text-slate-900 block mb-1">⏱️ Velocity Sprint</span>
-                <p className="text-slate-500">+25 XP speed bonus for finishing accurate sprints in &lt;6 mins.</p>
+              <div className="p-3 bg-stone-50 rounded-xl border border-stone-100">
+                <span className="font-bold text-stone-900 block mb-1">⏱️ Velocity Sprint</span>
+                <p className="text-stone-500">+25 XP speed bonus for finishing accurate sprints in &lt;6 mins.</p>
               </div>
             </div>
           </div>
@@ -423,8 +423,8 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
                 onClick={() => setBadgeFilter(cat)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
                   badgeFilter === cat
-                    ? 'bg-indigo-600 text-white shadow-2xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-yellow-400 text-stone-900 shadow-2xs'
+                    : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
                 }`}
               >
                 {cat === 'all' ? 'All Trophies' : cat}
@@ -439,13 +439,13 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
 
               let tierStyle = {
                 badge: 'bg-amber-100 text-amber-800 border-amber-200',
-                card: 'border-slate-200'
+                card: 'border-stone-200'
               };
 
               if (badge.tier === 'silver') {
                 tierStyle = {
-                  badge: 'bg-slate-100 text-slate-800 border-slate-300',
-                  card: 'border-slate-200'
+                  badge: 'bg-stone-100 text-stone-800 border-stone-300',
+                  card: 'border-stone-200'
                 };
               } else if (badge.tier === 'gold') {
                 tierStyle = {
@@ -462,16 +462,16 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
               return (
                 <div
                   key={badge.id}
-                  className={`bg-white rounded-2xl border p-5 shadow-xs flex flex-col justify-between transition-all ${
+                  className={`bg-white rounded-xl border p-4 shadow-xs flex flex-col justify-between transition-all ${
                     isUnlocked
                       ? tierStyle.card
-                      : 'border-dashed border-slate-300 bg-slate-50/40 opacity-75'
+                      : 'border-dashed border-stone-300 bg-stone-50/40 opacity-75'
                   }`}
                 >
                   <div>
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl border shadow-2xs ${
-                        isUnlocked ? 'bg-white border-slate-200' : 'bg-slate-100 border-slate-200 grayscale'
+                        isUnlocked ? 'bg-white border-stone-200' : 'bg-stone-100 border-stone-200 grayscale'
                       }`}>
                         {badge.icon}
                       </div>
@@ -481,27 +481,27 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
                           {badge.tier}
                         </span>
                         {isUnlocked ? (
-                          <span className="p-1 bg-emerald-100 text-emerald-700 rounded-full" title="Unlocked">
+                          <span className="p-1 bg-yellow-100 text-yellow-700 rounded-full" title="Unlocked">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                           </span>
                         ) : (
-                          <span className="p-1 bg-slate-200 text-slate-500 rounded-full" title="Locked">
+                          <span className="p-1 bg-stone-200 text-stone-500 rounded-full" title="Locked">
                             <Lock className="w-3.5 h-3.5" />
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <h3 className="font-bold text-sm text-slate-900 mb-1">{badge.title}</h3>
-                    <p className="text-xs text-slate-500 leading-relaxed mb-3">{badge.description}</p>
+                    <h3 className="font-bold text-sm text-stone-900 mb-1">{badge.title}</h3>
+                    <p className="text-xs text-stone-500 leading-relaxed mb-3">{badge.description}</p>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="text-[11px] text-slate-400 font-medium truncate max-w-[140px]">
+                  <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
+                    <span className="text-[11px] text-stone-400 font-medium truncate max-w-[140px]">
                       {isUnlocked && badge.unlockedAt ? `Unlocked on ${new Date(badge.unlockedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : badge.requirementText}
                     </span>
 
-                    <span className="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 shrink-0">
+                    <span className="font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-md border border-yellow-200 shrink-0">
                       +{badge.xpReward} XP
                     </span>
                   </div>

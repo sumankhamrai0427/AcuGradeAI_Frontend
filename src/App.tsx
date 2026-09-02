@@ -67,17 +67,11 @@ import { LoginPage } from './components/LoginPage';
 import { LandingPage } from './components/LandingPage';
 import { ChildPinModal } from './components/ChildPinModal';
 import { PublicDossierView } from './components/PublicDossierView';
-import {
+import ApiServices, {
   getStoredTokens,
   clearTokens,
   decodeTokenPayload,
-  authApi,
-  parentApi,
-  communicationApi,
-  gamificationApi,
-  subscriptionApi,
-  adminApi,
-} from './lib/api';
+} from './services/ApiServices';
 
 const getInitialPublicDossierToken = (): string | null => {
   if (typeof window === 'undefined') return null;
@@ -204,11 +198,9 @@ export default function App() {
   // Data loading — replaces the old mock-data useState initializers.
   // ------------------------------------------------------------
   const loadParentAndChildren = useCallback(async () => {
-    const [me, children] = await Promise.all([parentApi.getMe(), parentApi.getChildren()]);
+    const [me, children] = await Promise.all([ApiServices.getMe(), ApiServices.getChildren()]);
 
-    // Merge per-child topicMastery + recent exams from each child's overview
-    // (the children-list endpoint returns the lean ChildAccount shape only).
-    const overviews = await Promise.all(children.map((c: ChildAccount) => parentApi.getChildOverview(c.id)));
+    const overviews = await Promise.all(children.map((c: ChildAccount) => ApiServices.getChildOverview(c.id)));
     const enrichedChildren: ChildAccount[] = children.map((c: ChildAccount, idx: number) => ({
       ...c,
       topicMastery: overviews[idx].topicMastery || {},
@@ -234,8 +226,8 @@ export default function App() {
 
   const loadGamification = useCallback(async () => {
     const [badgeList, leaderboardList] = await Promise.all([
-      gamificationApi.listBadges(),
-      gamificationApi.leaderboard('all_time'),
+      ApiServices.listBadges(),
+      ApiServices.leaderboard('all_time'),
     ]);
     setBadges(badgeList);
     setLeaderboard(
@@ -247,7 +239,7 @@ export default function App() {
   }, [activeChildId]);
 
   const loadLearningPath = useCallback(async (childId: string) => {
-    const nodes = await parentApi.getChildLearningPath(childId);
+    const nodes = await ApiServices.getChildLearningPath(childId);
     setLearningNodes(nodes);
   }, []);
 
@@ -318,7 +310,7 @@ export default function App() {
   const handleLogout = async () => {
     const tokens = getStoredTokens();
     try {
-      if (tokens) await authApi.logout(tokens.refreshToken);
+      if (tokens) await ApiServices.logout({ refreshToken: tokens.refreshToken });
     } catch {
       // best-effort — clear local state regardless
     }
@@ -399,14 +391,14 @@ export default function App() {
 
   // Subscription Upgrade
   const handleUpgradeTier = async (tier: SubscriptionTier) => {
-    await subscriptionApi.upgrade(tier);
+    await ApiServices.upgradeSubscription({ tier });
     setParentAccount((prev) => (prev ? { ...prev, subscriptionTier: tier } : prev));
     setShowUpgradeModal(false);
   };
 
   // Daily quota reset (admin/parent action)
   const handleResetDailyQuota = async (childId: string) => {
-    await adminApi.resetQuota(childId);
+    await ApiServices.resetQuota(childId);
     setParentAccount((prev) =>
       prev
         ? { ...prev, children: prev.children.map((c) => (c.id === childId ? { ...c, dailyExamsTakenToday: 0 } : c)) }
@@ -418,7 +410,7 @@ export default function App() {
   const handleAddChild = async (
     childData: Omit<ChildAccount, 'id' | 'totalExamsTaken' | 'averageScore' | 'streakDays' | 'dailyExamsTakenToday' | 'topicMastery'>
   ) => {
-    const created = await parentApi.addChild({
+    const created = await ApiServices.addChild({
       name: childData.name,
       avatar: childData.avatar,
       classGrade: childData.classGrade,
@@ -432,7 +424,7 @@ export default function App() {
 
   // Update child
   const handleUpdateChild = async (updatedChild: ChildAccount) => {
-    const saved = await parentApi.updateChild(updatedChild.id, {
+    const saved = await ApiServices.updateChild(updatedChild.id, {
       name: updatedChild.name,
       avatar: updatedChild.avatar,
       classGrade: updatedChild.classGrade,
@@ -450,7 +442,7 @@ export default function App() {
   // (see controller/gamification_controller.py:award_xp_route).
   const handleAwardXP = async (amount: number, reason: string) => {
     if (!activeChildId) return;
-    const { xp, level } = await gamificationApi.awardXp(activeChildId, amount, reason);
+    const { xp, level } = await ApiServices.awardXp({ studentId: activeChildId, amount, reason });
     setParentAccount((prev) =>
       prev
         ? { ...prev, children: prev.children.map((c) => (c.id === activeChildId ? { ...c, xp, level } : c)) }
@@ -471,9 +463,9 @@ export default function App() {
       case 'pricing': return 'Subscription & Plan Management';
       case 'admin': return 'Super Admin & RAG Runbook Engine';
       case 'blog': return 'Curriculum Taxonomy & Pedagogical Blog';
-      case 'about': return 'About AcuGrade & RAG Intelligence';
+      case 'about': return 'About SahajPath & RAG Intelligence';
       case 'legal': return 'Academic Policies & Disclaimers';
-      default: return 'AcuGrade Workspace';
+      default: return 'SahajPath Workspace';
     }
   };
 
@@ -498,26 +490,43 @@ export default function App() {
   // bootstrap the app shell.
   // ------------------------------------------------------------
   if (!authRole) {
-    if (authModalMode) {
-      return (
-        <LoginPage
-          onAuthenticated={handleAuthenticated}
-          initialMode={authModalMode}
-          onClose={() => setAuthModalMode(null)}
-        />
-      );
-    }
     return (
-      <LandingPage
-        onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
-      />
+      <div className="relative w-full h-full min-h-screen overflow-x-hidden">
+        {/* Main Landing Page */}
+        <LandingPage
+          onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
+        />
+
+        {/* Slide-over panel for LoginPage */}
+        <div 
+          className={`fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl transform transition-transform duration-500 ease-in-out ${
+            authModalMode ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          {authModalMode && (
+            <LoginPage
+              onAuthenticated={handleAuthenticated}
+              initialMode={authModalMode}
+              onClose={() => setAuthModalMode(null)}
+            />
+          )}
+        </div>
+        
+        {/* Backdrop */}
+        {authModalMode && (
+          <div 
+            className="fixed inset-0 bg-stone-900/50 z-40 backdrop-blur-sm transition-opacity duration-500" 
+            onClick={() => setAuthModalMode(null)}
+          />
+        )}
+      </div>
     );
   }
 
   if (isBootstrapping) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3 text-slate-500">
+      <div className="min-h-screen w-full flex items-center justify-center bg-stone-50">
+        <div className="flex flex-col items-center gap-3 text-stone-500">
           <Loader2 className="w-6 h-6 animate-spin" />
           <p className="text-sm">Loading your workspace…</p>
         </div>
@@ -527,13 +536,13 @@ export default function App() {
 
   if (bootstrapError) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 px-4">
+      <div className="min-h-screen w-full flex items-center justify-center bg-stone-50 px-4">
         <div className="max-w-sm text-center space-y-3">
           <AlertTriangle className="w-8 h-8 text-red-500 mx-auto" />
-          <p className="text-sm text-slate-700">{bootstrapError}</p>
+          <p className="text-sm text-stone-700">{bootstrapError}</p>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold"
+            className="px-4 py-2 rounded-lg bg-stone-900 text-white text-sm font-semibold"
           >
             Back to login
           </button>
@@ -546,15 +555,15 @@ export default function App() {
   // "family" for an ADMIN/SUPER_ADMIN account to show a parent dashboard for.
   if (isAdminSession) {
     return (
-      <div className="min-h-screen w-full bg-slate-50 flex flex-col">
-        <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+      <div className="min-h-screen w-full bg-stone-50 flex flex-col">
+        <header className="h-14 bg-white border-b border-stone-200 flex items-center justify-between px-6">
           <div className="flex items-center gap-2.5">
             <ShieldCheck className="w-5 h-5 text-amber-600" />
-            <span className="font-bold text-slate-900">AcuGrade AI — Admin Console</span>
+            <span className="font-bold text-stone-900">SahajPath — Admin Console</span>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800"
+            className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
           >
             <LogOut className="w-4 h-4" />
             Log out
@@ -577,35 +586,35 @@ export default function App() {
   // Teacher-only session: render Teacher Portal
   if (isTeacherSession) {
     return (
-      <div className="min-h-screen w-full bg-slate-50 flex flex-col">
-        <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+      <div className="min-h-screen w-full bg-stone-50 flex flex-col">
+        <header className="h-14 bg-white border-b border-stone-200 flex items-center justify-between px-6">
           <div className="flex items-center gap-2.5">
-            <GraduationCap className="w-5 h-5 text-indigo-600" />
-            <span className="font-bold text-slate-900">AcuGrade AI — Teacher Portal</span>
+            <GraduationCap className="w-5 h-5 text-yellow-600" />
+            <span className="font-bold text-stone-900">SahajPath — Teacher Portal</span>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800"
+            className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800"
           >
             <LogOut className="w-4 h-4" />
             Log out
           </button>
         </header>
         <div className="flex-1 max-w-3xl w-full mx-auto p-6 space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
-            <h2 className="text-xl font-bold text-slate-900">Welcome, Educator! 🧑‍🏫</h2>
-            <p className="text-sm text-slate-600">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4">
+            <h2 className="text-xl font-bold text-stone-900">Welcome, Educator! 🧑‍🏫</h2>
+            <p className="text-sm text-stone-600">
               You are logged in with a Teacher account. This portal receives diagnostic dossiers and enables communication with parents.
             </p>
-            <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-sm text-indigo-800 space-y-2">
+            <div className="p-4 rounded-xl bg-yellow-50 border border-yellow-200 text-sm text-yellow-800 space-y-2">
               <p className="font-semibold">Parent & Student Dashboard Testing:</p>
-              <p className="text-xs text-indigo-700">
+              <p className="text-xs text-yellow-700">
                 To experience the full Parent Dashboard, 10-Mark Diagnostic Exam Arena, Gamification Hub, and Adaptive Learning Paths, please sign in with a <strong>Parent</strong> account or create a new account from the login screen.
               </p>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors"
+              className="px-4 py-2 bg-stone-900 text-white rounded-lg text-sm font-semibold hover:bg-stone-800 transition-colors"
             >
               Sign out / Switch account
             </button>
@@ -620,22 +629,22 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 font-sans text-slate-900 overflow-hidden">
+    <div className="flex h-screen w-full bg-stone-50 font-sans text-stone-900 overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-stone-900/50 backdrop-blur-xs lg:hidden"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
 
       {/* Left Sidebar (High Density Theme with Global Collapse / Expand) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
+        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-stone-200 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
           } ${mobileSidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full'}`}
       >
         {/* Brand Header */}
-        <div className={`p-4 border-b border-slate-100 flex items-center ${isSidebarCollapsed ? 'lg:flex-col lg:gap-2.5 justify-center' : 'justify-between'}`}>
+        <div className={`p-4 border-b border-stone-100 flex items-center ${isSidebarCollapsed ? 'lg:flex-col lg:gap-2.5 justify-center' : 'justify-between'}`}>
           <div
             className="flex items-center gap-2.5 cursor-pointer min-w-0"
             onClick={() => {
@@ -643,14 +652,14 @@ export default function App() {
               setActiveTab('dashboard');
               setMobileSidebarOpen(false);
             }}
-            title="AcuGrade AI — RAG K-Graph"
+            title="SahajPath — RAG K-Graph"
           >
-            <div className="w-8 h-8 min-w-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-xs">
+            <div className="w-8 h-8 min-w-8 bg-yellow-400 rounded-lg flex items-center justify-center text-white font-bold shadow-xs">
               <span>Σ</span>
             </div>
             <div className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
-              <span className="font-bold text-lg tracking-tight italic text-slate-900">AcuGrade AI</span>
-              <span className="block text-[10px] text-slate-400 font-semibold tracking-wider uppercase">RAG K-Graph</span>
+              <span className="font-bold text-lg tracking-tight italic text-stone-900">SahajPath</span>
+              <span className="block text-[10px] text-stone-400 font-semibold tracking-wider uppercase">RAG K-Graph</span>
             </div>
           </div>
 
@@ -660,7 +669,7 @@ export default function App() {
               id="desktop-sidebar-toggle"
               onClick={toggleSidebar}
               title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-              className="hidden lg:flex p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 bg-slate-50/80 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 shadow-2xs hover:shadow-xs transition-all duration-200 hover:scale-105 active:scale-95 group cursor-pointer"
+              className="hidden lg:flex p-1.5 rounded-lg text-stone-500 hover:text-yellow-600 bg-stone-50/80 hover:bg-yellow-50 border border-stone-200/80 hover:border-yellow-300 shadow-2xs hover:shadow-xs transition-all duration-200 hover:scale-105 active:scale-95 group cursor-pointer"
             >
               {isSidebarCollapsed ? (
                 <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -672,7 +681,7 @@ export default function App() {
             {/* Mobile Close Button */}
             <button
               onClick={() => setMobileSidebarOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="lg:hidden p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -687,14 +696,14 @@ export default function App() {
             /* ============================================================ */
             <>
               {!isSidebarCollapsed ? (
-                <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest px-3 mb-2 mt-1 flex items-center justify-between">
+                <div className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest px-3 mb-2 mt-1 flex items-center justify-between">
                   <span>Student Arena</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 font-semibold">
                     {activeChild?.name}
                   </span>
                 </div>
               ) : (
-                <div className="hidden lg:block my-2 border-t border-slate-100" title={`Student Arena (${activeChild?.name})`} />
+                <div className="hidden lg:block my-2 border-t border-stone-100" title={`Student Arena (${activeChild?.name})`} />
               )}
 
               <button
@@ -707,11 +716,11 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
                   } ${activeTab === 'arena' && !activeSubmissionReport
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                    ? 'bg-yellow-400 text-stone-900 font-semibold shadow-xs'
+                    : 'text-stone-700 hover:bg-yellow-50/50 hover:text-yellow-900'
                   }`}
               >
-                <Play className={`w-4 h-4 flex-shrink-0 ${activeTab === 'arena' && !activeSubmissionReport ? 'text-white' : 'text-emerald-600'}`} />
+                <Play className={`w-4 h-4 flex-shrink-0 ${activeTab === 'arena' && !activeSubmissionReport ? 'text-white' : 'text-yellow-600'}`} />
                 <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>10-Mark Exam Arena</span>
               </button>
 
@@ -725,12 +734,12 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
                   } ${activeTab === 'learning-path' && !activeSubmissionReport
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                    ? 'bg-yellow-400 text-stone-900 font-semibold shadow-xs'
+                    : 'text-stone-700 hover:bg-yellow-50/50 hover:text-yellow-900'
                   }`}
               >
                 <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
-                  <Compass className={`w-4 h-4 flex-shrink-0 ${activeTab === 'learning-path' && !activeSubmissionReport ? 'text-white' : 'text-indigo-600'}`} />
+                  <Compass className={`w-4 h-4 flex-shrink-0 ${activeTab === 'learning-path' && !activeSubmissionReport ? 'text-white' : 'text-yellow-600'}`} />
                   <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Adaptive Learning Path</span>
                 </div>
               </button>
@@ -745,8 +754,8 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
                   } ${activeTab === 'gamification' && !activeSubmissionReport
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                    ? 'bg-yellow-400 text-stone-900 font-semibold shadow-xs'
+                    : 'text-stone-700 hover:bg-yellow-50/50 hover:text-yellow-900'
                   }`}
               >
                 <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
@@ -768,8 +777,8 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
                   } ${activeTab === 'fun-zone' && !activeSubmissionReport
-                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                    ? 'bg-yellow-400 text-stone-900 font-semibold shadow-xs'
+                    : 'text-stone-700 hover:bg-yellow-50/50 hover:text-yellow-900'
                   }`}
               >
                 <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
@@ -791,8 +800,8 @@ export default function App() {
                   }}
                   className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
                     } ${activeSubmissionReport
-                      ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                      : 'text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-900'
+                      ? 'bg-yellow-400 text-stone-900 font-semibold shadow-xs'
+                      : 'text-stone-700 hover:bg-yellow-50/50 hover:text-yellow-900'
                     }`}
                 >
                   <Award className={`w-4 h-4 flex-shrink-0 ${activeSubmissionReport ? 'text-white' : 'text-amber-500'}`} />
@@ -801,16 +810,16 @@ export default function App() {
               )}
 
               {/* Student Quick Action to return to Parent View */}
-              <div className="pt-4 mt-4 border-t border-slate-100">
+              <div className="pt-4 mt-4 border-t border-stone-100">
                 {!isSidebarCollapsed && (
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2">
+                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-3 mb-2">
                     Parent Access
                   </div>
                 )}
                 <button
                   onClick={handleSwitchToParent}
                   title="Switch to Parent View"
-                  className={`w-full flex items-center rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 transition-colors border border-slate-200 ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 lg:py-2.5 px-3 py-2.5 gap-2.5' : 'px-3 py-2.5 gap-2.5'
+                  className={`w-full flex items-center rounded-xl text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-yellow-50 hover:text-yellow-700 transition-colors border border-stone-200 ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 lg:py-2.5 px-3 py-2.5 gap-2.5' : 'px-3 py-2.5 gap-2.5'
                     }`}
                 >
                   <span className="text-base">👨‍👩‍👧‍👦</span>
@@ -824,11 +833,11 @@ export default function App() {
             /* ============================================================ */
             <>
               {!isSidebarCollapsed ? (
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-1">
+                <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-3 mb-2 mt-1">
                   Family & Management
                 </div>
               ) : (
-                <div className="hidden lg:block my-2 border-t border-slate-100" title="Family & Management" />
+                <div className="hidden lg:block my-2 border-t border-stone-100" title="Family & Management" />
               )}
 
               <button
@@ -841,11 +850,11 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
                   } ${activeTab === 'dashboard' && !activeSubmissionReport
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
               >
-                <BarChart3 className="w-4 h-4 flex-shrink-0 text-indigo-600" />
+                <BarChart3 className="w-4 h-4 flex-shrink-0 text-yellow-600" />
                 <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Family Dashboard</span>
               </button>
 
@@ -859,8 +868,8 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
                   } ${activeTab === 'ptc' && !activeSubmissionReport
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
               >
                 <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
@@ -882,20 +891,20 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
                   } ${activeTab === 'pricing'
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
               >
-                <Sparkles className="w-4 h-4 flex-shrink-0 text-indigo-500" />
+                <Sparkles className="w-4 h-4 flex-shrink-0 text-yellow-500" />
                 <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Subscription Plans</span>
               </button>
 
               {!isSidebarCollapsed ? (
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-5">
+                <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-3 mb-2 mt-5">
                   Academic Progress & Tools
                 </div>
               ) : (
-                <div className="hidden lg:block my-3 border-t border-slate-100" title="Academic Progress & Tools" />
+                <div className="hidden lg:block my-3 border-t border-stone-100" title="Academic Progress & Tools" />
               )}
 
               <button
@@ -908,11 +917,11 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
                   } ${activeTab === 'arena' && !activeSubmissionReport
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
               >
-                <Play className="w-4 h-4 flex-shrink-0 text-emerald-600" />
+                <Play className="w-4 h-4 flex-shrink-0 text-yellow-600" />
                 <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>10-Mark Exam Arena</span>
               </button>
 
@@ -926,12 +935,12 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
                   } ${activeTab === 'learning-path' && !activeSubmissionReport
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
               >
                 <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
-                  <Compass className="w-4 h-4 flex-shrink-0 text-indigo-600" />
+                  <Compass className="w-4 h-4 flex-shrink-0 text-yellow-600" />
                   <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Adaptive Path</span>
                 </div>
               </button>
@@ -946,8 +955,8 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
                   } ${activeTab === 'gamification' && !activeSubmissionReport
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
               >
                 <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
@@ -972,7 +981,7 @@ export default function App() {
                   className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
                     } ${activeTab === 'admin'
                       ? 'bg-amber-50 text-amber-800 font-semibold'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                     }`}
                 >
                   <ShieldCheck className="w-4 h-4 flex-shrink-0 text-amber-600" />
@@ -981,11 +990,11 @@ export default function App() {
               )}
 
               {!isSidebarCollapsed ? (
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 mt-5">
+                <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-3 mb-2 mt-5">
                   Pedagogy & Resources
                 </div>
               ) : (
-                <div className="hidden lg:block my-3 border-t border-slate-100" title="Pedagogy & Resources" />
+                <div className="hidden lg:block my-3 border-t border-stone-100" title="Pedagogy & Resources" />
               )}
 
               <button
@@ -998,8 +1007,8 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
                   } ${activeTab === 'blog'
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
               >
                 <BookOpen className="w-4 h-4 flex-shrink-0" />
@@ -1016,8 +1025,8 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
                   } ${activeTab === 'about'
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
               >
                 <Info className="w-4 h-4 flex-shrink-0" />
@@ -1034,8 +1043,8 @@ export default function App() {
                 }}
                 className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
                   } ${activeTab === 'legal'
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
               >
                 <FileText className="w-4 h-4 flex-shrink-0" />
@@ -1046,26 +1055,26 @@ export default function App() {
         </nav>
 
         {/* Bottom Current Plan Widget (High Density) */}
-        <div className="p-3 border-t border-slate-100">
+        <div className="p-3 border-t border-stone-100">
           {/* Collapsed view on Desktop */}
           {isSidebarCollapsed ? (
             <div
               onClick={() => isFreePlan ? setShowUpgradeModal(true) : setActiveTab('pricing')}
               title={`Active Plan: ${parentAccount.subscriptionTier === 'free' ? 'Free Plan (1 Exam/Day)' : 'Unlimited Family Exams'} — Click to view`}
-              className="hidden lg:flex flex-col items-center justify-center p-2.5 bg-slate-900 rounded-xl text-white cursor-pointer hover:bg-slate-800 transition-colors shadow-2xs group"
+              className="hidden lg:flex flex-col items-center justify-center p-2.5 bg-stone-900 rounded-xl text-white cursor-pointer hover:bg-stone-800 transition-colors shadow-2xs group"
             >
-              <Sparkles className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
-              <span className="text-[9px] font-bold text-indigo-300 mt-1 uppercase">
+              <Sparkles className="w-5 h-5 text-yellow-400 group-hover:scale-110 transition-transform" />
+              <span className="text-[9px] font-bold text-yellow-300 mt-1 uppercase">
                 {parentAccount.subscriptionTier === 'free' ? 'Free' : 'Pro'}
               </span>
             </div>
           ) : null}
 
           {/* Full view on Expanded Desktop / Mobile Drawer */}
-          <div className={`bg-slate-900 rounded-xl p-3.5 text-white space-y-2 ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
+          <div className={`bg-stone-900 rounded-xl p-3.5 text-white space-y-2 ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
             <div className="flex items-center justify-between">
-              <p className="text-[10px] text-slate-400 uppercase font-semibold">Active Plan</p>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-indigo-300 font-mono">
+              <p className="text-[10px] text-stone-400 uppercase font-semibold">Active Plan</p>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-stone-800 text-yellow-300 font-mono">
                 {parentAccount.subscriptionTier === 'free' ? 'Free Plan' : parentAccount.subscriptionTier === 'scholar_pro' ? 'Scholar Pro' : 'Genius Pro'}
               </span>
             </div>
@@ -1073,9 +1082,9 @@ export default function App() {
               {parentAccount.subscriptionTier === 'free' ? 'Foundation (1 Exam/Day)' : 'Unlimited Family Exams'}
             </p>
 
-            <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-1.5 w-full bg-stone-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-indigo-500 rounded-full transition-all"
+                className="h-full bg-yellow-500 rounded-full transition-all"
                 style={{
                   width: isFreePlan ? (dailyQuotaUsed >= 1 ? '100%' : '0%') : '100%'
                 }}
@@ -1083,18 +1092,18 @@ export default function App() {
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-stone-400">
                 {isFreePlan ? `${dailyQuotaUsed}/1 Daily Test Taken` : 'Unlimited Exams Available'}
               </p>
               {isFreePlan ? (
                 <button
                   onClick={() => setShowUpgradeModal(true)}
-                  className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline"
+                  className="text-[10px] font-bold text-yellow-400 hover:text-yellow-300 underline"
                 >
                   Upgrade
                 </button>
               ) : (
-                <span className="text-[10px] text-emerald-400 font-semibold">Active</span>
+                <span className="text-[10px] text-yellow-400 font-semibold">Active</span>
               )}
             </div>
           </div>
@@ -1104,30 +1113,30 @@ export default function App() {
       {/* Main Workspace Area (High Density Theme) */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top Header Bar */}
-        <header className="h-14 lg:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 flex-shrink-0 z-20">
+        <header className="h-14 lg:h-16 bg-white border-b border-stone-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 flex-shrink-0 z-20">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             {/* Mobile-only Sidebar Toggle (hidden on desktop) */}
             <button
               id="mobile-sidebar-toggle"
               onClick={() => setMobileSidebarOpen(true)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-600 hover:bg-slate-100"
+              className="lg:hidden p-1.5 rounded-lg text-stone-600 hover:bg-stone-100"
             >
               <Menu className="w-5 h-5" />
             </button>
 
-            <h1 className="text-base sm:text-lg font-semibold text-slate-800 truncate">
+            <h1 className="text-base sm:text-lg font-semibold text-stone-800 truncate">
               {getPageTitle()}
             </h1>
 
-            <div className="hidden sm:block h-4 w-[1px] bg-slate-200" />
+            <div className="hidden sm:block h-4 w-[1px] bg-stone-200" />
 
             {/* Quick Profile Switcher (High Density Pill) */}
             <div className="hidden md:flex items-center gap-2">
-              <span className="text-xs text-slate-500">Active Persona:</span>
-              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+              <span className="text-xs text-stone-500">Active Persona:</span>
+              <div className="flex items-center gap-1.5 bg-stone-100 p-1 rounded-lg">
                 <button
                   onClick={handleSwitchToParent}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${isParentActive ? 'bg-white shadow-2xs text-indigo-700' : 'text-slate-600 hover:text-slate-900'
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${isParentActive ? 'bg-white shadow-2xs text-yellow-700' : 'text-stone-600 hover:text-stone-900'
                     }`}
                 >
                   Parent View
@@ -1137,8 +1146,8 @@ export default function App() {
                     key={child.id}
                     onClick={() => handleSwitchToChild(child.id)}
                     className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1 transition-all ${activePersona === 'child' && activeChildId === child.id
-                      ? 'bg-white shadow-2xs text-indigo-700'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white shadow-2xs text-yellow-700'
+                      : 'text-stone-600 hover:text-stone-900'
                       }`}
                   >
                     <span>{child.avatar}</span>
@@ -1155,11 +1164,11 @@ export default function App() {
             {isParentActive ? (
               <div
                 title={`Total Family Momentum: ${totalFamilyXP} XP across ${totalChildrenCount} registered child profile${totalChildrenCount === 1 ? '' : 's'}`}
-                className="hidden sm:flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full border border-indigo-200 text-xs font-bold text-indigo-800 shadow-2xs"
+                className="hidden sm:flex items-center gap-2 px-3 py-1 bg-yellow-50 rounded-full border border-yellow-300 text-xs font-bold text-yellow-800 shadow-2xs"
               >
-                <Trophy className="w-3.5 h-3.5 text-indigo-600" />
+                <Trophy className="w-3.5 h-3.5 text-yellow-600" />
                 <span>Family: {totalFamilyXP} XP</span>
-                <span className="text-indigo-300">•</span>
+                <span className="text-yellow-300">•</span>
                 <span>{totalChildrenCount} Profile{totalChildrenCount === 1 ? '' : 's'}</span>
               </div>
             ) : activeChild ? (
@@ -1181,29 +1190,29 @@ export default function App() {
               <button
                 id="header-persona-switcher"
                 onClick={() => setShowPersonaMenu(!showPersonaMenu)}
-                className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 rounded-full sm:rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 transition-all text-xs shadow-2xs group cursor-pointer"
+                className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 rounded-full sm:rounded-xl border border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50 transition-all text-xs shadow-2xs group cursor-pointer"
                 title={isParentActive ? `Parent Account (${parentAccount.name})` : `Active Student (${activeChild?.name})`}
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-50 to-purple-50 border border-indigo-100 flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-50 to-amber-50 border border-yellow-200 flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
                   {isParentActive ? '👨‍👩‍👧‍👦' : activeChild?.avatar || '👤'}
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-150" />
+                <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-stone-600 transition-transform duration-150" />
               </button>
 
               {/* Dropdown Menu Modal */}
               {showPersonaMenu && (
                 <div
                   id="persona-dropdown-menu"
-                  className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+                  className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
                 >
-                  <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50/60 rounded-t-2xl">
+                  <div className="px-4 py-2.5 border-b border-stone-100 bg-stone-50/60 rounded-t-2xl">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold text-xs shrink-0">
                         {parentAccount.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-slate-900 truncate">{parentAccount.name}</p>
-                        <p className="text-[10px] text-slate-400 truncate">{parentAccount.email || 'Parent Account'}</p>
+                        <p className="text-xs font-bold text-stone-900 truncate">{parentAccount.name}</p>
+                        <p className="text-[10px] text-stone-400 truncate">{parentAccount.email || 'Parent Account'}</p>
                       </div>
                     </div>
                   </div>
@@ -1211,21 +1220,21 @@ export default function App() {
                   <div className="p-1 space-y-0.5">
                     <button
                       onClick={handleSwitchToParent}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isParentActive ? 'bg-indigo-50 text-indigo-900 font-semibold' : 'text-slate-700 hover:bg-slate-100'
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isParentActive ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
                         }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <span className="text-base">👨‍👩‍👧‍👦</span>
                         <div>
-                          <div className="font-medium text-slate-900">Parent Dashboard</div>
-                          <div className="text-[10px] text-slate-500">Full family analytics & sub-accounts</div>
+                          <div className="font-medium text-stone-900">Parent Dashboard</div>
+                          <div className="text-[10px] text-stone-500">Full family analytics & sub-accounts</div>
                         </div>
                       </div>
-                      {isParentActive && <CheckCircle className="w-4 h-4 text-indigo-600" />}
+                      {isParentActive && <CheckCircle className="w-4 h-4 text-yellow-600" />}
                     </button>
 
-                    <div className="my-1 border-t border-slate-100 px-3 py-1">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Children Profiles</p>
+                    <div className="my-1 border-t border-stone-100 px-3 py-1">
+                      <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Children Profiles</p>
                     </div>
 
                     {parentAccount.children.map((child) => {
@@ -1234,28 +1243,28 @@ export default function App() {
                         <button
                           key={child.id}
                           onClick={() => handleSwitchToChild(child.id)}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isSelected ? 'bg-indigo-50 text-indigo-900 font-semibold' : 'text-slate-700 hover:bg-slate-100'
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isSelected ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
                             }`}
                         >
                           <div className="flex items-center gap-2.5">
                             <span className="text-base">{child.avatar}</span>
                             <div>
-                              <div className="font-medium text-slate-900">{child.name}</div>
-                              <div className="text-[10px] text-slate-500">
+                              <div className="font-medium text-stone-900">{child.name}</div>
+                              <div className="text-[10px] text-stone-500">
                                 {child.classGrade} • {child.targetBoard} • Avg {child.averageScore}/10
                               </div>
                             </div>
                           </div>
-                          {isSelected && <CheckCircle className="w-4 h-4 text-indigo-600" />}
+                          {isSelected && <CheckCircle className="w-4 h-4 text-yellow-600" />}
                         </button>
                       );
                     })}
 
-                    <div className="my-1 border-t border-slate-100" />
+                    <div className="my-1 border-t border-stone-100" />
 
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 font-medium transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-stone-500 hover:bg-stone-100 hover:text-stone-800 font-medium transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Log out</span>
@@ -1268,7 +1277,7 @@ export default function App() {
         </header>
 
         {/* Scrollable Main Content Frame (High Density Theme) */}
-        <div className="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 overflow-y-auto bg-stone-50 p-4 sm:p-6 lg:p-8">
           {activeSubmissionReport ? (
             <DiagnosticReport
               submission={activeSubmissionReport}
@@ -1383,25 +1392,25 @@ export default function App() {
         </div>
 
         {/* Crisp Bottom Footer (Dynamic Persona-Gated Theme) */}
-        <footer className="h-10 bg-white border-t border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 text-[11px] text-slate-400 flex-shrink-0 z-10">
+        <footer className="h-10 bg-white border-t border-stone-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 text-[11px] text-stone-400 flex-shrink-0 z-10">
           <div className="flex items-center gap-4">
             {activePersona === 'child' ? (
               <>
                 <button
                   onClick={() => { setActiveSubmissionReport(null); setActiveTab('arena'); }}
-                  className="hover:text-indigo-600 transition-colors font-medium"
+                  className="hover:text-yellow-600 transition-colors font-medium"
                 >
                   Exam Arena
                 </button>
                 <button
                   onClick={() => { setActiveSubmissionReport(null); setActiveTab('learning-path'); }}
-                  className="hover:text-slate-700 transition-colors"
+                  className="hover:text-stone-700 transition-colors"
                 >
                   Adaptive Path
                 </button>
                 <button
                   onClick={() => { setActiveSubmissionReport(null); setActiveTab('gamification'); }}
-                  className="hover:text-slate-700 transition-colors"
+                  className="hover:text-stone-700 transition-colors"
                 >
                   Leaderboard & Badges
                 </button>
@@ -1417,25 +1426,25 @@ export default function App() {
               <>
                 <button
                   onClick={() => { setActiveSubmissionReport(null); setActiveTab('dashboard'); }}
-                  className="hover:text-slate-700 transition-colors"
+                  className="hover:text-stone-700 transition-colors"
                 >
                   Dashboard
                 </button>
                 <button
                   onClick={() => { setActiveSubmissionReport(null); setActiveTab('ptc'); }}
-                  className="hover:text-slate-700 transition-colors"
+                  className="hover:text-stone-700 transition-colors"
                 >
                   Parent-Teacher Bridge
                 </button>
                 <button
                   onClick={() => { setActiveSubmissionReport(null); setActiveTab('blog'); }}
-                  className="hover:text-slate-700 transition-colors"
+                  className="hover:text-stone-700 transition-colors"
                 >
                   Curriculum Blog
                 </button>
                 <button
                   onClick={() => { setActiveSubmissionReport(null); setActiveTab('pricing'); }}
-                  className="hover:text-slate-700 transition-colors"
+                  className="hover:text-stone-700 transition-colors"
                 >
                   Plans
                 </button>
@@ -1473,13 +1482,13 @@ export default function App() {
 
       {/* Upgrade Subscription Modal */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-              <h2 className="text-base font-bold text-slate-900">Upgrade Subscription Plan</h2>
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-stone-200 my-8 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-stone-100">
+              <h2 className="text-base font-bold text-stone-900">Upgrade Subscription Plan</h2>
               <button
                 onClick={() => setShowUpgradeModal(false)}
-                className="px-2.5 py-1 rounded-lg border border-slate-200 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                className="px-2.5 py-1 rounded-lg border border-stone-200 text-xs font-semibold text-stone-500 hover:text-stone-800"
               >
                 ✕ Close
               </button>

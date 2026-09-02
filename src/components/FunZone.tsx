@@ -461,7 +461,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
       )}
 
       {/* Top Playful Hero Banner */}
-      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-3xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+      <div className="bg-gradient-to-r from-yellow-500 via-amber-600 to-pink-500 rounded-3xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
         {/* Background decorative geometry */}
         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-12 w-40 h-40 bg-pink-300/20 rounded-full blur-xl pointer-events-none" />
@@ -475,7 +475,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Recharge, Laugh & Play, {activeChild?.name?.split(' ')[0] || 'Champion'}!
             </h1>
-            <p className="text-xs sm:text-sm text-indigo-100 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-yellow-100 max-w-2xl leading-relaxed">
               Studying for board exams and competitive tests shouldn't be tedious. Explore funny scientist mishaps, witty puns, rapid-fire math duels, and memory challenges to refresh your focus!
             </p>
           </div>
@@ -497,9 +497,9 @@ export const FunZone: React.FC<FunZoneProps> = ({
             {onLaunchExam && (
               <button
                 onClick={onLaunchExam}
-                className="px-4 py-2.5 rounded-xl bg-white text-indigo-700 font-bold text-xs hover:bg-indigo-50 shadow-sm transition-all flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-white text-yellow-700 font-bold text-xs hover:bg-yellow-50 shadow-sm transition-all flex items-center gap-2"
               >
-                <Play className="w-4 h-4 text-emerald-600 fill-emerald-600" />
+                <Play className="w-4 h-4 text-yellow-600 fill-yellow-600" />
                 <span>Ready for 10-Mark Exam</span>
               </button>
             )}
@@ -507,7 +507,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
         </div>
 
         {/* Quick Fun Stats Strip */}
-        <div className="mt-6 pt-4 border-t border-white/20 flex flex-wrap items-center gap-4 sm:gap-8 text-xs font-semibold text-indigo-100">
+        <div className="mt-6 pt-4 border-t border-white/20 flex flex-wrap items-center gap-4 sm:gap-8 text-xs font-semibold text-yellow-100">
           <div className="flex items-center gap-1.5">
             <Flame className="w-4 h-4 text-amber-300" />
             <span>Streak: {activeChild?.streakDays || 1} Days Active</span>
@@ -527,14 +527,14 @@ export const FunZone: React.FC<FunZoneProps> = ({
       </div>
 
       {/* Main Game & Anecdote Navigation Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-2 shadow-2xs flex items-center gap-1.5 overflow-x-auto">
+      <div className="bg-white rounded-2xl border border-stone-200 p-2 shadow-2xs flex items-center gap-1.5 overflow-x-auto">
         <button
           id="btn-tab-anecdotes"
           onClick={() => { triggerSound('click'); setActiveTab('anecdote-vault'); }}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
             activeTab === 'anecdote-vault'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-yellow-400 text-stone-900 shadow-xs'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
           }`}
         >
           <span>😄</span>
@@ -546,8 +546,8 @@ export const FunZone: React.FC<FunZoneProps> = ({
           onClick={() => { triggerSound('click'); setActiveTab('speed-math'); }}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
             activeTab === 'speed-math'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-yellow-400 text-stone-900 shadow-xs'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
           }`}
         >
           <span>⚡</span>
@@ -559,8 +559,8 @@ export const FunZone: React.FC<FunZoneProps> = ({
           onClick={() => { triggerSound('click'); setActiveTab('memory-match'); }}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
             activeTab === 'memory-match'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-yellow-400 text-stone-900 shadow-xs'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
           }`}
         >
           <span>🃏</span>
@@ -572,8 +572,8 @@ export const FunZone: React.FC<FunZoneProps> = ({
           onClick={() => { triggerSound('click'); setActiveTab('word-scramble'); }}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
             activeTab === 'word-scramble'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-yellow-400 text-stone-900 shadow-xs'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
           }`}
         >
           <span>🧩</span>
@@ -585,8 +585,8 @@ export const FunZone: React.FC<FunZoneProps> = ({
           onClick={() => { triggerSound('click'); setActiveTab('particle-pop'); }}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
             activeTab === 'particle-pop'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-yellow-400 text-stone-900 shadow-xs'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
           }`}
         >
           <span>🧘</span>
@@ -610,7 +610,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
                   <span className="text-[10px] uppercase font-extrabold tracking-wider bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-md">
                     🎲 Featured Curiosity Spotlight
                   </span>
-                  <h3 className="text-lg font-bold text-slate-900 mt-1">
+                  <h3 className="text-lg font-bold text-stone-900 mt-1">
                     {FUN_ANECDOTES_AND_JOKES[randomFeatureIndex].title}
                   </h3>
                 </div>
@@ -631,7 +631,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
                   Origin: {FUN_ANECDOTES_AND_JOKES[randomFeatureIndex].characterOrOrigin}
                 </p>
               )}
-              <p className="text-sm text-slate-700 leading-relaxed">
+              <p className="text-sm text-stone-700 leading-relaxed">
                 {FUN_ANECDOTES_AND_JOKES[randomFeatureIndex].setupOrStory}
               </p>
 
@@ -640,7 +640,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
                   <div className="text-xs font-bold text-amber-900 uppercase tracking-wide mb-1 flex items-center gap-1.5">
                     <span>💡 The Hilarious Truth & Lesson:</span>
                   </div>
-                  <p className="text-sm text-slate-800 font-medium leading-relaxed">
+                  <p className="text-sm text-stone-800 font-medium leading-relaxed">
                     {FUN_ANECDOTES_AND_JOKES[randomFeatureIndex].punchlineOrTakeaway}
                   </p>
                 </div>
@@ -651,22 +651,22 @@ export const FunZone: React.FC<FunZoneProps> = ({
           {/* Filter Pills */}
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Browse:</span>
+              <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">Browse:</span>
               {(['all', 'anecdote', 'joke', 'fact', 'riddle'] as const).map(cat => (
                 <button
                   key={cat}
                   onClick={() => { triggerSound('click'); setAnecdoteCategory(cat); }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-colors ${
                     anecdoteCategory === cat
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                      ? 'bg-stone-900 text-white'
+                      : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-100'
                   }`}
                 >
                   {cat === 'all' ? 'All Stories & Jokes' : cat === 'anecdote' ? 'Historical Blunders' : cat === 'joke' ? 'School & Science Puns' : cat === 'fact' ? 'Wacky Facts' : 'Brain Riddles'}
                 </button>
               ))}
             </div>
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-stone-400 font-medium">
               Showing {filteredAnecdotes.length} entertaining insights
             </span>
           </div>
@@ -680,7 +680,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
               return (
                 <div 
                   key={item.id}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between"
+                  className="bg-white rounded-2xl border border-stone-200 p-5 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-3 mb-3">
@@ -688,33 +688,33 @@ export const FunZone: React.FC<FunZoneProps> = ({
                         <span className="text-2xl">{item.funReactionEmoji}</span>
                         <div>
                           <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                            item.category === 'anecdote' ? 'bg-purple-100 text-purple-800' :
+                            item.category === 'anecdote' ? 'bg-amber-100 text-amber-800' :
                             item.category === 'joke' ? 'bg-pink-100 text-pink-800' :
-                            item.category === 'fact' ? 'bg-emerald-100 text-emerald-800' :
-                            'bg-blue-100 text-blue-800'
+                            item.category === 'fact' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-teal-100 text-teal-800'
                           }`}>
                             {item.subject} • {item.category}
                           </span>
-                          <h4 className="font-bold text-sm text-slate-900 mt-1">{item.title}</h4>
+                          <h4 className="font-bold text-sm text-stone-900 mt-1">{item.title}</h4>
                         </div>
                       </div>
                     </div>
 
                     {item.characterOrOrigin && (
-                      <p className="text-[11px] font-medium text-slate-400 mb-2 italic">
+                      <p className="text-[11px] font-medium text-stone-400 mb-2 italic">
                         {item.characterOrOrigin}
                       </p>
                     )}
 
-                    <p className="text-xs text-slate-700 leading-relaxed mb-4">
+                    <p className="text-xs text-stone-700 leading-relaxed mb-4">
                       {item.setupOrStory}
                     </p>
 
                     {item.punchlineOrTakeaway && (
                       <div className="mb-4">
                         {isRevealed ? (
-                          <div className="p-3 bg-indigo-50/80 rounded-xl border border-indigo-100 text-xs text-indigo-950 font-medium leading-relaxed animate-in fade-in duration-200">
-                            <span className="font-bold text-indigo-700 block mb-1">
+                          <div className="p-3 bg-yellow-50/80 rounded-xl border border-yellow-200 text-xs text-yellow-950 font-medium leading-relaxed animate-in fade-in duration-200">
+                            <span className="font-bold text-yellow-700 block mb-1">
                               {item.category === 'joke' ? 'Punchline:' : item.category === 'riddle' ? 'Answer:' : 'The Takeaway:'}
                             </span>
                             {item.punchlineOrTakeaway}
@@ -722,9 +722,9 @@ export const FunZone: React.FC<FunZoneProps> = ({
                         ) : (
                           <button
                             onClick={() => handleTogglePunchline(item.id)}
-                            className="w-full py-2 px-3 rounded-xl border border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                            className="w-full py-2 px-3 rounded-xl border border-dashed border-yellow-300 bg-yellow-50/50 hover:bg-yellow-100 text-yellow-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                           >
-                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                            <Sparkles className="w-3.5 h-3.5 text-yellow-600" />
                             <span>
                               {item.category === 'joke' ? 'Tap to Reveal Punchline (+5 XP)' : item.category === 'riddle' ? 'Tap to Reveal Riddle Answer' : 'Tap to Read Full Story'}
                             </span>
@@ -734,10 +734,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
                     )}
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                  <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-400">
                     <button
                       onClick={() => handleLikeAnecdote(item.id, item.likesCount)}
-                      className="flex items-center gap-1.5 text-slate-500 hover:text-red-500 transition-colors font-medium"
+                      className="flex items-center gap-1.5 text-stone-500 hover:text-red-500 transition-colors font-medium"
                     >
                       <Heart className="w-3.5 h-3.5 fill-red-100 text-red-500" />
                       <span>{likes} Laughs</span>
@@ -745,7 +745,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
 
                     <button
                       onClick={() => handleTogglePunchline(item.id)}
-                      className="text-indigo-600 hover:text-indigo-800 font-semibold"
+                      className="text-yellow-600 hover:text-yellow-800 font-semibold"
                     >
                       {isRevealed ? 'Hide' : 'Expand'}
                     </button>
@@ -761,20 +761,20 @@ export const FunZone: React.FC<FunZoneProps> = ({
       {/* VIEW 2: SPEED MATH LIGHTNING DUEL */}
       {/* ============================================================ */}
       {activeTab === 'speed-math' && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-2xl">⚡</span>
-                <h2 className="text-xl font-bold text-slate-900">Speed Math Lightning Sprint</h2>
+                <h2 className="text-xl font-bold text-stone-900">Speed Math Lightning Sprint</h2>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-stone-500 mt-0.5">
                 Solve as many rapid-fire mental arithmetic questions as you can in 30 seconds!
               </p>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400 uppercase">Tier:</span>
+              <span className="text-xs font-bold text-stone-400 uppercase">Tier:</span>
               {(['junior', 'standard', 'genius'] as const).map(tier => (
                 <button
                   key={tier}
@@ -782,8 +782,8 @@ export const FunZone: React.FC<FunZoneProps> = ({
                   onClick={() => { triggerSound('click'); setMathLevel(tier); }}
                   className={`px-3 py-1 rounded-xl text-xs font-bold capitalize transition-colors ${
                     mathLevel === tier
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50'
+                      ? 'bg-yellow-400 text-stone-900'
+                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200 disabled:opacity-50'
                   }`}
                 >
                   {tier}
@@ -794,22 +794,22 @@ export const FunZone: React.FC<FunZoneProps> = ({
 
           {!mathGameActive && mathTimeLeft === 30 && (
             <div className="text-center py-12 space-y-6 max-w-md mx-auto">
-              <div className="w-20 h-20 rounded-3xl bg-indigo-50 border-2 border-indigo-200 text-indigo-600 flex items-center justify-center text-4xl mx-auto shadow-xs animate-bounce">
+              <div className="w-20 h-20 rounded-3xl bg-yellow-50 border-2 border-yellow-300 text-yellow-600 flex items-center justify-center text-4xl mx-auto shadow-xs animate-bounce">
                 ⏱️
               </div>
               <div className="space-y-2">
-                <h3 className="text-lg font-bold text-slate-900">Ready to Fire Up Your Neurons?</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <h3 className="text-lg font-bold text-stone-900">Ready to Fire Up Your Neurons?</h3>
+                <p className="text-xs text-stone-500 leading-relaxed">
                   Mental math speeds up calculation accuracy for Physics, Chemistry numericals, and Mathematics board exams.
                 </p>
               </div>
 
-              <div className="flex items-center justify-center gap-6 py-2 text-xs font-semibold text-slate-600 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-center gap-6 py-2 text-xs font-semibold text-stone-600 bg-stone-50 rounded-2xl border border-stone-100">
                 <div>
-                  <span className="block text-base font-bold text-indigo-600">30s</span>
+                  <span className="block text-base font-bold text-yellow-600">30s</span>
                   <span>Timer Sprint</span>
                 </div>
-                <div className="h-8 w-[1px] bg-slate-200" />
+                <div className="h-8 w-[1px] bg-stone-200" />
                 <div>
                   <span className="block text-base font-bold text-amber-500">+{mathHighScore}</span>
                   <span>High Score Record</span>
@@ -819,7 +819,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
               <button
                 id="btn-start-math-sprint"
                 onClick={startMathGame}
-                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-sm shadow-md transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-yellow-400 hover:bg-yellow-500 text-stone-900 font-bold rounded-2xl text-sm shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <Play className="w-4 h-4 fill-white" />
                 <span>Start 30-Second Math Blitz</span>
@@ -830,13 +830,13 @@ export const FunZone: React.FC<FunZoneProps> = ({
           {mathGameActive && currentMathProblem && (
             <div className="space-y-6 max-w-lg mx-auto py-4">
               {/* Header Bar during game */}
-              <div className="flex items-center justify-between bg-slate-900 text-white px-5 py-3 rounded-2xl">
+              <div className="flex items-center justify-between bg-stone-900 text-white px-5 py-3 rounded-2xl">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-amber-400" />
                   <span className="text-lg font-mono font-bold">{mathTimeLeft}s</span>
                 </div>
                 <div className="flex items-center gap-4 text-xs font-bold">
-                  <span className="text-emerald-400">Score: {mathScore}</span>
+                  <span className="text-yellow-400">Score: {mathScore}</span>
                   <span className="text-amber-300 flex items-center gap-1">
                     <Flame className="w-3.5 h-3.5" /> Streak: {mathStreak}
                   </span>
@@ -845,16 +845,16 @@ export const FunZone: React.FC<FunZoneProps> = ({
 
               {/* Problem Card */}
               <div className={`p-8 rounded-3xl text-center border-2 transition-all ${
-                mathFeedback === 'correct' ? 'bg-emerald-50 border-emerald-400' :
+                mathFeedback === 'correct' ? 'bg-yellow-50 border-yellow-400' :
                 mathFeedback === 'wrong' ? 'bg-red-50 border-red-400' :
-                'bg-slate-50 border-slate-200'
+                'bg-stone-50 border-stone-200'
               }`}>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Calculate Rapidly:</span>
-                <div className="text-4xl sm:text-5xl font-mono font-extrabold text-slate-900 my-4 tracking-tight">
+                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">Calculate Rapidly:</span>
+                <div className="text-4xl sm:text-5xl font-mono font-extrabold text-stone-900 my-4 tracking-tight">
                   {currentMathProblem.num1} {currentMathProblem.operation} {currentMathProblem.num2} = ?
                 </div>
                 {mathFeedback === 'correct' && (
-                  <span className="text-xs font-bold text-emerald-600 animate-in zoom-in-50">✨ Brilliant! +1 Point</span>
+                  <span className="text-xs font-bold text-yellow-600 animate-in zoom-in-50">✨ Brilliant! +1 Point</span>
                 )}
                 {mathFeedback === 'wrong' && (
                   <span className="text-xs font-bold text-red-600 animate-in zoom-in-50">❌ Oops, try again!</span>
@@ -867,7 +867,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
                   <button
                     key={i}
                     onClick={() => handleMathAnswer(opt)}
-                    className="py-4 px-6 rounded-2xl bg-white border-2 border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 text-slate-900 font-mono font-bold text-xl sm:text-2xl shadow-xs transition-all active:scale-95"
+                    className="py-4 px-6 rounded-2xl bg-white border-2 border-stone-200 hover:border-yellow-500 hover:bg-yellow-50/50 text-stone-900 font-mono font-bold text-xl sm:text-2xl shadow-xs transition-all active:scale-95"
                   >
                     {opt}
                   </button>
@@ -882,27 +882,27 @@ export const FunZone: React.FC<FunZoneProps> = ({
                 🏆
               </div>
               <div className="space-y-1">
-                <h3 className="text-2xl font-black text-slate-900">Sprint Completed!</h3>
-                <p className="text-sm text-slate-500">
-                  You scored <span className="font-bold text-indigo-600 text-base">{mathScore} correct calculations</span> in 30 seconds!
+                <h3 className="text-2xl font-black text-stone-900">Sprint Completed!</h3>
+                <p className="text-sm text-stone-500">
+                  You scored <span className="font-bold text-yellow-600 text-base">{mathScore} correct calculations</span> in 30 seconds!
                 </p>
               </div>
 
-              <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-xs text-indigo-900 font-medium">
+              <div className="p-4 bg-yellow-50 rounded-2xl border border-yellow-200 text-xs text-yellow-900 font-medium">
                 🎯 {mathScore >= 10 ? 'Phenomenal speed! You are at Olympiad-grade mental calculation velocity.' : 'Great workout! Regular 30-sec math sprints boost exam arithmetic reflexes.'}
               </div>
 
               <div className="flex gap-3">
                 <button
                   onClick={startMathGame}
-                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xs"
+                  className="flex-1 py-3 bg-yellow-400 hover:bg-yellow-500 text-stone-900 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xs"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>Play Again</span>
                 </button>
                 <button
                   onClick={() => { triggerSound('click'); setActiveTab('anecdote-vault'); }}
-                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs"
+                  className="px-4 py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-2xl text-xs"
                 >
                   Read Jokes
                 </button>
@@ -916,29 +916,29 @@ export const FunZone: React.FC<FunZoneProps> = ({
       {/* VIEW 3: CONCEPT MEMORY LAB FLIP */}
       {/* ============================================================ */}
       {activeTab === 'memory-match' && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-2xl">🃏</span>
-                <h2 className="text-xl font-bold text-slate-900">Science & Formula Memory Match</h2>
+                <h2 className="text-xl font-bold text-stone-900">Science & Formula Memory Match</h2>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-stone-500 mt-0.5">
                 Flip and pair scientific laws, chemical formulas, and core physics concepts together.
               </p>
             </div>
 
-            <div className="flex items-center gap-4 text-xs font-bold text-slate-600">
-              <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl">
-                <Clock className="w-3.5 h-3.5 text-indigo-600" />
+            <div className="flex items-center gap-4 text-xs font-bold text-stone-600">
+              <div className="flex items-center gap-1.5 bg-stone-100 px-3 py-1.5 rounded-xl">
+                <Clock className="w-3.5 h-3.5 text-yellow-600" />
                 <span>Time: {memoryElapsedSecs}s</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl">
+              <div className="flex items-center gap-1.5 bg-stone-100 px-3 py-1.5 rounded-xl">
                 <span>Moves: {memoryMoves}</span>
               </div>
               <button
                 onClick={startMemoryGame}
-                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-500"
+                className="p-1.5 rounded-lg border border-stone-200 hover:bg-stone-100 text-stone-500"
                 title="Restart Game"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -948,23 +948,23 @@ export const FunZone: React.FC<FunZoneProps> = ({
 
           {memoryGameWon ? (
             <div className="text-center py-12 space-y-6 max-w-md mx-auto animate-in zoom-in-95">
-              <div className="w-20 h-20 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-4xl mx-auto shadow-xs">
+              <div className="w-20 h-20 rounded-3xl bg-yellow-100 text-yellow-600 flex items-center justify-center text-4xl mx-auto shadow-xs">
                 🌟
               </div>
               <div className="space-y-1">
-                <h3 className="text-2xl font-black text-slate-900">All Formulas Paired!</h3>
-                <p className="text-xs text-slate-500">
-                  Completed in <span className="font-bold text-slate-900">{memoryElapsedSecs} seconds</span> and <span className="font-bold text-slate-900">{memoryMoves} moves</span>.
+                <h3 className="text-2xl font-black text-stone-900">All Formulas Paired!</h3>
+                <p className="text-xs text-stone-500">
+                  Completed in <span className="font-bold text-stone-900">{memoryElapsedSecs} seconds</span> and <span className="font-bold text-stone-900">{memoryMoves} moves</span>.
                 </p>
               </div>
 
-              <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-xs text-emerald-900 font-medium">
+              <div className="p-4 bg-yellow-50 rounded-2xl border border-yellow-200 text-xs text-yellow-900 font-medium">
                 ⚡ +40 AcuPoints (XP) added to your knowledge score!
               </div>
 
               <button
                 onClick={startMemoryGame}
-                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xs"
+                className="w-full py-3.5 bg-yellow-400 hover:bg-yellow-500 text-stone-900 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xs"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Play Another Round</span>
@@ -982,10 +982,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
                     onClick={() => handleCardClick(idx)}
                     className={`h-28 sm:h-32 rounded-2xl border-2 flex flex-col items-center justify-center p-2 text-center cursor-pointer transition-all duration-300 transform select-none ${
                       isMatched
-                        ? 'bg-emerald-50 border-emerald-400 text-emerald-950 opacity-90 scale-95'
+                        ? 'bg-yellow-50 border-yellow-400 text-yellow-950 opacity-90 scale-95'
                         : isFlipped
                         ? `${card.color} shadow-sm scale-100`
-                        : 'bg-indigo-600 border-indigo-700 hover:bg-indigo-700 text-white shadow-2xs hover:scale-102'
+                        : 'bg-yellow-400 border-yellow-700 hover:bg-yellow-700 text-white shadow-2xs hover:scale-102'
                     }`}
                   >
                     {isFlipped ? (
@@ -1002,7 +1002,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
                       <div className="space-y-1">
                         <span className="text-2xl opacity-70">🔬</span>
                         <span className="text-[10px] font-bold tracking-wider opacity-80 uppercase block">
-                          AcuGrade
+                          SahajPath
                         </span>
                       </div>
                     )}
@@ -1018,23 +1018,23 @@ export const FunZone: React.FC<FunZoneProps> = ({
       {/* VIEW 4: SCIENCE MYSTERY WORD SCRAMBLE */}
       {/* ============================================================ */}
       {activeTab === 'word-scramble' && currentScramble && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-2xl">🧩</span>
-                <h2 className="text-xl font-bold text-slate-900">Science Mystery Word Scramble</h2>
+                <h2 className="text-xl font-bold text-stone-900">Science Mystery Word Scramble</h2>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-stone-500 mt-0.5">
                 Tap the scrambled letter tiles in the correct order to decode the scientific keyword!
               </p>
             </div>
 
             <div className="flex items-center gap-3 text-xs font-bold">
-              <span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-xl border border-purple-200">
+              <span className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-xl border border-amber-200">
                 Word {scrambleIndex + 1} of {SCRAMBLE_WORDS.length}
               </span>
-              <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200">
+              <span className="px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-xl border border-yellow-300">
                 Solved: {scrambleTotalSolvedCount}
               </span>
             </div>
@@ -1042,21 +1042,21 @@ export const FunZone: React.FC<FunZoneProps> = ({
 
           <div className="max-w-xl mx-auto space-y-6 py-4 text-center">
             {/* Clue and category */}
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2">
+            <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200 text-left space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">
+                <span className="text-[10px] uppercase font-bold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded">
                   {currentScramble.category} Clue
                 </span>
                 <button
                   onClick={() => { triggerSound('click'); setScrambleHintVisible(!scrambleHintVisible); }}
-                  className="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1"
+                  className="text-xs text-yellow-600 font-semibold hover:underline flex items-center gap-1"
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
                   <span>{scrambleHintVisible ? 'Hide Clue' : 'Show Clue'}</span>
                 </button>
               </div>
 
-              <p className="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
+              <p className="text-xs sm:text-sm text-stone-800 font-medium leading-relaxed">
                 💡 "{currentScramble.hint}"
               </p>
             </div>
@@ -1070,10 +1070,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
                     key={idx}
                     className={`w-12 h-14 rounded-2xl border-2 flex items-center justify-center font-mono font-extrabold text-2xl transition-all ${
                       scrambleSolved
-                        ? 'bg-emerald-100 border-emerald-400 text-emerald-900'
+                        ? 'bg-yellow-100 border-yellow-400 text-yellow-900'
                         : letter
-                        ? 'bg-indigo-50 border-indigo-400 text-indigo-900 shadow-xs'
-                        : 'bg-white border-dashed border-slate-300 text-slate-300'
+                        ? 'bg-yellow-50 border-yellow-400 text-yellow-900 shadow-xs'
+                        : 'bg-white border-dashed border-stone-300 text-stone-300'
                     }`}
                   >
                     {letter || ''}
@@ -1085,7 +1085,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
             {/* Scramble Letter Tiles */}
             {!scrambleSolved && (
               <div className="space-y-4">
-                <p className="text-xs text-slate-400 font-medium">Tap letters to place in order:</p>
+                <p className="text-xs text-stone-400 font-medium">Tap letters to place in order:</p>
                 <div className="flex items-center justify-center gap-2.5 flex-wrap">
                   {scrambleAvailableTiles.map((tile, i) => (
                     <button
@@ -1094,8 +1094,8 @@ export const FunZone: React.FC<FunZoneProps> = ({
                       onClick={() => handleTileClick(i)}
                       className={`w-12 h-12 rounded-2xl font-mono font-bold text-xl border-2 shadow-2xs transition-all active:scale-90 ${
                         tile.used
-                          ? 'opacity-25 bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                          : 'bg-white border-slate-300 hover:border-indigo-600 hover:bg-indigo-50 text-slate-900'
+                          ? 'opacity-25 bg-stone-100 border-stone-200 text-stone-400 cursor-not-allowed'
+                          : 'bg-white border-stone-300 hover:border-yellow-400 hover:bg-yellow-50 text-stone-900'
                       }`}
                     >
                       {tile.letter}
@@ -1106,7 +1106,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
                 <div className="flex justify-center gap-3 pt-2">
                   <button
                     onClick={handleResetScrambleAnswer}
-                    className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 text-xs font-bold transition-colors"
+                    className="px-4 py-2 rounded-xl border border-stone-200 hover:bg-stone-100 text-stone-600 text-xs font-bold transition-colors"
                   >
                     Clear & Retry
                   </button>
@@ -1116,20 +1116,20 @@ export const FunZone: React.FC<FunZoneProps> = ({
 
             {/* Solved Celebration Box */}
             {scrambleSolved && (
-              <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-3xl text-center space-y-4 animate-in zoom-in-95">
+              <div className="p-6 bg-yellow-50 border border-yellow-300 rounded-3xl text-center space-y-4 animate-in zoom-in-95">
                 <div className="text-3xl">🎉</div>
                 <div>
-                  <h4 className="text-base font-extrabold text-emerald-950">
+                  <h4 className="text-base font-extrabold text-yellow-950">
                     Correct! The mystery word is {currentScramble.solution}!
                   </h4>
-                  <p className="text-xs text-emerald-800 mt-2 leading-relaxed max-w-md mx-auto">
+                  <p className="text-xs text-yellow-800 mt-2 leading-relaxed max-w-md mx-auto">
                     🧬 <span className="font-bold">Mind-Blowing Fact:</span> {currentScramble.funFact}
                   </p>
                 </div>
 
                 <button
                   onClick={handleNextScramble}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs shadow-xs flex items-center justify-center gap-2 mx-auto transition-colors"
+                  className="px-6 py-3 bg-yellow-400 hover:bg-yellow-500 text-stone-900 font-bold rounded-2xl text-xs shadow-xs flex items-center justify-center gap-2 mx-auto transition-colors"
                 >
                   <span>Next Mystery Word (+25 XP)</span>
                   <ChevronRight className="w-4 h-4" />
@@ -1144,13 +1144,13 @@ export const FunZone: React.FC<FunZoneProps> = ({
       {/* VIEW 5: 2-MINUTE MIND RESET & GUIDED BREATHING */}
       {/* ============================================================ */}
       {activeTab === 'particle-pop' && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6 text-center">
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-8 shadow-xs space-y-6 text-center">
           <div className="max-w-md mx-auto space-y-2">
             <div className="w-12 h-12 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center text-2xl mx-auto shadow-xs">
               🧘
             </div>
-            <h2 className="text-xl font-bold text-slate-900">2-Minute Mind Reset & Box Breathing</h2>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <h2 className="text-xl font-bold text-stone-900">2-Minute Mind Reset & Box Breathing</h2>
+            <p className="text-xs text-stone-500 leading-relaxed">
               Feeling test anxiety or tired from long problem solving? Follow this calming 4-4-4-4 rhythm to oxygenate your brain and enter a high-focus flow state.
             </p>
           </div>
@@ -1164,15 +1164,15 @@ export const FunZone: React.FC<FunZoneProps> = ({
                     ? breathPhase === 'Inhale'
                       ? 'w-56 h-56 bg-teal-200/60 scale-110'
                       : breathPhase === 'Hold'
-                      ? 'w-56 h-56 bg-indigo-200/60 scale-105'
+                      ? 'w-56 h-56 bg-yellow-200/60 scale-105'
                       : breathPhase === 'Exhale'
-                      ? 'w-40 h-40 bg-purple-200/60 scale-90'
+                      ? 'w-40 h-40 bg-amber-200/60 scale-90'
                       : 'w-40 h-40 bg-teal-100/60 scale-95'
-                    : 'w-44 h-44 bg-slate-100'
+                    : 'w-44 h-44 bg-stone-100'
                 }`}
               />
 
-              <div className="relative z-10 w-40 h-40 rounded-full bg-gradient-to-tr from-teal-500 to-indigo-600 text-white flex flex-col items-center justify-center shadow-lg">
+              <div className="relative z-10 w-40 h-40 rounded-full bg-gradient-to-tr from-teal-500 to-yellow-500 text-white flex flex-col items-center justify-center shadow-lg">
                 {breathActive ? (
                   <>
                     <span className="text-sm font-bold uppercase tracking-widest text-teal-100">{breathPhase}</span>
@@ -1193,14 +1193,14 @@ export const FunZone: React.FC<FunZoneProps> = ({
                 onClick={toggleBreathing}
                 className={`px-8 py-3.5 rounded-2xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 mx-auto ${
                   breathActive
-                    ? 'bg-slate-900 text-white hover:bg-slate-800'
+                    ? 'bg-stone-900 text-white hover:bg-stone-800'
                     : 'bg-teal-600 hover:bg-teal-700 text-white'
                 }`}
               >
                 {breathActive ? 'Pause Mind Reset' : 'Start 2-Minute Breathing Exercise'}
               </button>
 
-              <p className="text-[11px] text-slate-400 italic">
+              <p className="text-[11px] text-stone-400 italic">
                 Scientific studies show 2 minutes of paced breathing decreases cortisol and improves exam recall by 18%.
               </p>
             </div>
