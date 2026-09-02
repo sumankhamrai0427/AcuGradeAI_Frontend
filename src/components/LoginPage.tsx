@@ -169,7 +169,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </div>
           <div>
             <span className="text-xl font-black text-slate-900 tracking-tight font-display">AcuGrade AI</span>
-            <p className="text-xs text-slate-500 font-medium">Precision AI Exam Diagnostics</p>
+            <p className="text-xs text-slate-500 font-medium">Precision Exam Diagnostics</p>
           </div>
         </div>
 
