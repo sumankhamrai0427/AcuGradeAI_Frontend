@@ -1,1 +1,30 @@
 @import "tailwindcss";
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  header, nav, aside, .no-print, button, #desktop-sidebar-toggle {
+    display: none !important;
+  }
+  .print-only-dossier {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    z-index: 99999 !important;
+  }
+  .shadow-xs, .shadow-sm, .shadow-md, .shadow-2xs, .shadow-2xl {
+    box-shadow: none !important;
+  }
+  @page {
+    margin: 1cm;
+    size: A4 portrait;
+  }
+}

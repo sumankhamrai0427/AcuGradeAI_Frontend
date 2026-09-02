@@ -31,6 +31,7 @@ import { examApi } from '../lib/api';
 interface ExamArenaProps {
   parentAccount: ParentAccount;
   activeChildId: string | null;
+  activePersona?: 'parent' | 'child';
   onChildSelect: (childId: string) => void;
   onExamComplete: (submission: ExamSubmission) => void;
   onOpenUpgradeModal: () => void;
@@ -52,11 +53,13 @@ const SUBJECTS: Subject[] = [
 export const ExamArena: React.FC<ExamArenaProps> = ({
   parentAccount,
   activeChildId,
+  activePersona = 'parent',
   onChildSelect,
   onExamComplete,
   onOpenUpgradeModal,
   onResetDailyQuota,
 }) => {
+  const isStudentPersona = activePersona === 'child';
   // Current active child
   const activeChild = parentAccount.children.find((c) => c.id === activeChildId) || parentAccount.children[0];
 
@@ -598,51 +601,91 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Board Selector */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              1. Target Curriculum / Exam Board
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {BOARDS.map((b) => (
-                <button
-                  key={b}
-                  id={`board-btn-${b}`}
-                  type="button"
-                  onClick={() => setSelectedBoard(b)}
-                  className={`py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all ${selectedBoard === b
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                >
-                  {b}
-                </button>
-              ))}
+          {isStudentPersona ? (
+            /* Student View: Auto-locked Enrolled Syllabus Banner (Zero friction!) */
+            <div className="md:col-span-2 bg-gradient-to-r from-indigo-50/90 via-purple-50/70 to-indigo-50/90 rounded-2xl p-4 sm:p-5 border border-indigo-100/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-xs border border-indigo-100 shrink-0">
+                  {activeChild?.avatar || '🎓'}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-slate-900">{activeChild?.name}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-600 text-white">
+                      Enrolled Student
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1 flex items-center gap-2 flex-wrap">
+                    <span>Curriculum Board: <strong className="text-indigo-950 font-bold">{selectedBoard}</strong></span>
+                    <span className="text-slate-300">•</span>
+                    <span>Grade / Class: <strong className="text-indigo-950 font-bold">{selectedGrade}</strong></span>
+                  </p>
+                </div>
+              </div>
+              <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end justify-between gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-indigo-100">
+                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  ✓ Ready for Practice
+                </span>
+                <span className="text-[10px] text-slate-400">Adaptive 10-Mark Challenge</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Parent View: Full Cross-Board & Syllabus Calibration Freedom */
+            <>
+              <div className="md:col-span-2 p-3 bg-amber-50/80 rounded-xl border border-amber-200/80 text-xs text-amber-950 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  <strong>Parent Cross-Board Calibration:</strong> You have full freedom to benchmark <strong>{activeChild?.name}</strong> against other exam boards (e.g. ICSE, Cambridge, IIT-JEE Foundation) to test cross-syllabus readiness.
+                </span>
+              </div>
 
-          {/* Grade / Class Selector */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              2. Student Class / Grade (Class 5 to 12)
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {GRADES.map((g) => (
-                <button
-                  key={g}
-                  id={`grade-btn-${g.replace(/\s+/g, '')}`}
-                  type="button"
-                  onClick={() => setSelectedGrade(g)}
-                  className={`py-2.5 px-2 rounded-xl border text-xs font-semibold transition-all ${selectedGrade === g
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                >
-                  {g}
-                </button>
-              ))}
-            </div>
-          </div>
+              {/* Board Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  1. Target Curriculum / Exam Board
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {BOARDS.map((b) => (
+                    <button
+                      key={b}
+                      id={`board-btn-${b}`}
+                      type="button"
+                      onClick={() => setSelectedBoard(b)}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all ${selectedBoard === b
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        }`}
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Grade / Class Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  2. Student Class / Grade (Class 5 to 12)
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {GRADES.map((g) => (
+                    <button
+                      key={g}
+                      id={`grade-btn-${g.replace(/\s+/g, '')}`}
+                      type="button"
+                      onClick={() => setSelectedGrade(g)}
+                      className={`py-2.5 px-2 rounded-xl border text-xs font-semibold transition-all ${selectedGrade === g
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Subject Selector */}
           <div>

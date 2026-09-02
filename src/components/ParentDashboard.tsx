@@ -1,27 +1,27 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  ParentAccount, 
-  ChildAccount, 
-  Board, 
-  ClassGrade, 
+import {
+  ParentAccount,
+  ChildAccount,
+  Board,
+  ClassGrade,
   Subject,
   ExamDifficulty,
-  ExamSubmission 
+  ExamSubmission
 } from '../types';
-import { 
-  Users, 
-  Plus, 
-  GraduationCap, 
-  Award, 
-  TrendingUp, 
-  Calendar, 
-  CheckCircle2, 
-  Sparkles, 
-  Flame, 
-  Play, 
-  FileText, 
-  Edit3, 
-  Key, 
+import {
+  Users,
+  Plus,
+  GraduationCap,
+  Award,
+  TrendingUp,
+  Calendar,
+  CheckCircle2,
+  Sparkles,
+  Flame,
+  Play,
+  FileText,
+  Edit3,
+  Key,
   School,
   ExternalLink,
   ChevronRight,
@@ -45,7 +45,7 @@ interface ParentDashboardProps {
 
 const BOARDS: Board[] = ['CBSE', 'ICSE', 'ISC', 'UK-Cambridge', 'NCERT', 'NEET', 'IIT'];
 const GRADES: ClassGrade[] = [
-  'Class 5', 'Class 6', 'Class 7', 'Class 8', 
+  'Class 5', 'Class 6', 'Class 7', 'Class 8',
   'Class 9', 'Class 10', 'Class 11', 'Class 12'
 ];
 
@@ -62,7 +62,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 }) => {
   const [selectedChildForEdit, setSelectedChildForEdit] = useState<ChildAccount | null>(null);
   const [editFormData, setEditFormData] = useState<Partial<ChildAccount>>({});
-  const [timeframe, setTimeframe] = useState<'week' | 'month'>('month');
+  const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('day');
 
   // Active child resolution
   const activeChild = useMemo(() => {
@@ -72,7 +72,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   // Summary Metrics (100% Dynamic from child data & exam history)
   const totalChildren = parentAccount.children.length;
   const totalFamilyExams = examHistory.length;
-  
+
   const avgScoreNum = parentAccount.children.length > 0
     ? (parentAccount.children.reduce((acc, c) => acc + (c.averageScore || 0), 0) / totalChildren)
     : 0;
@@ -121,10 +121,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   const learningSpeedTier = avgScoreNum >= 8
     ? 'Accelerated'
     : avgScoreNum >= 6
-    ? 'Steady'
-    : totalFamilyExams > 0
-    ? 'Emerging'
-    : 'Calibrating';
+      ? 'Steady'
+      : totalFamilyExams > 0
+        ? 'Emerging'
+        : 'Calibrating';
 
   const benchmarkSubtitle = totalFamilyExams > 0
     ? `${avgScoreNum >= 8 ? 'Top 10%' : avgScoreNum >= 6 ? 'Top 25%' : 'Foundation'} benchmark in ${targetBoard}`
@@ -133,23 +133,32 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   // Helper: Case-insensitive semantic classifier to map concepts/topics to their accurate Academic Subjects
   const resolveSubjectForTopic = (topicName: string, fallbackSubject: Subject = 'Mathematics'): Subject => {
     const t = (topicName || '').toLowerCase().trim();
-    if (t.includes('english') || t.includes('grammar') || t.includes('reading') || t.includes('comprehension') || t.includes('syntax') || t.includes('vocabulary') || t.includes('composition') || t.includes('literature') || t.includes('prose') || t.includes('poetry')) {
+    if (t.includes('computer') || t.includes('code') || t.includes('coding') || t.includes('python') || t.includes('java') || t.includes('algorithm') || t.includes('software') || t.includes('database') || t.includes('sql') || t.includes('programming') || t.includes('cyber') || t.includes('network') || t.includes('binary')) {
+      return 'Computer Science';
+    }
+    if (t.includes('history') || t.includes('civic') || t.includes('geography') || t.includes('political') || t.includes('social') || t.includes('economics') || t.includes('resource') || t.includes('constitution') || t.includes('heritage')) {
+      return 'Social Studies';
+    }
+    if (t.includes('english') || t.includes('grammar') || t.includes('reading') || t.includes('comprehension') || t.includes('syntax') || t.includes('vocabulary') || t.includes('composition') || t.includes('literature') || t.includes('prose') || t.includes('poetry') || t.includes('essay')) {
       return 'English';
     }
-    if (t.includes('optic') || t.includes('light') || t.includes('electric') || t.includes('circuit') || t.includes('magnetic') || t.includes('motion') || t.includes('force') || t.includes('gravity') || t.includes('physics') || t.includes('energy') || t.includes('wave') || t.includes('sound') || t.includes('thermo')) {
+    if (t.includes('optic') || t.includes('light') || t.includes('electric') || t.includes('circuit') || t.includes('magnetic') || t.includes('motion') || t.includes('force') || t.includes('gravity') || t.includes('physics') || t.includes('energy') || t.includes('wave') || t.includes('sound') || t.includes('thermo') || t.includes('current') || t.includes('ray')) {
       return 'Physics';
     }
-    if (t.includes('chemical') || t.includes('reaction') || t.includes('acid') || t.includes('base') || t.includes('salt') || t.includes('carbon') || t.includes('periodic') || t.includes('metal') || t.includes('molecule') || t.includes('atom') || t.includes('chemistry') || t.includes('compound')) {
+    if (t.includes('chemical') || t.includes('reaction') || t.includes('acid') || t.includes('base') || t.includes('salt') || t.includes('carbon') || t.includes('periodic') || t.includes('metal') || t.includes('molecule') || t.includes('atom') || t.includes('chemistry') || t.includes('compound') || t.includes('bonding') || t.includes('stoichiometry')) {
       return 'Chemistry';
     }
-    if (t.includes('life') || t.includes('process') || t.includes('heredity') || t.includes('evolution') || t.includes('cell') || t.includes('bio') || t.includes('organism') || t.includes('reproduction') || t.includes('plant') || t.includes('animal') || t.includes('ecology')) {
+    if (t.includes('life') || t.includes('process') || t.includes('heredity') || t.includes('evolution') || t.includes('cell') || t.includes('bio') || t.includes('organism') || t.includes('reproduction') || t.includes('plant') || t.includes('animal') || t.includes('ecology') || t.includes('respiration') || t.includes('photosynthesis')) {
       return 'Biology';
     }
-    if (t.includes('pattern') || t.includes('series') || t.includes('logical') || t.includes('reasoning') || t.includes('syllogism') || t.includes('puzzle') || t.includes('spatial') || t.includes('coding') || t.includes('analogy')) {
+    if (t.includes('pattern') || t.includes('series') || t.includes('logical') || t.includes('reasoning') || t.includes('syllogism') || t.includes('puzzle') || t.includes('spatial') || t.includes('analogy') || t.includes('blood relation') || t.includes('direction sense')) {
       return 'Logical Reasoning';
     }
-    if (t.includes('quadratic') || t.includes('polynomial') || t.includes('equation') || t.includes('trig') || t.includes('arithmetic') || t.includes('algebra') || t.includes('math') || t.includes('geometry') || t.includes('triangle') || t.includes('circle') || t.includes('coordinate') || t.includes('calculus') || t.includes('number') || t.includes('sign') || t.includes('numerical')) {
+    if (t.includes('quadratic') || t.includes('polynomial') || t.includes('equation') || t.includes('trig') || t.includes('arithmetic') || t.includes('algebra') || t.includes('math') || t.includes('geometry') || t.includes('triangle') || t.includes('circle') || t.includes('coordinate') || t.includes('calculus') || t.includes('number') || t.includes('sign') || t.includes('numerical') || t.includes('fraction') || t.includes('probability') || t.includes('statistics')) {
       return 'Mathematics';
+    }
+    if (t.includes('science')) {
+      return 'Science';
     }
     return fallbackSubject;
   };
@@ -167,12 +176,38 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
     return now - 86400000;
   }, [parentAccount?.createdAt, examHistory, now]);
 
-  // Dynamic Evolutionary Progress Graph (Journey-Based from Joining Date)
+  // Dynamic Evolutionary Progress Graph (Journey-Based from Joining Date & 7-Day Sprint Rhythm)
   const graphBars = useMemo(() => {
+    const DAY_MS = 86400000;
     const WEEK_MS = 7 * 86400000;
     const MONTH_MS = 30 * 86400000;
 
-    if (timeframe === 'week') {
+    if (timeframe === 'day') {
+      // Standard Academic Week Calendar: Monday to Sunday (Mon on left -> Sun on right)
+      const nowObj = new Date(now);
+      const currentDayOfWeek = nowObj.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, ..., 6 = Sat
+      const diffToMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
+
+      const mondayMidnight = new Date(nowObj.getFullYear(), nowObj.getMonth(), nowObj.getDate() - diffToMonday, 0, 0, 0, 0).getTime();
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+      const days = [0, 1, 2, 3, 4, 5, 6].map((dayOffset) => {
+        const start = mondayMidnight + dayOffset * DAY_MS;
+        const end = start + DAY_MS;
+        return { label: dayNames[dayOffset], start, end };
+      });
+
+      return days.map(d => {
+        const matching = examHistory.filter(e => {
+          const t = new Date(e.submittedAt).getTime();
+          return t >= d.start && t < d.end;
+        });
+        const pct = matching.length > 0
+          ? Math.round((matching.reduce((acc, e) => acc + (e.marksObtained || 0), 0) / matching.length) * 10)
+          : null;
+        return { label: d.label, pct, count: matching.length };
+      });
+    } else if (timeframe === 'week') {
       const currentWeekIndex = Math.max(0, Math.floor((now - genesisTimestamp) / WEEK_MS));
       // Base week number for the 4-week window (starts at W1 for new users)
       const startWeekNumber = currentWeekIndex < 4 ? 1 : currentWeekIndex - 2;
@@ -377,23 +412,28 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                     Smart Growth Tracker
                   </span>
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">Weekly & monthly score progression across 10-mark diagnostic tests</p>
+                <p className="text-xs text-slate-400 mt-0.5">Daily, weekly & monthly score progression across 10-mark diagnostic tests</p>
               </div>
 
               <div className="flex gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-                <button 
+                <button
+                  onClick={() => setTimeframe('day')}
+                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'day' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                >
+                  Day
+                </button>
+                <button
                   onClick={() => setTimeframe('week')}
-                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${
-                    timeframe === 'week' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
-                  }`}
+                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'week' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+                    }`}
                 >
                   Week
                 </button>
-                <button 
+                <button
                   onClick={() => setTimeframe('month')}
-                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${
-                    timeframe === 'month' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-900'
-                  }`}
+                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'month' ? 'bg-indigo-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+                    }`}
                 >
                   Month
                 </button>
@@ -410,17 +450,15 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                 return (
                   <div key={bar.label} className="flex-1 flex flex-col items-center h-full justify-end group">
                     {hasData ? (
-                      <div 
-                        className={`w-full rounded-t-lg relative transition-all duration-300 ${
-                          isLatestWithData 
-                            ? 'bg-indigo-500 group-hover:bg-indigo-600 shadow-xs' 
+                      <div
+                        className={`w-full rounded-t-lg relative transition-all duration-300 ${isLatestWithData
+                            ? 'bg-indigo-500 group-hover:bg-indigo-600 shadow-xs'
                             : 'bg-indigo-200 group-hover:bg-indigo-300'
-                        }`} 
+                          }`}
                         style={{ height: `${Math.max(10, Math.min(100, scorePct as number))}%` }}
                       >
-                        <div className={`absolute -top-2 right-1/2 translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-xs flex items-center justify-center ${
-                          isLatestWithData ? 'bg-indigo-600' : 'bg-indigo-400'
-                        }`}>
+                        <div className={`absolute -top-2 right-1/2 translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-xs flex items-center justify-center ${isLatestWithData ? 'bg-indigo-600' : 'bg-indigo-400'
+                          }`}>
                           <div className="w-1.5 h-1.5 rounded-full bg-white" />
                         </div>
                       </div>
@@ -428,11 +466,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                       // Empty state for intervals without exams: flat dashed baseline (no floating dots!)
                       <div className="w-full h-1 bg-slate-100 rounded-full border-t border-dashed border-slate-200 group-hover:bg-slate-200 transition-colors mb-0.5" />
                     )}
-                    <span className={`text-[10px] mt-2 font-semibold transition-colors ${
-                      hasData 
-                        ? (isLatestWithData ? 'font-bold text-indigo-700' : 'text-slate-700') 
+                    <span className={`text-[10px] mt-2 font-semibold transition-colors ${hasData
+                        ? (isLatestWithData ? 'font-bold text-indigo-700' : 'text-slate-700')
                         : 'text-slate-300'
-                    }`}>
+                      }`}>
                       {bar.label} {hasData ? `(${scorePct}%)` : '(—)'}
                     </span>
                   </div>
@@ -480,11 +517,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                   <div
                     key={child.id}
                     id={`child-card-${child.id}`}
-                    className={`bg-white rounded-2xl border transition-all p-5 shadow-xs relative ${
-                      isChildActive
+                    className={`bg-white rounded-2xl border transition-all p-5 shadow-xs relative ${isChildActive
                         ? 'border-indigo-500 ring-2 ring-indigo-100 bg-white'
                         : 'border-slate-200 hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between gap-3 mb-3">
@@ -554,9 +590,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                               </div>
                               <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
                                 <div
-                                  className={`h-full rounded-full transition-all duration-300 ${
-                                    numPct >= 80 ? 'bg-emerald-500' : numPct >= 60 ? 'bg-amber-500' : 'bg-rose-500'
-                                  }`}
+                                  className={`h-full rounded-full transition-all duration-300 ${numPct >= 80 ? 'bg-emerald-500' : numPct >= 60 ? 'bg-amber-500' : 'bg-rose-500'
+                                    }`}
                                   style={{ width: `${numPct}%` }}
                                 />
                               </div>
@@ -574,11 +609,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                     <div className="flex items-center gap-2 pt-1">
                       <button
                         onClick={() => onChildSelect(child.id)}
-                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
-                          isChildActive
+                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${isChildActive
                             ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                             : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                        }`}
+                          }`}
                       >
                         {isChildActive ? 'Selected' : 'Select Candidate'}
                       </button>
@@ -611,22 +645,22 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                 Adaptive
               </span>
             </div>
-            
+
             <div className="space-y-2.5">
               {dynamicRecommendations.map((rec) => {
-                const isEnglish = rec.subject === 'English';
-                const isPhysics = rec.subject === 'Physics';
-                const isMath = rec.subject === 'Mathematics';
-                const subjectColorClass = isEnglish 
-                  ? 'text-purple-600' 
-                  : isPhysics 
-                  ? 'text-blue-600' 
-                  : isMath 
-                  ? 'text-indigo-600' 
-                  : 'text-amber-600';
+                const subjectColorClass =
+                  rec.subject === 'English' ? 'text-purple-600' :
+                    rec.subject === 'Physics' ? 'text-blue-600' :
+                      rec.subject === 'Chemistry' ? 'text-teal-600' :
+                        rec.subject === 'Biology' ? 'text-emerald-600' :
+                          rec.subject === 'Computer Science' ? 'text-cyan-600' :
+                            rec.subject === 'Social Studies' ? 'text-amber-700' :
+                              rec.subject === 'Logical Reasoning' ? 'text-pink-600' :
+                                rec.subject === 'Science' ? 'text-emerald-600' :
+                                  'text-indigo-600';
 
                 return (
-                  <div 
+                  <div
                     key={`${rec.subject}-${rec.topic}`}
                     onClick={() => onLaunchExamForChild(activeChildId || parentAccount.children[0]?.id)}
                     className="p-3 border border-slate-100 rounded-xl hover:border-indigo-200 hover:bg-slate-50 cursor-pointer transition-all"
@@ -650,7 +684,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
               })}
             </div>
 
-            <button 
+            <button
               onClick={() => onLaunchExamForChild(activeChildId || parentAccount.children[0]?.id)}
               className="w-full mt-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
             >
@@ -669,19 +703,18 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             <div className="space-y-3">
               {examHistory.length > 0 ? (
                 examHistory.slice(0, 4).map((sub) => (
-                  <div 
-                    key={sub.id} 
+                  <div
+                    key={sub.id}
                     onClick={() => onViewSubmissionReport(sub)}
                     className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
-                        sub.marksObtained >= 8 
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' 
-                          : sub.marksObtained >= 5 
-                          ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' 
-                          : 'bg-rose-50 text-rose-600 border border-rose-200'
-                      }`}>
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${sub.marksObtained >= 8
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          : sub.marksObtained >= 5
+                            ? 'bg-indigo-50 text-indigo-600 border border-indigo-200'
+                            : 'bg-rose-50 text-rose-600 border border-rose-200'
+                        }`}>
                         {sub.marksObtained}/10
                       </div>
                       <div className="min-w-0">

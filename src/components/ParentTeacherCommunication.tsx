@@ -20,7 +20,12 @@ import {
   Printer,
   ChevronRight,
   AlertCircle,
-  Loader2
+  Loader2,
+  Users,
+  MessageCircle,
+  X,
+  Trash2,
+  Eye
 } from 'lucide-react';
 import { 
   TeacherContact, 
@@ -63,9 +68,23 @@ export const ParentTeacherCommunication: React.FC<ParentTeacherCommunicationProp
   const [isLoadingDossiers, setIsLoadingDossiers] = useState(false);
   const [isCreatingDossier, setIsCreatingDossier] = useState(false);
   const [isSubmittingDossier, setIsSubmittingDossier] = useState(false);
-  const [dossierNotes, setDossierNotes] = useState(`Comprehensive Class ${activeChild.classGrade} Diagnostic dossier across 10-mark sprints for term review.`);
-  const [dossierRecipients, setDossierRecipients] = useState('');
+  
+  // Dynamic Dossier Form State
+  const [dossierStudentId, setDossierStudentId] = useState<string>(String(activeChild.id));
+  const selectedDossierStudent = parentAccount.children.find(c => String(c.id) === String(dossierStudentId)) || activeChild;
+  
+  const [dossierNotes, setDossierNotes] = useState(
+    `Comprehensive ${activeChild.classGrade} (${activeChild.targetBoard}) Diagnostic dossier across 10-mark sprints for term review.`
+  );
+  const [dossierRecipientsList, setDossierRecipientsList] = useState<string[]>([
+    '🏫 School Subject Teacher',
+    '👨‍🏫 Math Tutor'
+  ]);
+  const [customRecipientInput, setCustomRecipientInput] = useState('');
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [isPrintingDossier, setIsPrintingDossier] = useState<string | null>(null);
+  const [printableDossierData, setPrintableDossierData] = useState<any | null>(null);
+  const [deletingDossierId, setDeletingDossierId] = useState<string | null>(null);
 
   const [ptmSchedules, setPtmSchedules] = useState<PTMSchedule[]>([]);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
@@ -193,13 +212,6 @@ export const ParentTeacherCommunication: React.FC<ParentTeacherCommunicationProp
     }
   }, [activeTab, activeChild.id]);
 
-  // Set default dossier recipients once teachers load
-  useEffect(() => {
-    if (teachers.length > 0 && !dossierRecipients) {
-      setDossierRecipients(teachers[0].email || '');
-    }
-  }, [teachers, dossierRecipients]);
-
   const activeTeacher = teachers.find(t => t.id === selectedTeacherId) || teachers[0] || {
     id: 't-1',
     name: 'School Faculty',
@@ -246,10 +258,15 @@ export const ParentTeacherCommunication: React.FC<ParentTeacherCommunicationProp
 
     setIsSubmittingDossier(true);
     try {
+      const targetChild = parentAccount.children.find(c => String(c.id) === String(dossierStudentId)) || activeChild;
+      const finalRecipients = dossierRecipientsList.length > 0
+        ? dossierRecipientsList
+        : ['General Academic Review'];
+
       await communicationApi.createDossier({
-        studentId: activeChild.id,
+        studentId: targetChild.id,
         notes: dossierNotes,
-        recipients: dossierRecipients.split(',').map(s => s.trim()).filter(Boolean),
+        recipients: finalRecipients,
       });
       setIsCreatingDossier(false);
       await fetchDossiers();
@@ -265,6 +282,50 @@ export const ParentTeacherCommunication: React.FC<ParentTeacherCommunicationProp
     navigator.clipboard?.writeText(`${origin}/share/dossier/${token}`);
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 2000);
+  };
+
+  const handleWhatsAppShare = (dossier: SharedDossier) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://acugrade.ai';
+    const link = `${origin}/share/dossier/${dossier.shareToken}`;
+    const text = encodeURIComponent(`Hello! Here is the verified Academic Dossier and 10-mark diagnostic exam report for ${dossier.childName}:\n${link}`);
+    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+  };
+
+  const handleOpenPreview = (shareToken: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://acugrade.ai';
+    window.open(`${origin}/share/dossier/${shareToken}`, '_blank');
+  };
+
+  const handleRevokeDossier = async (dossierId: string) => {
+    if (!window.confirm('Are you sure you want to revoke and delete this academic dossier? The educator share link will immediately be deactivated.')) {
+      return;
+    }
+    try {
+      setDeletingDossierId(dossierId);
+      await communicationApi.deleteDossier(dossierId);
+      setSharedDossiers(prev => prev.filter(d => d.id !== dossierId));
+    } catch (err) {
+      console.error('Revoke dossier error:', err);
+      alert('Failed to revoke dossier. Please try again.');
+    } finally {
+      setDeletingDossierId(null);
+    }
+  };
+
+  const handlePrintDossier = async (shareToken: string) => {
+    try {
+      setIsPrintingDossier(shareToken);
+      const res = await communicationApi.getPublicDossier(shareToken);
+      setPrintableDossierData(res);
+      // Wait briefly for React to render the full dossier DOM before opening native print dialog
+      setTimeout(() => {
+        window.print();
+        setIsPrintingDossier(null);
+      }, 300);
+    } catch (err) {
+      console.error('Direct print failed:', err);
+      setIsPrintingDossier(null);
+    }
   };
 
   const handleScheduleSubmit = async (e: React.FormEvent) => {
@@ -572,74 +633,140 @@ export const ParentTeacherCommunication: React.FC<ParentTeacherCommunicationProp
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {sharedDossiers.map((dossier) => (
-              <div
-                key={dossier.id}
-                className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 uppercase">
-                      Active Dossier
-                    </span>
-                    <h3 className="font-bold text-sm text-slate-900 mt-1.5">
-                      Candidate: {dossier.childName}
-                    </h3>
-                    <p className="text-xs text-slate-400">
-                      Created by {dossier.parentName} • {new Date(dossier.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  <span className="font-mono text-xs font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200">
-                    {dossier.shareToken}
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  {dossier.notes}
-                </p>
-
-                <div className="text-xs text-slate-500 space-y-1">
-                  <span className="font-bold text-slate-700 block">Authorized Recipients:</span>
-                  <div className="flex gap-1 flex-wrap">
-                    {dossier.recipients.map((rec, i) => (
-                      <span key={i} className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px]">
-                        {rec}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => handleCopyLink(dossier.shareToken)}
-                    className="flex-1 py-1.5 px-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center justify-center gap-1.5"
-                  >
-                    {copiedToken === dossier.shareToken ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-emerald-600">Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Copy Secure URL</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => window.print()}
-                    className="py-1.5 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Print PDF</span>
-                  </button>
-                </div>
+          {sharedDossiers.length === 0 ? (
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 text-center shadow-xs max-w-xl mx-auto space-y-4">
+              <div className="w-14 h-14 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 mx-auto text-2xl shadow-2xs">
+                <Share2 className="w-7 h-7" />
               </div>
-            ))}
+              <div>
+                <h3 className="text-base font-bold text-slate-900">No Academic Dossiers Shared Yet</h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
+                  Generate an encrypted 360° performance snapshot link to easily share {activeChild.name}’s diagnostic exam results, topic mastery, and weak chapters with school teachers or private tutors.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsCreatingDossier(true)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs inline-flex items-center gap-2 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Generate First Dossier for {activeChild.name}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {sharedDossiers.map((dossier) => {
+                const matchedChild = parentAccount.children.find(c => String(c.id) === String(dossier.studentId || (dossier as any).childId));
+                return (
+                  <div
+                    key={dossier.id}
+                    className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 uppercase">
+                          Active Dossier
+                        </span>
+                        <h3 className="font-bold text-sm text-slate-900 mt-1.5">
+                          Candidate: {matchedChild?.name || dossier.childName || 'Student'}
+                        </h3>
+                        <p className="text-xs text-slate-400">
+                          Created by {dossier.parentName} • {new Date(dossier.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      <span className="font-mono text-xs font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200">
+                        {dossier.shareToken}
+                      </span>
+                    </div>
+
+                  <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    {dossier.notes}
+                  </p>
+
+                  <div className="text-xs text-slate-500 space-y-1.5">
+                    <span className="font-bold text-slate-700 block flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-indigo-600" />
+                      Authorized Educators & Mentors ({dossier.recipients.length}):
+                    </span>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {dossier.recipients.map((rec, i) => (
+                        <span key={i} className="bg-indigo-50 text-indigo-800 border border-indigo-100 font-semibold px-2.5 py-1 rounded-lg text-[11px]">
+                          {rec}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Live View Tracker & Expiry */}
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                    {(dossier as any).viewCount && (dossier as any).viewCount > 0 ? (
+                      <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                        <Eye className="w-3 h-3 text-emerald-600" />
+                        <span>Viewed {(dossier as any).viewCount} {(dossier as any).viewCount === 1 ? 'time' : 'times'}</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <span>Not viewed yet</span>
+                      </span>
+                    )}
+
+                    <span className="text-[10px] text-slate-400">
+                      Expires {new Date(dossier.expiresAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                    <button
+                      onClick={() => handleCopyLink(dossier.shareToken)}
+                      className="flex-1 min-w-[100px] py-1.5 px-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      {copiedToken === dossier.shareToken ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-600 font-bold">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Copy URL</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => handleWhatsAppShare(dossier)}
+                      className="py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
+                      title="Share directly on WhatsApp"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleOpenPreview(dossier.shareToken)}
+                      className="py-1.5 px-3 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title="Open and preview the public dossier portal"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>View</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleRevokeDossier(dossier.id)}
+                      disabled={deletingDossierId === dossier.id}
+                      className="py-1.5 px-2.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                      title="Revoke and delete this dossier access link"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>{deletingDossierId === dossier.id ? 'Revoking...' : 'Revoke'}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+          )}
         </div>
       )}
 
@@ -778,52 +905,278 @@ export const ParentTeacherCommunication: React.FC<ParentTeacherCommunicationProp
       {/* Modal: Create New Dossier */}
       {isCreatingDossier && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-            <h3 className="text-base font-bold text-slate-900 mb-1">Generate Shareable Academic Dossier</h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Packages {activeChild.name}’s 10-mark diagnostic exam history, topic mastery bars, and error classifications into an encrypted link.
-            </p>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Generate Shareable Academic Dossier</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Creates an encrypted 30-day snapshot of diagnostic exams, topic mastery, and error analysis for educators.
+              </p>
+            </div>
 
-            <form onSubmit={handleCreateDossierSubmit} className="space-y-3.5 text-xs">
+            <form onSubmit={handleCreateDossierSubmit} className="space-y-4 text-xs">
+              {/* 1. Student Selection (Auto sets Board & Grade) */}
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Dossier Notes / Purpose:</label>
+                <label className="font-bold text-slate-700 block mb-1.5 flex items-center justify-between">
+                  <span>Target Candidate (Student):</span>
+                  <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                    {selectedDossierStudent.targetBoard} • {selectedDossierStudent.classGrade}
+                  </span>
+                </label>
+                <select
+                  value={String(dossierStudentId)}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    setDossierStudentId(newId);
+                    const s = parentAccount.children.find(c => String(c.id) === String(newId)) || activeChild;
+                    setDossierNotes(`Comprehensive ${s.classGrade} (${s.targetBoard}) Diagnostic dossier across 10-mark sprints for term review.`);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                >
+                  {parentAccount.children.map((child) => (
+                    <option key={child.id} value={String(child.id)}>
+                      {child.avatar} {child.name} ({child.classGrade} - {child.targetBoard})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 2. Multiple Educators Tagging */}
+              <div className="space-y-2">
+                <label className="font-bold text-slate-700 block">
+                  Add Educators / Mentors to Share With:
+                </label>
+
+                {/* Quick Add Preset Chips */}
+                <div className="flex gap-1.5 flex-wrap">
+                  {[
+                    '🏫 School Class Teacher',
+                    '👨‍🏫 Math Tutor',
+                    '🧪 Science Mentor',
+                    '🏢 Coaching Institute'
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => {
+                        if (!dossierRecipientsList.includes(preset)) {
+                          setDossierRecipientsList([...dossierRecipientsList, preset]);
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-semibold text-[11px] transition-colors border border-slate-200"
+                    >
+                      + {preset}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom Input */}
+                <div className="flex gap-1.5 mt-2">
+                  <input
+                    type="text"
+                    value={customRecipientInput}
+                    onChange={(e) => setCustomRecipientInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (customRecipientInput.trim()) {
+                          if (!dossierRecipientsList.includes(customRecipientInput.trim())) {
+                            setDossierRecipientsList([...dossierRecipientsList, customRecipientInput.trim()]);
+                          }
+                          setCustomRecipientInput('');
+                        }
+                      }
+                    }}
+                    placeholder="Type teacher name / role (e.g. Sharma Sir - Math) and press Add..."
+                    className="flex-1 px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (customRecipientInput.trim()) {
+                        if (!dossierRecipientsList.includes(customRecipientInput.trim())) {
+                          setDossierRecipientsList([...dossierRecipientsList, customRecipientInput.trim()]);
+                        }
+                        setCustomRecipientInput('');
+                      }
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {/* Active Tag Pills */}
+                <div className="flex gap-1.5 flex-wrap pt-1 min-h-[32px]">
+                  {dossierRecipientsList.map((rec) => (
+                    <span
+                      key={rec}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 font-semibold text-[11px]"
+                    >
+                      <span>{rec}</span>
+                      <button
+                        type="button"
+                        onClick={() => setDossierRecipientsList(dossierRecipientsList.filter(r => r !== rec))}
+                        className="p-0.5 hover:bg-indigo-200 rounded-full text-indigo-700"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Purpose Notes */}
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Dossier Notes / Consultation Purpose:</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   required
                   value={dossierNotes}
                   onChange={(e) => setDossierNotes(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-1 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
                 />
               </div>
 
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Educator Email Addresses (comma separated):</label>
-                <input
-                  type="text"
-                  required
-                  value={dossierRecipients}
-                  onChange={(e) => setDossierRecipients(e.target.value)}
-                  placeholder="e.g. s.mukherjee@dpsrkp.edu.in, a.verma@dpsrkp.edu.in"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-1 focus:ring-indigo-500"
-                />
-              </div>
-
+              {/* Actions */}
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsCreatingDossier(false)}
-                  className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-xs"
+                  disabled={isSubmittingDossier}
+                  className="px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 disabled:opacity-50 shadow-xs flex items-center gap-1.5"
                 >
-                  Generate & Send
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>{isSubmittingDossier ? 'Generating...' : 'Generate Secure Dossier Link'}</span>
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* DIRECT IN-MEMORY PRINTABLE DOSSIER REPORT (Zero-Tab Print)   */}
+      {/* ============================================================ */}
+      {printableDossierData && (
+        <div className="hidden print-only-dossier p-8 text-slate-900 bg-white space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl">
+                Σ
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">AcuGrade AI — Official Academic Dossier</h1>
+                <p className="text-xs text-slate-500">Verified Diagnostic Performance Snapshot & Topic Mastery</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="font-mono text-xs font-bold px-2.5 py-1 bg-slate-100 rounded border border-slate-300 block mb-1">
+                {printableDossierData.dossier?.shareToken}
+              </span>
+              <span className="text-[10px] text-slate-500">
+                Valid: {new Date(printableDossierData.dossier?.createdAt || Date.now()).toLocaleDateString()} – {new Date(printableDossierData.dossier?.expiresAt || Date.now()).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+
+          {/* Student Profile Card */}
+          <div className="border border-slate-300 rounded-xl p-5 bg-slate-50 flex items-start justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{printableDossierData.student?.avatar || '🧑‍🎓'}</span>
+                <h2 className="text-xl font-black text-slate-900">{printableDossierData.student?.name}</h2>
+              </div>
+              <p className="text-xs text-slate-600 font-semibold">
+                Class: {printableDossierData.student?.classGrade} • Board: {printableDossierData.student?.targetBoard} • School: {printableDossierData.student?.schoolName || 'School Student'}
+              </p>
+              <div className="pt-2 text-xs text-slate-700 bg-white p-3 rounded-lg border border-slate-200">
+                <span className="font-bold text-indigo-900 block mb-0.5">Parent Consultation Note:</span>
+                <span className="italic">"{printableDossierData.dossier?.notes || 'Comprehensive diagnostic review across 10-mark sprints.'}"</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 shrink-0 text-center">
+              <div className="p-3 bg-white rounded-lg border border-slate-200 min-w-[90px]">
+                <span className="text-[9px] text-slate-500 uppercase font-bold block">Avg. Score</span>
+                <span className="text-lg font-black text-indigo-600">{printableDossierData.student?.averageScore}/10</span>
+              </div>
+              <div className="p-3 bg-white rounded-lg border border-slate-200 min-w-[90px]">
+                <span className="text-[9px] text-slate-500 uppercase font-bold block">Tests Done</span>
+                <span className="text-lg font-black text-slate-800">{printableDossierData.student?.totalExamsTaken}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Diagnostic Topic Mastery (K-Graph) */}
+          {printableDossierData.topicMastery && Object.keys(printableDossierData.topicMastery).length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1">
+                Diagnostic Topic Mastery (K-Graph Analysis)
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(printableDossierData.topicMastery).map(([topic, score]: [string, any]) => {
+                  const scorePct = Math.round(Number(score) * 100);
+                  return (
+                    <div key={topic} className="p-3 border border-slate-200 rounded-lg bg-white">
+                      <div className="flex justify-between text-xs font-semibold mb-1">
+                        <span className="text-slate-800 truncate font-medium">{topic}</span>
+                        <span className={`font-bold ${scorePct >= 80 ? 'text-emerald-700' : scorePct >= 60 ? 'text-amber-700' : 'text-rose-600'}`}>
+                          {scorePct}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${scorePct >= 80 ? 'bg-emerald-500' : scorePct >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                          style={{ width: `${scorePct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Recent Diagnostic Exams */}
+          {printableDossierData.recentSubmissions && printableDossierData.recentSubmissions.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1">
+                Recent Diagnostic Exam Sprints ({printableDossierData.recentSubmissions.length})
+              </h3>
+              <div className="space-y-3">
+                {printableDossierData.recentSubmissions.map((sub: any, idx: number) => (
+                  <div key={sub.id || idx} className="border border-slate-200 rounded-xl p-4 space-y-2 bg-white">
+                    <div className="flex justify-between items-center text-xs font-bold text-slate-900 border-b border-slate-100 pb-2">
+                      <span>{sub.examTitle || '10-Mark Diagnostic Exam'} • {sub.subject}</span>
+                      <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-900 rounded border border-indigo-200">
+                        Score: {sub.marksObtained}/{sub.totalMarks || 10} ({sub.accuracyPercentage}%)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-700 leading-relaxed">
+                      <strong>AI Diagnosis:</strong> {sub.analysis?.encouragementNote || sub.analysis?.evolutionaryRoadmap || 'Proficient performance.'}
+                    </p>
+                    {sub.analysis?.areasToImprove && sub.analysis.areasToImprove.length > 0 && (
+                      <p className="text-[11px] text-rose-700 font-medium">
+                        <strong>Remediation Target:</strong> {sub.analysis.areasToImprove.join(', ')}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Footer Note */}
+          <div className="pt-4 border-t border-slate-300 flex justify-between items-center text-[10px] text-slate-400">
+            <span>Generated by AcuGrade AI Diagnostic Platform</span>
+            <span>Confidential Academic Report</span>
           </div>
         </div>
       )}

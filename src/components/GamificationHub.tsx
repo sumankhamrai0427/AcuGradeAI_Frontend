@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Trophy, 
   Award, 
@@ -31,6 +31,7 @@ interface GamificationHubProps {
   activeChild: ChildAccount;
   allBadges: Badge[];
   leaderboard: LeaderboardEntry[];
+  activePersona?: 'parent' | 'child';
   onSelectStudentToCompare?: (studentId: string) => void;
 }
 
@@ -38,22 +39,45 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
   activeChild,
   allBadges,
   leaderboard,
+  activePersona = 'parent',
   onSelectStudentToCompare
 }) => {
+  const isStudentPersona = activePersona === 'child';
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'badges'>('leaderboard');
   const [badgeFilter, setBadgeFilter] = useState<BadgeCategory | 'all'>('all');
-  const [boardFilter, setBoardFilter] = useState<Board | 'all'>('all');
-  const [gradeFilter, setGradeFilter] = useState<ClassGrade | 'all'>('all');
+  const [boardFilter, setBoardFilter] = useState<Board | 'all'>(() => isStudentPersona ? activeChild.targetBoard : 'all');
+  const [gradeFilter, setGradeFilter] = useState<ClassGrade | 'all'>(() => isStudentPersona ? activeChild.classGrade : 'all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Automatically sync to child's cohort when in Student Persona
+  useEffect(() => {
+    if (isStudentPersona) {
+      setBoardFilter(activeChild.targetBoard);
+      setGradeFilter(activeChild.classGrade);
+    } else {
+      setBoardFilter('all');
+      setGradeFilter('all');
+    }
+  }, [activeChild.id, isStudentPersona, activeChild.targetBoard, activeChild.classGrade]);
+
   // Child's current stats
-  const childXP = activeChild.xp || 1420;
+  const childXP = activeChild.xp || 0;
   const childLevel = activeChild.level || Math.floor(childXP / 250) + 1;
   const nextLevelXP = childLevel * 250;
   const currentLevelBaseXP = (childLevel - 1) * 250;
   const progressToNextLevel = Math.min(100, Math.max(0, Math.round(((childXP - currentLevelBaseXP) / 250) * 100)));
 
-  const earnedBadgeIds = activeChild.earnedBadgeIds || ['badge-pioneer', 'badge-streak-3'];
+  const earnedBadgeIds = activeChild.earnedBadgeIds || [];
+
+  // Dynamic Rank in Leaderboard Cohort
+  const currentStudentRank = React.useMemo(() => {
+    const myEntry = leaderboard.find(e => e.studentId === activeChild.id || e.isCurrentStudent);
+    if (myEntry) {
+      return myEntry.rank === 1 ? '#1 Rank' : myEntry.rank <= 3 ? `Top #${myEntry.rank}` : `Rank #${myEntry.rank}`;
+    }
+    const total = leaderboard.length;
+    return total > 0 ? `Rank #${Math.min(total, 1)}` : 'Calibrating';
+  }, [leaderboard, activeChild.id]);
 
   // Filter leaderboard
   const filteredLeaderboard = leaderboard.filter((entry) => {
@@ -152,11 +176,13 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-400 mb-1">
-            <span className="text-xs font-semibold">Global Rank</span>
+            <span className="text-xs font-semibold">{isStudentPersona ? 'Cohort Rank' : 'Global Rank'}</span>
             <Crown className="w-4 h-4 text-purple-500" />
           </div>
-          <p className="text-2xl font-bold text-purple-600">Top 5%</p>
-          <span className="text-[10px] text-purple-600 font-semibold">In {activeChild.targetBoard} Board</span>
+          <p className="text-2xl font-bold text-purple-600">{currentStudentRank}</p>
+          <span className="text-[10px] text-purple-600 font-semibold">
+            {isStudentPersona ? `In ${activeChild.targetBoard} (${activeChild.classGrade})` : `Across All Registrations`}
+          </span>
         </div>
       </div>
 
@@ -192,53 +218,81 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
         <div className="space-y-4">
           {/* Leaderboard Filters */}
           <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* Search */}
-              <div className="relative min-w-[200px]">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search student or school..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
-                />
-              </div>
+            {isStudentPersona ? (
+              /* Student View: No Board/Grade Dropdowns, Only Global Search + Enrolled Cohort Indicator */
+              <div className="flex items-center gap-3 flex-wrap flex-1">
+                {/* Search */}
+                <div className="relative min-w-[240px] flex-1 sm:flex-initial">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder={`Search ${activeChild.classGrade} students or school...`}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
 
-              {/* Board */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-slate-500">Board:</span>
-                <select
-                  value={boardFilter}
-                  onChange={(e) => setBoardFilter(e.target.value as any)}
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-800"
-                >
-                  <option value="all">All Boards</option>
-                  <option value="CBSE">CBSE</option>
-                  <option value="ICSE">ICSE</option>
-                  <option value="UK-Cambridge">UK-Cambridge</option>
-                  <option value="NEET">NEET</option>
-                  <option value="IIT">IIT JEE</option>
-                </select>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200/80 text-xs font-bold text-indigo-900 shadow-2xs">
+                  <Users className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                  <span>Cohort: {activeChild.classGrade} • {activeChild.targetBoard}</span>
+                </div>
               </div>
+            ) : (
+              /* Parent View: Full Comparative Filters across all boards and classes */
+              <div className="flex items-center gap-3 flex-wrap flex-1">
+                {/* Search */}
+                <div className="relative min-w-[200px]">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search student or school..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
 
-              {/* Grade */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-slate-500">Grade:</span>
-                <select
-                  value={gradeFilter}
-                  onChange={(e) => setGradeFilter(e.target.value as any)}
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-800"
-                >
-                  <option value="all">All Classes</option>
-                  <option value="Class 7">Class 7</option>
-                  <option value="Class 9">Class 9</option>
-                  <option value="Class 10">Class 10</option>
-                  <option value="Class 11">Class 11</option>
-                  <option value="Class 12">Class 12</option>
-                </select>
+                {/* Board */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-slate-500">Board:</span>
+                  <select
+                    value={boardFilter}
+                    onChange={(e) => setBoardFilter(e.target.value as any)}
+                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="all">All Boards</option>
+                    <option value="CBSE">CBSE</option>
+                    <option value="ICSE">ICSE</option>
+                    <option value="ISC">ISC</option>
+                    <option value="UK-Cambridge">UK-Cambridge</option>
+                    <option value="NCERT">NCERT</option>
+                    <option value="NEET">NEET</option>
+                    <option value="IIT">IIT JEE</option>
+                  </select>
+                </div>
+
+                {/* Grade */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-slate-500">Grade:</span>
+                  <select
+                    value={gradeFilter}
+                    onChange={(e) => setGradeFilter(e.target.value as any)}
+                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="all">All Classes</option>
+                    <option value="Class 5">Class 5</option>
+                    <option value="Class 6">Class 6</option>
+                    <option value="Class 7">Class 7</option>
+                    <option value="Class 8">Class 8</option>
+                    <option value="Class 9">Class 9</option>
+                    <option value="Class 10">Class 10</option>
+                    <option value="Class 11">Class 11</option>
+                    <option value="Class 12">Class 12</option>
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
 
             <span className="text-xs text-slate-400">
               Showing {filteredLeaderboard.length} candidates

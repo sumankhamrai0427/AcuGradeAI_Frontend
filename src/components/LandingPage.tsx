@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   GraduationCap,
   Sparkles,
@@ -33,6 +33,7 @@ import {
   Lock,
   Lightbulb
 } from 'lucide-react';
+import { healthApi } from '../lib/api';
 
 interface LandingPageProps {
   onOpenAuth: (mode?: 'login' | 'register') => void;
@@ -52,6 +53,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
   // FAQ open/close state
   const [openFaqIdx, setOpenFaqIdx] = useState<number | null>(0);
+
+  // Live Backend Health Status (Heartbeat)
+  const [isBackendOnline, setIsBackendOnline] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const checkHealth = async () => {
+      try {
+        const res = await healthApi.check();
+        if (isMounted) {
+          setIsBackendOnline(res?.status === 'ok' || (res && res.statusCode === 200) || !!res);
+        }
+      } catch {
+        if (isMounted) {
+          setIsBackendOnline(false);
+        }
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 8000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const openAuth = (mode: 'login' | 'register' = 'login') => {
     onOpenAuth(mode);
@@ -224,7 +251,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
             </div>
             <div>
               <span className="font-extrabold text-xl tracking-tight text-slate-900 font-display">AcuGrade AI</span>
-              <span className="block text-[11px] text-slate-500 font-medium">Precision AI Exam Diagnostics</span>
+              <span className="block text-[11px] text-slate-500 font-medium">Precision Exam Diagnostics</span>
             </div>
           </div>
 
@@ -259,7 +286,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               onClick={() => openAuth('login')}
               className="px-4 py-2 text-sm font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100/80 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <KeyRound className="w-4 h-4 text-slate-500" />
               <span>Sign in</span>
             </button>
 
@@ -268,7 +294,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-100 hover:shadow-lg transition-all flex items-center gap-2 group cursor-pointer"
             >
               <span>Sign Up</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
 
@@ -360,21 +385,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto space-y-6">
-            {/* Project Eyebrow Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-indigo-100 shadow-xs">
+            {/* Project Eyebrow Badge (Dynamic Live Health Status) */}
+            <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border shadow-xs transition-colors ${isBackendOnline === false ? 'border-rose-200' : 'border-indigo-100'
+              }`}>
               <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                {isBackendOnline !== false ? (
+                  <>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </>
+                ) : (
+                  <>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                  </>
+                )}
               </span>
               <span className="text-xs font-bold text-indigo-900 tracking-tight">
-                AI Exam Diagnostics for School & Competitive Prep
+                Exam Diagnostics for School & Competitive Prep
               </span>
             </div>
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] font-display">
               Smarter Learning. <br className="hidden sm:block" />
-              <span className="gradient-text-primary">Better Preparation.</span> Powered by AI.
+              <span className="gradient-text-primary">Better Preparation.</span><br />Built for Success.
             </h1>
 
             {/* Supporting Description */}
@@ -390,7 +425,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 onClick={() => openAuth('register')}
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-base shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-3 group cursor-pointer"
               >
-                <span>Get Started / Sign Up</span>
+                <span>Get Started</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
 
@@ -398,7 +433,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 onClick={() => openAuth('login')}
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold text-base shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <KeyRound className="w-4 h-4 text-indigo-600" />
                 <span>Login to Workspace</span>
               </button>
             </div>
@@ -414,8 +448,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
                 <div className="text-[11px] font-semibold text-slate-500">Multi-Step Rubrics</div>
               </div>
               <div className="p-3.5 rounded-2xl bg-white/80 border border-slate-200/80 backdrop-blur-xs">
-                <div className="text-xl sm:text-2xl font-black text-emerald-600 font-display">K-Graph</div>
-                <div className="text-[11px] font-semibold text-slate-500">Adaptive Mastery</div>
+                <div className="text-xl sm:text-2xl font-black text-emerald-600 font-display">LearnFlow</div>
+                <div className="text-[11px] font-semibold text-slate-500">Personalized Learning</div>
               </div>
               <div className="p-3.5 rounded-2xl bg-white/80 border border-slate-200/80 backdrop-blur-xs">
                 <div className="text-xl sm:text-2xl font-black text-purple-600 font-display">8 Boards</div>
@@ -590,7 +624,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               Platform Features
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-display">
-              Engineered for Students, Parents & Educators
+              One Intelligent Platform. Three Perspectives on Academic Growth.
             </h2>
             <p className="text-slate-600 text-sm sm:text-base mt-2">
               Every feature in AcuGrade AI is designed to make exam preparation clear, structured, and rewarding.
@@ -1255,45 +1289,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
       </section>
 
       {/* ========================================================================= */}
-      {/* 9. FINAL CTA SECTION                                                      */}
-      {/* ========================================================================= */}
-      <section className="py-16 sm:py-20 bg-slate-900 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl -z-0 pointer-events-none" />
-
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-6 relative z-10">
-          <span className="px-3 py-1 rounded-full bg-slate-800 text-indigo-300 text-xs font-bold border border-slate-700">
-            Start Practicing Today
-          </span>
-
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight font-display">
-            Ready to Experience Precision AI Diagnostics?
-          </h2>
-
-          <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto font-medium">
-            Join students and parents practicing daily 10-mark sprints. Take your first diagnostic exam in minutes.
-          </p>
-
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={() => openAuth('register')}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 font-extrabold text-base shadow-xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
-            >
-              <span>Get Started / Sign Up</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => openAuth('login')}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-base transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <KeyRound className="w-4 h-4 text-indigo-400" />
-              <span>Login to Existing Account</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
       {/* 10. FOOTER                                                                */}
       {/* ========================================================================= */}
       <footer className="bg-slate-950 text-slate-400 text-xs py-16 border-t border-slate-800">
@@ -1310,9 +1305,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
                 Precision diagnostic exam grading and adaptive learning platform powered by verified curriculum knowledge graphs.
               </p>
-              <div className="flex items-center gap-2 text-[11px] text-emerald-400 bg-emerald-950/50 border border-emerald-800/40 px-3 py-1.5 rounded-full w-fit">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Knowledge Graph: Operational v2.4</span>
+              {/* Live Status Badge in Footer */}
+              <div className={`flex items-center gap-2 text-[11px] px-3 py-1.5 rounded-full w-fit border transition-colors ${isBackendOnline !== false
+                ? 'text-emerald-400 bg-emerald-950/50 border-emerald-800/40'
+                : 'text-rose-400 bg-rose-950/50 border-rose-800/40'
+                }`}>
+                <span className={`w-2 h-2 rounded-full ${isBackendOnline !== false ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500 animate-pulse'
+                  }`} />
+                <span>
+                  Smart Growth Tracker: {isBackendOnline !== false ? 'Online' : 'Offline'}
+                </span>
               </div>
             </div>
 
@@ -1333,7 +1335,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth }) => {
               <h4 className="text-white font-bold text-xs uppercase tracking-wider">Platform</h4>
               <ul className="space-y-1.5 text-slate-400">
                 <li>10-Mark Diagnostic Arena</li>
-                <li>Adaptive K-Graph Roadmaps</li>
+                <li>Personalized Learning Paths</li>
                 <li>Smart Step Assessment</li>
                 <li>Gamification & FunZone</li>
                 <li>Parent-Teacher Dossiers</li>

@@ -66,6 +66,7 @@ import { FunZone } from './components/FunZone';
 import { LoginPage } from './components/LoginPage';
 import { LandingPage } from './components/LandingPage';
 import { ChildPinModal } from './components/ChildPinModal';
+import { PublicDossierView } from './components/PublicDossierView';
 import {
   getStoredTokens,
   clearTokens,
@@ -78,7 +79,40 @@ import {
   adminApi,
 } from './lib/api';
 
+const getInitialPublicDossierToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const path = window.location.pathname || '';
+  if (path.includes('/share/dossier/')) {
+    const parts = path.split('/share/dossier/');
+    if (parts[1]) {
+      const token = parts[1].split('/')[0].split('?')[0].split('#')[0].trim();
+      if (token) return token;
+    }
+  }
+  const params = new URLSearchParams(window.location.search);
+  const qToken = params.get('dossier') || params.get('token') || params.get('shareToken');
+  if (qToken) return qToken.trim();
+
+  const hash = window.location.hash || '';
+  if (hash.includes('dossier=')) {
+    const match = hash.match(/dossier=([^&]+)/);
+    if (match && match[1]) return match[1].trim();
+  }
+  return null;
+};
+
 export default function App() {
+  // Public Shared Dossier Portal Router
+  const [publicDossierToken, setPublicDossierToken] = useState<string | null>(getInitialPublicDossierToken);
+
+  useEffect(() => {
+    const onLocationChange = () => {
+      setPublicDossierToken(getInitialPublicDossierToken());
+    };
+    window.addEventListener('popstate', onLocationChange);
+    return () => window.removeEventListener('popstate', onLocationChange);
+  }, []);
+
   // ------------------------------------------------------------
   // Auth bootstrap. Nothing about the account is hardcoded anymore —
   // this reads whatever tokens (if any) are already in sessionStorage and
@@ -442,6 +476,21 @@ export default function App() {
       default: return 'AcuGrade Workspace';
     }
   };
+
+  // ------------------------------------------------------------
+  // Render Public Academic Dossier (Zero login required for educators)
+  // ------------------------------------------------------------
+  if (publicDossierToken) {
+    return (
+      <PublicDossierView
+        shareToken={publicDossierToken}
+        onExit={() => {
+          window.history.pushState({}, '', '/');
+          setPublicDossierToken(null);
+        }}
+      />
+    );
+  }
 
   // ------------------------------------------------------------
   // Render: If not logged in, show the LandingPage. If the visitor
@@ -1132,18 +1181,13 @@ export default function App() {
               <button
                 id="header-persona-switcher"
                 onClick={() => setShowPersonaMenu(!showPersonaMenu)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 transition-all text-xs sm:text-sm shadow-2xs"
+                className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 rounded-full sm:rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 transition-all text-xs shadow-2xs group cursor-pointer"
+                title={isParentActive ? `Parent Account (${parentAccount.name})` : `Active Student (${activeChild?.name})`}
               >
-                <span className="text-base">{isParentActive ? '👨‍👩‍👧‍👦' : activeChild?.avatar || '👤'}</span>
-                <div className="text-left hidden sm:block leading-tight">
-                  <div className="font-semibold text-slate-800 truncate max-w-[110px]">
-                    {isParentActive ? 'Parent View' : activeChild?.name}
-                  </div>
-                  <div className="text-[10px] text-slate-500">
-                    {isParentActive ? 'All Children' : `${activeChild?.classGrade} • ${activeChild?.targetBoard}`}
-                  </div>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-50 to-purple-50 border border-indigo-100 flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                  {isParentActive ? '👨‍👩‍👧‍👦' : activeChild?.avatar || '👤'}
                 </div>
-                <ChevronDown className="w-4 h-4 text-slate-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-150" />
               </button>
 
               {/* Dropdown Menu Modal */}
@@ -1152,9 +1196,16 @@ export default function App() {
                   id="persona-dropdown-menu"
                   className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
                 >
-                  <div className="px-4 py-2 border-b border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Switch Persona</p>
-                    <p className="text-xs text-slate-700 font-medium mt-0.5">{parentAccount.name}</p>
+                  <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50/60 rounded-t-2xl">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs shrink-0">
+                        {parentAccount.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-slate-900 truncate">{parentAccount.name}</p>
+                        <p className="text-[10px] text-slate-400 truncate">{parentAccount.email || 'Parent Account'}</p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="p-1 space-y-0.5">
@@ -1174,7 +1225,7 @@ export default function App() {
                     </button>
 
                     <div className="my-1 border-t border-slate-100 px-3 py-1">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Children Sub-Accounts</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Children Profiles</p>
                     </div>
 
                     {parentAccount.children.map((child) => {
@@ -1199,17 +1250,6 @@ export default function App() {
                         </button>
                       );
                     })}
-
-                    <button
-                      onClick={() => {
-                        setShowPersonaMenu(false);
-                        setShowAddChildModal(true);
-                      }}
-                      className="w-full mt-1 flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-indigo-600 hover:bg-indigo-50 font-medium transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add New Child Sub-Account</span>
-                    </button>
 
                     <div className="my-1 border-t border-slate-100" />
 
@@ -1275,6 +1315,7 @@ export default function App() {
                 <ExamArena
                   parentAccount={parentAccount}
                   activeChildId={activeChildId}
+                  activePersona={activePersona}
                   onChildSelect={(cId) => setActiveChildId(cId)}
                   onExamComplete={handleExamComplete}
                   onOpenUpgradeModal={() => setShowUpgradeModal(true)}
@@ -1295,6 +1336,7 @@ export default function App() {
                   activeChild={activeChild}
                   allBadges={badges}
                   leaderboard={leaderboard}
+                  activePersona={activePersona}
                 />
               )}
 

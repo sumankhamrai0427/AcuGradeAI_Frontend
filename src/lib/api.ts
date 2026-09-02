@@ -262,6 +262,12 @@ export const communicationApi = {
   markRead: (messageId: string) => request<any>(`/api/v1/messages/${messageId}/read`, { method: 'PUT' }),
   createDossier: (payload: any) => request<any>('/api/v1/dossiers', { method: 'POST', body: payload }),
   listDossiers: () => request<any[]>('/api/v1/dossiers'),
+  deleteDossier: (dossierId: string) =>
+    request<{ deletedId: string; message: string }>(`/api/v1/dossiers/${encodeURIComponent(dossierId)}`, { method: 'DELETE' }),
+  getDossierPreview: (studentId: string | number) =>
+    request<any>(`/api/v1/dossiers/preview/${studentId}`),
+  getPublicDossier: (shareToken: string) =>
+    request<any>(`/api/v1/dossiers/public/${encodeURIComponent(shareToken)}`, { auth: false }),
   schedulePTM: (payload: { teacherId: string | number; studentId: string | number; scheduledAt: string; topic: string }) =>
     request<any>('/api/v1/ptm/schedule', { method: 'POST', body: payload }),
   listPTMSchedules: () => request<any[]>('/api/v1/ptm/schedules'),
