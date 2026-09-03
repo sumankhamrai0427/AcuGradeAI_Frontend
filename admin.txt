@@ -1,0 +1,1090 @@
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Loader2,
+  ShieldCheck,
+  LogOut,
+  LayoutDashboard,
+  Users,
+  BookOpen,
+  BarChart3,
+  Menu,
+  X,
+  Bell,
+  TrendingUp,
+  UserCheck,
+  BookMarked,
+  AlertCircle,
+  ChevronRight,
+  Settings,
+  Activity,
+  GraduationCap,
+  CheckCircle2,
+} from 'lucide-react';
+import ApiServices, {
+  storeTokens,
+  decodeTokenPayload,
+  clearTokens,
+  getStoredTokens,
+} from '../../services/ApiServices';
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+type AdminView = 'dashboard' | 'users' | 'courses' | 'reports';
+
+// ─────────────────────────────────────────────────────────────
+// Stat Card Component
+// ─────────────────────────────────────────────────────────────
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  change: string;
+  positive?: boolean;
+  accent?: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ icon, label, value, change, positive = true, accent = 'bg-amber-400' }) => (
+  <div className="admin-card group hover:-translate-y-1 transition-all duration-300">
+    <div className="flex items-start justify-between mb-4">
+      <div className={`w-12 h-12 rounded-2xl ${accent} flex items-center justify-center shadow-lg`}>
+        {icon}
+      </div>
+      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+        {change}
+      </span>
+    </div>
+    <p className="text-3xl font-black text-stone-900 tracking-tight">{value}</p>
+    <p className="text-sm text-stone-500 font-medium mt-1">{label}</p>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Sidebar Nav Item
+// ─────────────────────────────────────────────────────────────
+interface NavItemProps {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  collapsed: boolean;
+  onClick: () => void;
+  id: string;
+}
+
+const NavItem: React.FC<NavItemProps> = ({ icon, label, active, collapsed, onClick, id }) => (
+  <button
+    id={id}
+    onClick={onClick}
+    title={collapsed ? label : undefined}
+    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group
+      ${active
+        ? 'bg-amber-400 text-stone-900 shadow-md shadow-amber-400/30'
+        : 'text-stone-600 hover:bg-amber-50 hover:text-amber-700'
+      }
+      ${collapsed ? 'justify-center' : ''}
+    `}
+  >
+    <span className={`flex-shrink-0 transition-transform duration-200 ${active ? '' : 'group-hover:scale-110'}`}>{icon}</span>
+    {!collapsed && <span className="truncate">{label}</span>}
+    {!collapsed && active && <ChevronRight className="w-4 h-4 ml-auto opacity-60" />}
+  </button>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Dashboard View
+// ─────────────────────────────────────────────────────────────
+const DashboardView: React.FC = () => (
+  <div className="space-y-8">
+    {/* Welcome Banner */}
+    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-yellow-400 to-yellow-300 p-8 shadow-xl shadow-amber-400/25">
+      <div className="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
+      <div className="absolute right-16 bottom-0 w-32 h-32 rounded-full bg-amber-500/30 blur-xl" />
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 mb-2">
+          <ShieldCheck className="w-5 h-5 text-stone-800" />
+          <span className="text-xs font-black uppercase tracking-widest text-stone-700">Admin Console</span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight leading-tight">
+          Welcome to Admin<br />Dashboard
+        </h1>
+        <p className="mt-2 text-stone-700 font-medium text-sm max-w-md">
+          Manage users, courses and view platform analytics from your central command centre.
+        </p>
+      </div>
+    </div>
+
+    {/* Stats Grid */}
+    <div>
+      <h2 className="text-xs font-black uppercase tracking-widest text-stone-400 mb-4">Platform Overview</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={<Users className="w-6 h-6 text-white" />}
+          label="Total Users"
+          value="12,480"
+          change="+8.2%"
+          accent="bg-amber-400"
+        />
+        <StatCard
+          icon={<BookOpen className="w-6 h-6 text-white" />}
+          label="Active Courses"
+          value="348"
+          change="+3.1%"
+          accent="bg-yellow-500"
+        />
+        <StatCard
+          icon={<Activity className="w-6 h-6 text-white" />}
+          label="Sessions Today"
+          value="2,193"
+          change="+14%"
+          accent="bg-amber-500"
+        />
+        <StatCard
+          icon={<TrendingUp className="w-6 h-6 text-white" />}
+          label="Completion Rate"
+          value="78.4%"
+          change="+2.3%"
+          accent="bg-yellow-400"
+        />
+      </div>
+    </div>
+
+    {/* Recent Activity */}
+    <div>
+      <h2 className="text-xs font-black uppercase tracking-widest text-stone-400 mb-4">Recent Activity</h2>
+      <div className="admin-card space-y-4">
+        {[
+          { icon: <UserCheck className="w-4 h-4 text-amber-600" />, text: 'New user registration: Priya Sharma', time: '2 min ago', bg: 'bg-amber-50' },
+          { icon: <BookMarked className="w-4 h-4 text-yellow-600" />, text: 'Course "CBSE Math Grade 8" updated', time: '15 min ago', bg: 'bg-yellow-50' },
+          { icon: <AlertCircle className="w-4 h-4 text-rose-500" />, text: 'Failed login attempt detected (IP: 192.168.x.x)', time: '32 min ago', bg: 'bg-red-50' },
+          { icon: <BarChart3 className="w-4 h-4 text-emerald-600" />, text: 'Monthly report generated for August 2026', time: '1 hr ago', bg: 'bg-emerald-50' },
+          { icon: <UserCheck className="w-4 h-4 text-amber-600" />, text: 'New user registration: Arjun Mehta', time: '2 hr ago', bg: 'bg-amber-50' },
+        ].map((item, i) => (
+          <div key={i} className="flex items-start gap-3">
+            <div className={`w-8 h-8 rounded-xl ${item.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+              {item.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-stone-800 truncate">{item.text}</p>
+              <p className="text-xs text-stone-400 font-medium mt-0.5">{item.time}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────
+// Users View
+// ─────────────────────────────────────────────────────────────
+const UsersView: React.FC = () => {
+  const users = [
+    { name: 'Priya Sharma', email: 'priya@example.com', role: 'Parent', status: 'Active', joined: 'Aug 30, 2026' },
+    { name: 'Arjun Mehta', email: 'arjun@example.com', role: 'Student', status: 'Active', joined: 'Aug 29, 2026' },
+    { name: 'Deepa Nair', email: 'deepa@example.com', role: 'Teacher', status: 'Inactive', joined: 'Aug 25, 2026' },
+    { name: 'Rahul Verma', email: 'rahul@example.com', role: 'Parent', status: 'Active', joined: 'Aug 22, 2026' },
+    { name: 'Sunita Patel', email: 'sunita@example.com', role: 'Student', status: 'Active', joined: 'Aug 20, 2026' },
+    { name: 'Vikram Singh', email: 'vikram@example.com', role: 'Teacher', status: 'Active', joined: 'Aug 18, 2026' },
+  ];
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-black text-stone-900">Users</h1>
+        <p className="text-sm text-stone-500 font-medium mt-1">Manage all platform users and their access.</p>
+      </div>
+      <div className="admin-card overflow-hidden !p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-stone-100 bg-stone-50/60">
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Name</th>
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Role</th>
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400 hidden sm:table-cell">Status</th>
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400 hidden md:table-cell">Joined</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-50">
+              {users.map((u, i) => (
+                <tr key={i} className="hover:bg-amber-50/40 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-yellow-500 flex items-center justify-center text-white font-black text-sm shadow-sm">
+                        {u.name[0]}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-stone-800">{u.name}</p>
+                        <p className="text-xs text-stone-400">{u.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold
+                      ${u.role === 'Parent' ? 'bg-amber-100 text-amber-700' :
+                        u.role === 'Teacher' ? 'bg-blue-50 text-blue-600' :
+                        'bg-yellow-50 text-yellow-700'}`}>
+                      {u.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 hidden sm:table-cell">
+                    <span className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-1 rounded-full
+                      ${u.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${u.status === 'Active' ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                      {u.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-stone-500 hidden md:table-cell">{u.joined}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// Courses View
+// ─────────────────────────────────────────────────────────────
+const CoursesView: React.FC = () => {
+  const courses = [
+    { title: 'CBSE Mathematics Grade 8', subject: 'Mathematics', students: 1240, completion: 82, board: 'CBSE' },
+    { title: 'ICSE Science Grade 10', subject: 'Science', students: 980, completion: 71, board: 'ICSE' },
+    { title: 'CBSE English Language', subject: 'English', students: 2100, completion: 90, board: 'CBSE' },
+    { title: 'NCERT Social Studies Grade 7', subject: 'Social Studies', students: 760, completion: 65, board: 'NCERT' },
+    { title: 'ICSE Hindi Grade 9', subject: 'Hindi', students: 540, completion: 58, board: 'ICSE' },
+  ];
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-black text-stone-900">Courses</h1>
+        <p className="text-sm text-stone-500 font-medium mt-1">Overview of all active curriculum courses on the platform.</p>
+      </div>
+      <div className="grid gap-4">
+        {courses.map((c, i) => (
+          <div key={i} className="admin-card flex flex-col sm:flex-row sm:items-center gap-4 hover:-translate-y-0.5 transition-all duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-300 to-yellow-500 flex items-center justify-center shadow-lg flex-shrink-0">
+              <BookOpen className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-stone-900 truncate">{c.title}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md">{c.board}</span>
+                <span className="text-xs text-stone-400">{c.subject}</span>
+              </div>
+              <div className="mt-2.5">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-stone-400 font-medium">Completion</span>
+                  <span className="text-xs font-black text-amber-600">{c.completion}%</span>
+                </div>
+                <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full transition-all duration-700"
+                    style={{ width: `${c.completion}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-2xl font-black text-stone-900">{c.students.toLocaleString()}</p>
+              <p className="text-xs text-stone-400 font-medium">students</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// Reports View
+// ─────────────────────────────────────────────────────────────
+const ReportsView: React.FC = () => {
+  const reports = [
+    { title: 'Monthly Platform Report', period: 'August 2026', type: 'PDF', size: '2.4 MB', status: 'Ready' },
+    { title: 'User Growth Analytics', period: 'Q3 2026', type: 'CSV', size: '1.1 MB', status: 'Ready' },
+    { title: 'Course Completion Summary', period: 'August 2026', type: 'PDF', size: '890 KB', status: 'Processing' },
+    { title: 'Revenue & Subscription Report', period: 'August 2026', type: 'XLSX', size: '3.2 MB', status: 'Ready' },
+  ];
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-black text-stone-900">Reports</h1>
+        <p className="text-sm text-stone-500 font-medium mt-1">Download and view platform analytics reports.</p>
+      </div>
+      <div className="grid gap-4">
+        {reports.map((r, i) => (
+          <div key={i} className="admin-card flex items-center gap-4 hover:-translate-y-0.5 transition-all duration-200">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md flex-shrink-0
+              ${r.type === 'PDF' ? 'bg-red-100' : r.type === 'CSV' ? 'bg-emerald-100' : 'bg-blue-100'}`}>
+              <BarChart3 className={`w-6 h-6 ${r.type === 'PDF' ? 'text-red-500' : r.type === 'CSV' ? 'text-emerald-600' : 'text-blue-500'}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-stone-900 truncate">{r.title}</p>
+              <p className="text-xs text-stone-400 mt-0.5">{r.period} · {r.size}</p>
+            </div>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${r.status === 'Ready' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                {r.status}
+              </span>
+              {r.status === 'Ready' && (
+                <button className="text-xs font-black text-amber-600 hover:text-amber-800 border border-amber-200 hover:border-amber-400 px-3 py-1.5 rounded-lg transition-all hover:bg-amber-50 hidden sm:block">
+                  Download
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// Admin Dashboard Shell
+// ─────────────────────────────────────────────────────────────
+interface AdminDashboardProps {
+  onLogout: () => void;
+  user?: any;
+}
+
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
+  const [activeView, setActiveView] = useState<AdminView>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  const navItems: { id: AdminView; icon: React.ReactNode; label: string; navId: string }[] = [
+    { id: 'dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', navId: 'admin-nav-dashboard' },
+    { id: 'users', icon: <Users className="w-5 h-5" />, label: 'Users', navId: 'admin-nav-users' },
+    { id: 'courses', icon: <BookOpen className="w-5 h-5" />, label: 'Courses', navId: 'admin-nav-courses' },
+    { id: 'reports', icon: <BarChart3 className="w-5 h-5" />, label: 'Reports', navId: 'admin-nav-reports' },
+  ];
+
+  const handleNav = (view: AdminView) => {
+    setActiveView(view);
+    setSidebarOpen(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-50 flex font-sans">
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-stone-900/40 backdrop-blur-sm lg:hidden"
+        />
+      )}
+
+      {/* ── Sidebar ─────────────────────────────── */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-stone-100 flex flex-col shadow-xl
+          transition-all duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:static lg:translate-x-0 lg:shadow-none
+          ${collapsed ? 'lg:w-20' : 'lg:w-64'}
+          w-72
+        `}
+      >
+        {/* Brand */}
+        <div className={`p-5 border-b border-stone-100 flex items-center ${collapsed ? 'lg:justify-center' : 'justify-between'}`}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 min-w-10 bg-amber-400 rounded-xl flex items-center justify-center shadow-lg shadow-amber-400/30 flex-shrink-0">
+              <ShieldCheck className="w-5 h-5 text-white" />
+            </div>
+            {!collapsed && (
+              <div className="min-w-0">
+                <p className="font-black text-stone-900 tracking-tight text-base leading-none">SahajPath</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500 mt-0.5">Admin Console</p>
+              </div>
+            )}
+          </div>
+          {/* Desktop collapse toggle */}
+          {!collapsed && (
+            <button
+              id="admin-sidebar-collapse"
+              onClick={() => setCollapsed(true)}
+              className="hidden lg:flex p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
+              title="Collapse sidebar"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          {/* Mobile close */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Expand button when collapsed */}
+        {collapsed && (
+          <button
+            id="admin-sidebar-expand"
+            onClick={() => setCollapsed(false)}
+            className="hidden lg:flex mx-auto mt-3 p-2 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-colors"
+            title="Expand sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
+        {/* Nav */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-2">
+          {!collapsed && (
+            <p className="text-[10px] font-black uppercase tracking-widest text-stone-300 px-3 mb-3">Main Menu</p>
+          )}
+          {navItems.map((item) => (
+            <NavItem
+              key={item.id}
+              id={item.navId}
+              icon={item.icon}
+              label={item.label}
+              active={activeView === item.id}
+              collapsed={collapsed}
+              onClick={() => handleNav(item.id)}
+            />
+          ))}
+        </nav>
+
+        {/* Footer — Settings & Logout */}
+        <div className="p-3 border-t border-stone-100 space-y-1">
+          <NavItem
+            id="admin-nav-settings"
+            icon={<Settings className="w-5 h-5" />}
+            label="Settings"
+            active={false}
+            collapsed={collapsed}
+            onClick={() => {}}
+          />
+          <button
+            id="admin-nav-logout"
+            onClick={onLogout}
+            title={collapsed ? 'Logout' : undefined}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold
+              text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 group
+              ${collapsed ? 'justify-center' : ''}
+            `}
+          >
+            <LogOut className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />
+            {!collapsed && 'Logout'}
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main Area ───────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        {/* Top Header */}
+        <header className="h-16 bg-white border-b border-stone-100 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 shadow-sm">
+          <div className="flex items-center gap-3">
+            <button
+              id="admin-mobile-menu"
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-xl transition-colors"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <h2 className="text-base font-black text-stone-900 capitalize">{activeView}</h2>
+              <p className="text-xs text-stone-400 font-medium hidden sm:block">
+                {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Notification bell */}
+            <button
+              id="admin-notifications"
+              className="relative p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors"
+            >
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-400 rounded-full border-2 border-white" />
+            </button>
+
+            {/* Admin Avatar */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-md shadow-amber-400/30">
+                <ShieldCheck className="w-4 h-4 text-white" />
+              </div>
+              <div className="hidden sm:block text-left">
+                <p className="text-sm font-black text-stone-800 leading-none">{user?.name || 'SahajPath Admin'}</p>
+                <p className="text-xs text-stone-400 font-medium">{user?.email || 'admin@sahajpath.com'}</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          {activeView === 'dashboard' && <DashboardView />}
+          {activeView === 'users' && <UsersView />}
+          {activeView === 'courses' && <CoursesView />}
+          {activeView === 'reports' && <ReportsView />}
+        </main>
+      </div>
+
+      {/* Inline scoped styles */}
+      <style>{`
+        .admin-card {
+          background: white;
+          border: 1px solid rgba(231,229,228,0.7);
+          border-radius: 1.25rem;
+          padding: 1.5rem;
+          box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.04);
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// Admin Login Page
+// ─────────────────────────────────────────────────────────────
+type AuthScreen = 'login' | 'forgot-password';
+
+const AdminLogin: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // ── Auth state ──────────────────────────────
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    const tokens = getStoredTokens();
+    if (!tokens) return false;
+    const payload = decodeTokenPayload(tokens.accessToken);
+    const role = (payload?.role ?? '').toUpperCase();
+    return role === 'ADMIN' || role === 'SUPER_ADMIN';
+  });
+
+  const [adminUser, setAdminUser] = useState<any>(() => {
+    const stored = sessionStorage.getItem('acugrade_admin_user') || localStorage.getItem('acugrade_admin_user');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  const [view, setView] = useState<AuthScreen>('login');
+
+  // Synchronize router path when authenticated or not
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (location.pathname === '/admin' || location.pathname === '/admin/login') {
+        navigate('/admin/dashboard', { replace: true });
+      }
+    }
+  }, [isAuthenticated, location.pathname, navigate]);
+
+  // ── Login form state ────────────────────────
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [loginSuccess, setLoginSuccess] = useState(false);
+
+  // ── Create New Password state ───────────────
+  const [resetEmail, setResetEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetErrorMessage, setResetErrorMessage] = useState<string | null>(null);
+  const [resetFieldErrors, setResetFieldErrors] = useState<{
+    email?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
+
+  const clearFieldError = (field: 'email' | 'password') => {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+    if (errorMessage) setErrorMessage(null);
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setFieldErrors({});
+
+    const errs: { email?: string; password?: string } = {};
+    if (!email.trim()) {
+      errs.email = 'Please enter your admin email.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      errs.email = 'Please enter a valid email address.';
+    }
+    if (!password) errs.password = 'Please enter your password.';
+    if (Object.keys(errs).length) {
+      setFieldErrors(errs);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await ApiServices.adminLogin({ email: email.trim(), password });
+      const result = response.data?.data || response.data;
+
+      const accessToken = result.accessToken || result.tokens?.accessToken;
+      const refreshToken = result.refreshToken || result.tokens?.refreshToken;
+
+      if (accessToken && refreshToken) {
+        storeTokens({ accessToken, refreshToken });
+      }
+
+      const payload = accessToken ? decodeTokenPayload(accessToken) : null;
+      const userRole = ((payload?.role || result.user?.role || result.user?.roleName || '') as string).toUpperCase();
+
+      if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+        clearTokens();
+        sessionStorage.removeItem('acugrade_admin_user');
+        setErrorMessage('Access denied. This portal is restricted to admin accounts only.');
+        return;
+      }
+
+      const userData = result.user || {
+        email: email.trim(),
+        name: result.user?.name || 'SahajPath Admin',
+        role: userRole,
+        roleName: userRole,
+      };
+
+      sessionStorage.setItem('acugrade_admin_user', JSON.stringify(userData));
+      setAdminUser(userData);
+
+      setLoginSuccess(true);
+      setTimeout(() => {
+        setIsAuthenticated(true);
+        navigate('/admin/dashboard');
+      }, 500);
+    } catch (error: any) {
+      const msg =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to sign in. Please check your credentials and try again.';
+      setErrorMessage(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setResetErrorMessage(null);
+    setResetFieldErrors({});
+
+    const errs: { email?: string; newPassword?: string; confirmPassword?: string } = {};
+    if (!resetEmail.trim()) {
+      errs.email = 'Please enter your admin email.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail.trim())) {
+      errs.email = 'Please enter a valid email address.';
+    }
+    if (!newPassword) {
+      errs.newPassword = 'Please enter a new password.';
+    } else if (newPassword.length < 6) {
+      errs.newPassword = 'Password must be at least 6 characters.';
+    }
+    if (!confirmPassword) {
+      errs.confirmPassword = 'Please confirm your new password.';
+    } else if (newPassword !== confirmPassword) {
+      errs.confirmPassword = 'Passwords do not match.';
+    }
+
+    if (Object.keys(errs).length) {
+      setResetFieldErrors(errs);
+      return;
+    }
+
+    setResetSubmitting(true);
+    try {
+      await ApiServices.adminResetPassword({
+        email: resetEmail.trim(),
+        newPassword,
+      });
+      setResetSuccess(true);
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to update password. Please try again.';
+      setResetErrorMessage(msg);
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    const tokens = getStoredTokens();
+    try {
+      if (tokens) await ApiServices.logout({ refreshToken: tokens.refreshToken });
+    } catch {
+      /* best-effort */
+    }
+    clearTokens();
+    sessionStorage.removeItem('acugrade_admin_user');
+    localStorage.removeItem('acugrade_admin_user');
+    setAdminUser(null);
+    setIsAuthenticated(false);
+    setLoginSuccess(false);
+    setEmail('');
+    setPassword('');
+    setErrorMessage(null);
+    navigate('/admin/login');
+  };
+
+  // If already authenticated or on dashboard route with valid auth, show dashboard
+  if (isAuthenticated) {
+    return <AdminDashboard onLogout={handleLogout} user={adminUser} />;
+  }
+
+  // ── Clean SahajPath Admin Sign In Page ──────────
+  return (
+    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col justify-center items-center p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-md bg-white rounded-3xl p-8 sm:p-10 border border-stone-200/80 shadow-xl shadow-stone-200/50">
+        {/* Brand Header */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-12 h-12 rounded-2xl bg-yellow-400 text-stone-900 flex items-center justify-center shadow-lg shadow-yellow-200 mb-3">
+            <GraduationCap className="w-6 h-6" />
+          </div>
+          <div className="font-black text-xl tracking-tight text-stone-900">SahajPath</div>
+          <h1 className="text-2xl font-black text-stone-900 tracking-tight mt-4">
+            {view === 'login' ? 'Admin Sign In' : 'Create New Password'}
+          </h1>
+        </div>
+
+        {/* ── View: Admin Sign In ── */}
+        {view === 'login' && (
+          <form onSubmit={handleLoginSubmit} noValidate className="space-y-4">
+            {/* Admin Email */}
+            <div>
+              <label htmlFor="admin-email" className="block text-xs font-bold text-stone-700 mb-2 uppercase tracking-wider">
+                Admin Email
+              </label>
+              <div className="relative group">
+                <Mail
+                  size={17}
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${
+                    fieldErrors.email ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                  }`}
+                />
+                <input
+                  id="admin-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearFieldError('email');
+                  }}
+                  placeholder="admin@sahajpath.com"
+                  autoComplete="email"
+                  className={`w-full h-12 pl-11 pr-4 rounded-2xl text-sm font-semibold text-stone-900 outline-none transition-all
+                    placeholder:text-stone-300 placeholder:font-normal
+                    bg-stone-50/60 border-2
+                    ${
+                      fieldErrors.email
+                        ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
+                        : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
+                    }`}
+                />
+              </div>
+              {fieldErrors.email && (
+                <p className="text-red-500 text-xs font-bold mt-1.5 ml-1">{fieldErrors.email}</p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label htmlFor="admin-password" className="block text-xs font-bold text-stone-700 mb-2 uppercase tracking-wider">
+                Password
+              </label>
+              <div className="relative group">
+                <Lock
+                  size={17}
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${
+                    fieldErrors.password ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                  }`}
+                />
+                <input
+                  id="admin-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearFieldError('password');
+                  }}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  className={`w-full h-12 pl-11 pr-12 rounded-2xl text-sm font-semibold text-stone-900 outline-none transition-all
+                    placeholder:text-stone-300 placeholder:font-normal
+                    bg-stone-50/60 border-2
+                    ${
+                      fieldErrors.password
+                        ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
+                        : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
+                    }`}
+                />
+                <button
+                  type="button"
+                  id="admin-toggle-password"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p className="text-red-500 text-xs font-bold mt-1.5 ml-1">{fieldErrors.password}</p>
+              )}
+            </div>
+
+            {/* Forgot Password Link */}
+            <div className="flex justify-end pt-0.5">
+              <button
+                type="button"
+                id="admin-forgot-password"
+                onClick={() => {
+                  setResetEmail(email);
+                  setResetSuccess(false);
+                  setResetErrorMessage(null);
+                  setResetFieldErrors({});
+                  setView('forgot-password');
+                }}
+                className="text-xs font-bold text-yellow-600 hover:text-yellow-700 transition-colors"
+              >
+                Forgot Password?
+              </button>
+            </div>
+
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-xs font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {/* Sign In Button */}
+            <button
+              id="admin-login-submit"
+              type="submit"
+              disabled={isSubmitting || loginSuccess}
+              className="w-full h-12 rounded-2xl font-extrabold text-sm transition-all duration-200 shadow-lg shadow-yellow-200 bg-yellow-400 hover:bg-yellow-500 text-stone-900 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none flex items-center justify-center gap-2 mt-2"
+            >
+              {isSubmitting ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : loginSuccess ? (
+                <span>Signed In</span>
+              ) : (
+                <span>Sign In</span>
+              )}
+            </button>
+          </form>
+        )}
+
+        {/* ── View: Create New Password ── */}
+        {view === 'forgot-password' && (
+          <div>
+            {resetSuccess ? (
+              <div className="text-center space-y-4 py-2">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <p className="text-sm font-bold text-stone-800">Password created successfully.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail(resetEmail);
+                    setPassword('');
+                    setView('login');
+                  }}
+                  className="w-full h-12 rounded-2xl font-extrabold text-sm transition-all duration-200 shadow-lg shadow-yellow-200 bg-yellow-400 hover:bg-yellow-500 text-stone-900 active:scale-[0.98] flex items-center justify-center mt-4"
+                >
+                  Sign In
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleResetSubmit} noValidate className="space-y-4">
+                {/* Admin Email */}
+                <div>
+                  <label htmlFor="reset-email" className="block text-xs font-bold text-stone-700 mb-2 uppercase tracking-wider">
+                    Admin Email
+                  </label>
+                  <div className="relative group">
+                    <Mail
+                      size={17}
+                      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${
+                        resetFieldErrors.email ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                      }`}
+                    />
+                    <input
+                      id="reset-email"
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => {
+                        setResetEmail(e.target.value);
+                        setResetFieldErrors((prev) => ({ ...prev, email: undefined }));
+                      }}
+                      placeholder="admin@sahajpath.com"
+                      autoComplete="email"
+                      className={`w-full h-12 pl-11 pr-4 rounded-2xl text-sm font-semibold text-stone-900 outline-none transition-all
+                        placeholder:text-stone-300 placeholder:font-normal bg-stone-50/60 border-2 ${
+                          resetFieldErrors.email
+                            ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
+                            : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
+                        }`}
+                    />
+                  </div>
+                  {resetFieldErrors.email && (
+                    <p className="text-red-500 text-xs font-bold mt-1.5 ml-1">{resetFieldErrors.email}</p>
+                  )}
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label htmlFor="new-password" className="block text-xs font-bold text-stone-700 mb-2 uppercase tracking-wider">
+                    New Password
+                  </label>
+                  <div className="relative group">
+                    <Lock
+                      size={17}
+                      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${
+                        resetFieldErrors.newPassword ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                      }`}
+                    />
+                    <input
+                      id="new-password"
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        setResetFieldErrors((prev) => ({ ...prev, newPassword: undefined }));
+                      }}
+                      placeholder="••••••••"
+                      className={`w-full h-12 pl-11 pr-12 rounded-2xl text-sm font-semibold text-stone-900 outline-none transition-all
+                        placeholder:text-stone-300 placeholder:font-normal bg-stone-50/60 border-2 ${
+                          resetFieldErrors.newPassword
+                            ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
+                            : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
+                        }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+                      aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showNewPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                  {resetFieldErrors.newPassword && (
+                    <p className="text-red-500 text-xs font-bold mt-1.5 ml-1">{resetFieldErrors.newPassword}</p>
+                  )}
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label htmlFor="confirm-password" className="block text-xs font-bold text-stone-700 mb-2 uppercase tracking-wider">
+                    Confirm Password
+                  </label>
+                  <div className="relative group">
+                    <Lock
+                      size={17}
+                      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${
+                        resetFieldErrors.confirmPassword ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                      }`}
+                    />
+                    <input
+                      id="confirm-password"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        setResetFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                      }}
+                      placeholder="••••••••"
+                      className={`w-full h-12 pl-11 pr-12 rounded-2xl text-sm font-semibold text-stone-900 outline-none transition-all
+                        placeholder:text-stone-300 placeholder:font-normal bg-stone-50/60 border-2 ${
+                          resetFieldErrors.confirmPassword
+                            ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
+                            : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
+                        }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                  {resetFieldErrors.confirmPassword && (
+                    <p className="text-red-500 text-xs font-bold mt-1.5 ml-1">{resetFieldErrors.confirmPassword}</p>
+                  )}
+                </div>
+
+                {/* Error Message */}
+                {resetErrorMessage && (
+                  <div className="p-3.5 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-xs font-bold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <span>{resetErrorMessage}</span>
+                  </div>
+                )}
+
+                {/* Submit button */}
+                <button
+                  id="admin-reset-submit"
+                  type="submit"
+                  disabled={resetSubmitting}
+                  className="w-full h-12 rounded-2xl font-extrabold text-sm transition-all duration-200 shadow-lg shadow-yellow-200 bg-yellow-400 hover:bg-yellow-500 text-stone-900 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none flex items-center justify-center gap-2 mt-2"
+                >
+                  {resetSubmitting ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <span>Create Password</span>
+                  )}
+                </button>
+
+                {/* Back to Sign In Link */}
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setView('login');
+                      setErrorMessage(null);
+                    }}
+                    className="text-xs font-bold text-stone-500 hover:text-stone-800 transition-colors"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AdminLogin;

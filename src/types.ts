@@ -133,6 +133,7 @@ export interface ChildAccount {
   classGrade: ClassGrade;
   targetBoard: Board;
   schoolName?: string;
+  email?: string;
   pin: string;
   dailyExamsTakenToday: number;
   lastExamDate?: string;

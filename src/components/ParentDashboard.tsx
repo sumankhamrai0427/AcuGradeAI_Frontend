@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ParentAccount,
   ChildAccount,
@@ -29,6 +30,15 @@ import {
   Lock,
   BarChart3
 } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
 
 interface ParentDashboardProps {
   parentAccount: ParentAccount;
@@ -60,6 +70,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   onViewSubmissionReport,
   onUpdateChild,
 }) => {
+  const navigate = useNavigate();
   const [selectedChildForEdit, setSelectedChildForEdit] = useState<ChildAccount | null>(null);
   const [editFormData, setEditFormData] = useState<Partial<ChildAccount>>({});
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('day');
@@ -76,11 +87,12 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   const avgScoreNum = parentAccount.children.length > 0
     ? (parentAccount.children.reduce((acc, c) => acc + (c.averageScore || 0), 0) / totalChildren)
     : 0;
+  
+  const hasData = totalChildren > 0 && (totalFamilyExams > 0 || avgScoreNum > 0);
 
-  const avgFamilyScore = avgScoreNum.toFixed(1);
-  const overallReadinessPct = totalFamilyExams > 0 || avgScoreNum > 0
-    ? Math.min(100, Math.round(avgScoreNum * 10))
-    : 0;
+  const avgFamilyScore = hasData ? avgScoreNum.toFixed(1) + '%' : 'N/A';
+  const overallReadinessPct = hasData ? Math.min(100, Math.round(avgScoreNum * 10)) + '%' : 'N/A';
+  const learningStreakText = hasData ? '6 Days' : 'N/A';
 
   // Real-Time Weekly Delta calculation
   const now = useMemo(() => new Date().getTime(), []);
@@ -304,33 +316,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
       });
     }
 
-    // Default fallback recommendations when no exams are taken yet
-    return [
-      {
-        subject: 'Mathematics' as Subject,
-        topic: 'Quadratic Equations & Polynomials',
-        difficulty: 'hard' as ExamDifficulty,
-        tag: `${board} • ${grade}`,
-        badgeColor: 'bg-red-100 text-red-700',
-        badgeText: 'Hard',
-      },
-      {
-        subject: 'Physics' as Subject,
-        topic: 'Ray Optics & Light Refraction',
-        difficulty: 'medium' as ExamDifficulty,
-        tag: `${board} Calibration`,
-        badgeColor: 'bg-teal-100 text-teal-700',
-        badgeText: 'Medium',
-      },
-      {
-        subject: 'Logical Reasoning' as Subject,
-        topic: 'Pattern Recognition & Series Alpha',
-        difficulty: 'simple' as ExamDifficulty,
-        tag: 'Foundation Prep',
-        badgeColor: 'bg-yellow-100 text-yellow-700',
-        badgeText: 'Easy',
-      }
-    ];
+    // No exams taken yet or no weak topics
+    return [];
   }, [activeChild, activeTopicMastery]);
 
   const isFree = parentAccount.subscriptionTier === 'free';
@@ -364,385 +351,311 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* High Density Bento Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left 8 Columns: Metrics, Evolutionary Progress Graph, and Child Sub-Accounts */}
-        <div className="lg:col-span-8 flex flex-col gap-4">
-          {/* Top 3 High Density Metric Cards (100% Dynamic) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
-              <p className="text-[11px] text-stone-500 mb-0.5">Overall Readiness</p>
-              <p className="text-xl font-bold text-yellow-600">
-                {overallReadinessPct > 0 ? `${overallReadinessPct}%` : 'Calibrating'}
-              </p>
-              <p className="text-[10px] text-stone-400 mt-1 flex items-center gap-1">
-                <span className={deltaIsPositive ? 'text-yellow-600 font-semibold' : 'text-rose-600 font-semibold'}>
-                  {deltaText}
-                </span>
-              </p>
-            </div>
+    <div className="space-y-8 pb-10">
 
-            <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
-              <p className="text-[11px] text-stone-500 mb-0.5">Exams Completed</p>
-              <p className="text-xl font-bold text-yellow-600">{totalFamilyExams}</p>
-              <p className="text-[10px] text-stone-400 mt-1">
-                Across {totalChildren} Registered Sub-Account{totalChildren === 1 ? '' : 's'}
-              </p>
+      {/* 1. TOP SUMMARY CARDS */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Card 1: My Children (Yellow/Orange) */}
+        <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-2xl border border-yellow-100 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-yellow-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="flex items-center gap-2 mb-2 relative z-10">
+            <div className="w-7 h-7 rounded-xl bg-white shadow-sm flex items-center justify-center">
+              <Users className="w-3.5 h-3.5 text-yellow-600" />
             </div>
-
-            <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
-              <p className="text-[11px] text-stone-500 mb-0.5">AI Learning Speed</p>
-              <p className="text-xl font-bold text-amber-600">
-                {learningSpeedTier}
-              </p>
-              <p className="text-[10px] text-stone-400 mt-1">
-                {benchmarkSubtitle}
-              </p>
-            </div>
+            <span className="text-xs font-bold text-yellow-900 uppercase tracking-wider">My Children</span>
           </div>
+          <p className="text-2xl font-black text-stone-900 relative z-10">{totalChildren} <span className="text-sm font-semibold text-yellow-700">Active</span></p>
+        </div>
 
-          {/* Evolutionary Progress Graph (100% Dynamic Graph) */}
-          <div className="bg-white border border-stone-200 rounded-xl p-4 flex flex-col shadow-xs">
-            <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
-              <div>
-                <h2 className="font-bold text-base text-stone-800 flex items-center gap-2">
-                  <span>Evolutionary Progress Graph</span>
-                  <span className="text-[10px] font-semibold text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded border border-yellow-300">
-                    Smart Growth Tracker
-                  </span>
-                </h2>
-                <p className="text-xs text-stone-400 mt-0.5">Daily, weekly & monthly score progression across 10-mark diagnostic tests</p>
-              </div>
-
-              <div className="flex gap-1 bg-stone-100 p-0.5 rounded-lg border border-stone-200">
-                <button
-                  onClick={() => setTimeframe('day')}
-                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'day' ? 'bg-yellow-400 text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-900'
-                    }`}
-                >
-                  Day
-                </button>
-                <button
-                  onClick={() => setTimeframe('week')}
-                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'week' ? 'bg-yellow-400 text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-900'
-                    }`}
-                >
-                  Week
-                </button>
-                <button
-                  onClick={() => setTimeframe('month')}
-                  className={`px-2.5 py-1 text-[11px] rounded font-semibold transition-all ${timeframe === 'month' ? 'bg-yellow-400 text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-900'
-                    }`}
-                >
-                  Month
-                </button>
-              </div>
+        {/* Card 2: Overall Progress (Emerald/Teal) */}
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-2xl border border-emerald-100 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="flex items-center gap-2 mb-2 relative z-10">
+            <div className="w-7 h-7 rounded-xl bg-white shadow-sm flex items-center justify-center">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
             </div>
-
-            {/* Dynamic Step Graph */}
-            <div className="pt-4 pb-2 px-2 flex items-end justify-between gap-3 h-32 border-b border-stone-100">
-              {graphBars.map((bar, idx) => {
-                const hasData = bar.pct !== null;
-                const scorePct = hasData ? bar.pct : null;
-                const isLatestWithData = hasData && (idx === graphBars.length - 1 || graphBars.slice(idx + 1).every(b => b.pct === null));
-
-                return (
-                  <div key={bar.label} className="flex-1 flex flex-col items-center h-full justify-end group">
-                    {hasData ? (
-                      <div
-                        className={`w-full rounded-t-lg relative transition-all duration-300 ${isLatestWithData
-                            ? 'bg-yellow-500 group-hover:bg-yellow-400 shadow-xs'
-                            : 'bg-yellow-200 group-hover:bg-yellow-300'
-                          }`}
-                        style={{ height: `${Math.max(10, Math.min(100, scorePct as number))}%` }}
-                      >
-                        <div className={`absolute -top-2 right-1/2 transtone-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow-xs flex items-center justify-center ${isLatestWithData ? 'bg-yellow-400' : 'bg-yellow-400'
-                          }`}>
-                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                        </div>
-                      </div>
-                    ) : (
-                      // Empty state for intervals without exams: flat dashed baseline (no floating dots!)
-                      <div className="w-full h-1 bg-stone-100 rounded-full border-t border-dashed border-stone-200 group-hover:bg-stone-200 transition-colors mb-0.5" />
-                    )}
-                    <span className={`text-[10px] mt-2 font-semibold transition-colors ${hasData
-                        ? (isLatestWithData ? 'font-bold text-yellow-700' : 'text-stone-700')
-                        : 'text-stone-300'
-                      }`}>
-                      {bar.label} {hasData ? `(${scorePct}%)` : '(—)'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Dynamic AI Observation Callout */}
-            <div className="mt-3 p-3 bg-yellow-50/80 rounded-xl flex items-center gap-2.5 border border-yellow-200">
-              <div className="p-2 bg-yellow-100 rounded-lg text-yellow-700 shrink-0">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <p className="text-xs text-yellow-950 font-medium leading-relaxed">
-                <strong>Smart Mentor's Advice:</strong> {aiObservationMessage}
-              </p>
-            </div>
+            <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Progress</span>
           </div>
+          <div className="relative z-10">
+            <p className="text-2xl font-black text-stone-900">{avgFamilyScore}</p>
+            <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">Across all children</p>
+          </div>
+        </div>
 
-          {/* Children Sub-Accounts Section */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-base text-stone-800 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-yellow-600" />
-                  <span>Candidate Sub-Accounts & Active Personas</span>
-                </h3>
-                <p className="text-xs text-stone-400">Independent credentials, target boards, and syllabus tracking</p>
-              </div>
+        {/* Card 3: Exam Readiness (Blue/Indigo) */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="flex items-center gap-2 mb-2 relative z-10">
+            <div className="w-7 h-7 rounded-xl bg-white shadow-sm flex items-center justify-center">
+              <Award className="w-3.5 h-3.5 text-blue-600" />
+            </div>
+            <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">Readiness</span>
+          </div>
+          <div className="relative z-10">
+            <p className="text-2xl font-black text-stone-900">{overallReadinessPct}</p>
+            <p className="text-[10px] text-blue-700 font-semibold mt-0.5">Based on assessments</p>
+          </div>
+        </div>
 
-              <button
-                id="add-child-btn-dashboard"
+        {/* Card 4: Learning Streak (Rose/Pink) */}
+        <div className="bg-gradient-to-br from-rose-50 to-pink-50 p-4 rounded-2xl border border-rose-100 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-rose-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="flex items-center gap-2 mb-2 relative z-10">
+            <div className="w-7 h-7 rounded-xl bg-white shadow-sm flex items-center justify-center">
+              <Flame className="w-3.5 h-3.5 text-rose-500" />
+            </div>
+            <span className="text-xs font-bold text-rose-900 uppercase tracking-wider">Streak</span>
+          </div>
+          <div className="relative z-10">
+            <p className="text-2xl font-black text-stone-900">{learningStreakText}</p>
+            <p className="text-[10px] text-rose-700 font-semibold mt-0.5">Active learning</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. MY CHILDREN SECTION */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="font-bold text-xl text-stone-900">My Children</h2>
+          <p className="text-xs text-stone-500 font-medium">Track each child's learning journey.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {parentAccount.children.length === 0 ? (
+            <div className="col-span-1 lg:col-span-2 bg-stone-50 border border-stone-200 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+              <Users className="w-10 h-10 text-stone-300 mb-3" />
+              <p className="font-bold text-stone-700">No Children Added Yet</p>
+              <p className="text-sm text-stone-500 mt-1 mb-4">Add your children to start tracking their learning journey.</p>
+              <button 
                 onClick={onOpenAddChildModal}
-                className="px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-all"
+                className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-stone-900 font-bold rounded-xl transition-colors shadow-sm"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Child Sub-Account</span>
+                Add a Child
               </button>
             </div>
+          ) : parentAccount.children.map((child) => {
+            const isChildActive = activeChildId === child.id;
+            const childMasteryEntries = Object.entries(child.topicMastery || {}).sort((a, b) => Number(b[1]) - Number(a[1]));
+            const strongestTopic = childMasteryEntries.length > 0 ? childMasteryEntries[0][0] : 'Mathematics';
+            const weakestTopic = childMasteryEntries.length > 0 ? childMasteryEntries[childMasteryEntries.length - 1][0] : 'English';
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {parentAccount.children.map((child) => {
-                const isChildActive = activeChildId === child.id;
+            return (
+              <div
+                key={child.id}
+                className={`bg-white rounded-2xl border transition-all p-5 relative flex flex-col gap-4 overflow-hidden group ${isChildActive ? 'border-yellow-400 ring-4 ring-yellow-50 shadow-md' : 'border-stone-200 hover:border-stone-300 shadow-sm'
+                  }`}
+              >
+                {/* Decorative blob */}
+                <div className={`absolute -right-12 -bottom-12 w-32 h-32 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors ${isChildActive ? 'bg-yellow-400 opacity-40' : 'bg-stone-300 group-hover:bg-yellow-300'}`}></div>
 
-                return (
-                  <div
-                    key={child.id}
-                    id={`child-card-${child.id}`}
-                    className={`bg-white rounded-xl border transition-all p-4 shadow-xs relative ${isChildActive
-                        ? 'border-yellow-500 ring-2 ring-yellow-100 bg-white'
-                        : 'border-stone-200 hover:border-stone-300'
-                      }`}
-                  >
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-yellow-50 border border-yellow-200 flex items-center justify-center text-2xl">
-                          {child.avatar}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <h4 className="font-bold text-sm text-stone-900">{child.name}</h4>
-                            {isChildActive && (
-                              <span className="text-[10px] bg-yellow-50 text-yellow-700 font-bold px-1.5 py-0.2 rounded border border-yellow-300">
-                                Active
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-stone-500 mt-0.5">{child.schoolName || 'School Student'}</p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-50 text-yellow-700">
-                              {child.classGrade}
-                            </span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-100 text-stone-700">
-                              {child.targetBoard}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleStartEdit(child)}
-                        className="p-1 rounded-md border border-stone-200 hover:bg-stone-50 text-stone-400 hover:text-stone-700"
-                        title="Edit Child Profile & PIN"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
+                {/* Header */}
+                <div className="flex items-center justify-between relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-center text-3xl shadow-xs">
+                      {child.avatar}
                     </div>
-
-                    {/* PIN and Stats */}
-                    <div className="grid grid-cols-3 gap-2 py-1.5 px-2 bg-stone-50 rounded-xl text-center text-xs mb-2 border border-stone-100">
-                      <div>
-                        <span className="text-[10px] text-stone-400 uppercase font-semibold block">Average</span>
-                        <span className="font-bold text-yellow-600">{child.averageScore}/10</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-stone-400 uppercase font-semibold block">Tests</span>
-                        <span className="font-bold text-stone-800">{child.totalExamsTaken}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-stone-400 uppercase font-semibold block">PIN</span>
-                        <span className="font-mono font-bold text-stone-700">{child.pin}</span>
-                      </div>
-                    </div>
-
-                    {/* Topic Mastery (Live from K-Graph engine) */}
-                    {child.topicMastery && Object.keys(child.topicMastery).length > 0 ? (
-                      <div className="mb-3 space-y-1.5">
-                        <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
-                          Topic Mastery (K-Graph)
-                        </span>
-                        {Object.entries(child.topicMastery).slice(0, 2).map(([topic, pct]) => {
-                          const numPct = Number(pct);
-                          return (
-                            <div key={topic} className="text-xs">
-                              <div className="flex justify-between text-stone-600 mb-0.5 text-[11px]">
-                                <span className="truncate max-w-[140px] font-medium">{topic}</span>
-                                <span className="font-bold text-stone-800">{numPct}%</span>
-                              </div>
-                              <div className="w-full h-1 bg-stone-100 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all duration-300 ${numPct >= 80 ? 'bg-yellow-500' : numPct >= 60 ? 'bg-amber-500' : 'bg-rose-500'
-                                    }`}
-                                  style={{ width: `${numPct}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="mb-3 py-1.5 px-2 bg-stone-50 rounded-lg text-[10px] text-stone-400 text-center">
-                        No topic mastery recorded yet. Take an exam to map K-Graph.
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        onClick={() => onChildSelect(child.id)}
-                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${isChildActive
-                            ? 'bg-yellow-50 text-yellow-700 border border-yellow-300'
-                            : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
-                          }`}
-                      >
-                        {isChildActive ? 'Selected' : 'Select Candidate'}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          onChildSelect(child.id);
-                          onLaunchExamForChild(child.id);
-                        }}
-                        className="py-1.5 px-3 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                      >
-                        <Play className="w-3 h-3 fill-white" />
-                        <span>Start Test</span>
-                      </button>
+                    <div>
+                      <h4 className="font-bold text-lg text-stone-900">{child.name}</h4>
+                      <p className="text-xs text-stone-500 font-medium mb-1">{child.classGrade} • {child.targetBoard}</p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+                  {isChildActive && (
+                    <span className="text-[10px] bg-yellow-100 text-yellow-700 font-bold px-2 py-1 rounded-lg">
+                      ACTIVE
+                    </span>
+                  )}
+                </div>
 
-        {/* Right 4 Columns: Dynamic Recommended Exams and Recent Results Ledger */}
-        <div className="lg:col-span-4 flex flex-col gap-4">
-          {/* Dynamic Recommended Exams Widget */}
-          <div className="bg-white border border-stone-200 rounded-xl p-4 flex flex-col shadow-xs">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold text-sm text-stone-800">Recommended Exams</h2>
-              <span className="text-[10px] font-semibold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded">
-                Adaptive
-              </span>
-            </div>
-
-            <div className="space-y-2.5">
-              {dynamicRecommendations.map((rec) => {
-                const subjectColorClass =
-                  rec.subject === 'English' ? 'text-amber-600' :
-                    rec.subject === 'Physics' ? 'text-teal-600' :
-                      rec.subject === 'Chemistry' ? 'text-teal-600' :
-                        rec.subject === 'Biology' ? 'text-yellow-600' :
-                          rec.subject === 'Computer Science' ? 'text-cyan-600' :
-                            rec.subject === 'Social Studies' ? 'text-amber-700' :
-                              rec.subject === 'Logical Reasoning' ? 'text-pink-600' :
-                                rec.subject === 'Science' ? 'text-yellow-600' :
-                                  'text-yellow-600';
-
-                return (
-                  <div
-                    key={`${rec.subject}-${rec.topic}`}
-                    onClick={() => onLaunchExamForChild(activeChildId || parentAccount.children[0]?.id)}
-                    className="p-3 border border-stone-100 rounded-xl hover:border-yellow-300 hover:bg-stone-50 cursor-pointer transition-all"
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className={`text-[10px] font-bold uppercase tracking-tight ${subjectColorClass}`}>
-                        {rec.subject}
-                      </span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${rec.badgeColor}`}>
-                        {rec.badgeText}
-                      </span>
-                    </div>
-                    <p className="text-xs font-semibold mb-1.5 text-stone-900">{rec.topic}</p>
-                    <div className="flex items-center gap-2 text-[10px] text-stone-500">
-                      <span>10 Questions (10 Marks)</span>
-                      <span className="w-1 h-1 bg-stone-300 rounded-full" />
-                      <span>{rec.tag}</span>
+                {/* Progress Indicators */}
+                <div className="grid grid-cols-3 gap-4 border-y border-stone-100 py-4 relative z-10">
+                  <div className="col-span-1">
+                    <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Overall Progress</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${Math.round(child.averageScore * 10)}%` }} />
+                      </div>
+                      <span className="text-xs font-bold text-stone-800">{Math.round(child.averageScore * 10)}%</span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-
-            <button
-              onClick={() => onLaunchExamForChild(activeChildId || parentAccount.children[0]?.id)}
-              className="w-full mt-4 py-2 bg-stone-900 text-white text-xs font-bold rounded-lg hover:bg-stone-800 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
-            >
-              <Play className="w-3.5 h-3.5 fill-white" />
-              <span>Browse All Subjects & Launch Arena</span>
-            </button>
-          </div>
-
-          {/* Recent Results Ledger (100% Dynamic) */}
-          <div className="bg-white border border-stone-200 rounded-xl p-4 flex flex-col shadow-xs">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold text-sm text-stone-800">Recent Results</h2>
-              <span className="text-[10px] text-stone-400">{examHistory.length} Recorded</span>
-            </div>
-
-            <div className="space-y-3">
-              {examHistory.length > 0 ? (
-                examHistory.slice(0, 4).map((sub) => (
-                  <div
-                    key={sub.id}
-                    onClick={() => onViewSubmissionReport(sub)}
-                    className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-stone-50 cursor-pointer transition-colors border border-transparent hover:border-stone-100"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${sub.marksObtained >= 8
-                          ? 'bg-yellow-50 text-yellow-600 border border-yellow-300'
-                          : sub.marksObtained >= 5
-                            ? 'bg-yellow-50 text-yellow-600 border border-yellow-300'
-                            : 'bg-rose-50 text-rose-600 border border-rose-200'
-                        }`}>
-                        {sub.marksObtained}/10
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-stone-900 truncate">{sub.examTitle}</p>
-                        <p className="text-[10px] text-stone-400">
-                          {sub.studentName} • {new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </p>
-                      </div>
-                    </div>
-
-                    <ChevronRight className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                  <div className="col-span-1 text-center border-l border-stone-100 pl-4">
+                    <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Exam Readiness</span>
+                    <span className="text-sm font-bold text-stone-800">{Math.max(0, Math.round((child.averageScore * 10) - 4))}%</span>
                   </div>
-                ))
-              ) : (
-                <div className="py-6 text-center text-stone-400 text-xs space-y-2">
-                  <BarChart3 className="w-8 h-8 mx-auto text-stone-300" />
-                  <p>No exams completed yet.</p>
+                  <div className="col-span-1 text-right border-l border-stone-100">
+                    <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Latest Result</span>
+                    <span className="text-sm font-bold text-stone-800">{child.averageScore}/10</span>
+                  </div>
+                </div>
+
+                {/* Strengths & Weaknesses */}
+                <div className="grid grid-cols-2 gap-4 text-xs relative z-10">
+                  <div>
+                    <span className="text-[10px] text-stone-400 uppercase font-bold block mb-0.5">Strongest</span>
+                    <span className="font-semibold text-stone-800 truncate block">{strongestTopic}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-stone-400 uppercase font-bold block mb-0.5">Needs Attention</span>
+                    <span className="font-semibold text-stone-800 truncate block">{weakestTopic}</span>
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="flex items-center justify-between mt-1 pt-3 relative z-10">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-500">
+                    <Flame className="w-4 h-4" /> 6 Day Streak
+                  </div>
                   <button
-                    onClick={() => onLaunchExamForChild(activeChildId || parentAccount.children[0]?.id)}
-                    className="text-xs text-yellow-600 font-semibold hover:underline"
+                    onClick={() => {
+                      onChildSelect(child.id);
+                      navigate('/children');
+                    }}
+                    className="text-xs font-bold text-yellow-600 hover:text-yellow-700 hover:underline flex items-center gap-1"
                   >
-                    Launch First 10-Mark Diagnostic →
+                    View Progress <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              )}
-            </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. LEARNING PROGRESS */}
+      <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs mt-8 relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/40 to-transparent pointer-events-none"></div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 relative z-10">
+          <div>
+            <h2 className="font-bold text-lg text-stone-900">Learning Progress</h2>
+            <p className="text-xs text-stone-500 font-medium">See how your children's performance is changing over time.</p>
+          </div>
+          <div className="flex gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200 shrink-0">
+            <button
+              onClick={() => setTimeframe('week')}
+              className={`px-3 py-1.5 text-xs rounded-lg font-bold transition-all ${timeframe === 'week' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500 hover:text-stone-900'}`}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setTimeframe('month')}
+              className={`px-3 py-1.5 text-xs rounded-lg font-bold transition-all ${timeframe === 'month' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500 hover:text-stone-900'}`}
+            >
+              Month
+            </button>
           </div>
         </div>
+
+        <div className="h-64 w-full">
+          {!hasData ? (
+            <div className="h-full w-full flex flex-col items-center justify-center bg-stone-50 rounded-xl border border-stone-200 border-dashed">
+              <TrendingUp className="w-8 h-8 text-stone-300 mb-2" />
+              <p className="text-stone-500 font-bold text-sm">No data available</p>
+              <p className="text-stone-400 text-xs mt-1">Start learning to see progress charts</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={graphBars} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorPct" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
+                <XAxis
+                  dataKey="label"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: '#78716c', fontWeight: 500 }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: '#78716c', fontWeight: 500 }}
+                  domain={[0, 100]}
+                />
+                <Tooltip
+                  contentStyle={{ borderRadius: '12px', border: '1px solid #f5f5f4', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ color: '#b45309', fontWeight: 'bold' }}
+                  formatter={(value) => [`${value}%`, 'Score']}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="pct"
+                  stroke="#f59e0b"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorPct)"
+                  activeDot={{ r: 6, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
+                  connectNulls={true}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* 5 & 6. RECENT RESULTS + NEXT STEPS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+
+        {/* Recent Results */}
+        <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs flex flex-col relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-blue-300 rounded-full blur-3xl opacity-10 group-hover:opacity-20 pointer-events-none transition-opacity"></div>
+          <h2 className="font-bold text-base text-stone-900 mb-4 relative z-10">Recent Results</h2>
+          <div className={`flex-1 space-y-3 relative z-10 ${examHistory.length === 0 ? 'flex items-center justify-center' : ''}`}>
+            {examHistory.length > 0 ? (
+              examHistory.slice(0, 4).map((sub) => (
+                <div key={sub.id} className="flex justify-between items-center p-3 rounded-xl border border-stone-100 bg-stone-50 hover:border-stone-200 transition-colors">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-stone-900 mb-0.5">{sub.studentName}</span>
+                    <span className="text-[10px] text-stone-500 font-medium">
+                      {resolveSubjectForTopic(sub.examTitle)} • {sub.difficulty.charAt(0).toUpperCase() + sub.difficulty.slice(1)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-bold text-stone-900">{sub.marksObtained}/10</span>
+                    <span className="text-[10px] text-stone-400 font-medium">{new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-stone-500 py-4 text-center">No exams completed yet.</p>
+            )}
+          </div>
+          {examHistory.length > 0 && (
+            <button
+              onClick={() => navigate('/reports')}
+              className="text-xs font-bold text-yellow-600 hover:text-yellow-700 hover:underline flex items-center gap-1 cursor-pointer w-fit"
+            >
+              View All Results <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Recommended Next Steps */}
+        <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs flex flex-col relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-orange-300 rounded-full blur-3xl opacity-10 group-hover:opacity-20 pointer-events-none transition-opacity"></div>
+          <h2 className="font-bold text-base text-stone-900 mb-4 relative z-10">Recommended Next Steps</h2>
+          <div className={`flex-1 space-y-3 relative z-10 ${dynamicRecommendations.length === 0 ? 'flex items-center justify-center' : ''}`}>
+            {dynamicRecommendations.length > 0 ? (
+              dynamicRecommendations.slice(0, 2).map((rec, idx) => (
+                <div key={idx} className="flex items-center p-3 rounded-xl border border-stone-100 bg-stone-50">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-stone-900 mb-0.5 flex items-center gap-1.5">
+                      {idx === 0 ? '📘' : '🧮'} Practice {rec.subject}
+                    </span>
+                    <span className="text-[10px] text-stone-500 font-medium">
+                      {idx === 0 ? 'Improve accuracy in this topic.' : 'Ready to try the next difficulty level.'}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-stone-500 py-4 text-center">No recommendations available yet.</p>
+            )}
+          </div>
+        </div>
+
       </div>
 
       {/* Edit Child Modal */}

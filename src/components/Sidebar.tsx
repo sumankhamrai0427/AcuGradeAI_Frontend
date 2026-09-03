@@ -40,7 +40,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-stone-200">
+    <div className="flex flex-col h-full bg-gradient-to-b from-yellow-50/40 via-white to-orange-50/20 border-r border-stone-200/60 relative">
+      {/* Decorative background blob in sidebar */}
+      <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-b from-yellow-100/30 to-transparent pointer-events-none"></div>
+      
       {/* Header / Brand */}
       <div className={`h-16 w-full flex items-center justify-between ${isSidebarCollapsed ? 'lg:justify-center px-4' : 'px-6'} border-b border-stone-100 flex-shrink-0 transition-all`}>
         <div className="flex items-center gap-2">
@@ -51,9 +54,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {onToggleSidebar && (
-          <button 
-            onClick={onToggleSidebar} 
-            className={`hidden lg:flex p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors ${isSidebarCollapsed ? '' : 'ml-auto'}`}
+          <button
+            onClick={onToggleSidebar}
+            className={`hidden lg:flex p-1.5 rounded-lg text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 bg-stone-50 border border-stone-100 transition-colors ${isSidebarCollapsed ? '' : 'ml-auto'}`}
             title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
             {isSidebarCollapsed ? (
@@ -67,12 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Dynamic Navigation Links */}
       <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1.5 custom-scrollbar">
-        {activePersona && !isSidebarCollapsed && (
-          <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-3 mb-2 mt-1">
-            {activePersona === 'student' ? 'Student Workspace' : 'Family & Management'}
-          </div>
-        )}
-        
+
         {(Array.isArray(pageAccess) ? pageAccess : [])
           .filter(page => page.isActive === 1)
           .sort((a, b) => a.menuOrder - b.menuOrder)
@@ -84,35 +82,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 to={page.pageRoute}
                 onClick={() => setMobileSidebarOpen?.(false)}
                 className={({ isActive }) => `
-                  group w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all
+                  group w-full flex items-center py-2.5 rounded-xl text-sm transition-all relative overflow-hidden
                   ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'}
                   ${isActive
-                    ? 'text-yellow-600 font-semibold'
-                    : 'text-stone-500 hover:text-stone-900'
+                    ? 'text-yellow-700 font-bold bg-gradient-to-r from-yellow-50 to-white shadow-sm border border-yellow-100/50'
+                    : 'text-stone-500 font-medium hover:text-stone-900 hover:bg-stone-50 border border-transparent'
                   }
                 `}
                 title={page.pageName}
               >
                 {({ isActive }) => (
                   <>
-                    <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${isActive ? 'text-yellow-600' : 'text-stone-400 group-hover:text-stone-900'}`} />
-                    <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
+                    {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1/2 bg-yellow-400 rounded-r-full"></div>}
+                    <Icon className={`w-4 h-4 flex-shrink-0 transition-colors relative z-10 ${isActive ? 'text-yellow-600' : 'text-stone-400 group-hover:text-stone-500'}`} />
+                    <span className={`truncate relative z-10 ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
                       {page.pageName}
                     </span>
                   </>
                 )}
               </NavLink>
             );
-        })}
+          })}
       </nav>
 
       {/* Footer Actions (Logout) */}
       <div className="p-4 border-t border-stone-100 mt-auto">
         <button
           onClick={onLogout}
-          className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-stone-600 rounded-lg hover:bg-stone-50 hover:text-stone-900 transition-colors ${
-            isSidebarCollapsed ? 'lg:justify-center lg:px-0' : ''
-          }`}
+          className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-stone-600 rounded-lg hover:bg-stone-50 hover:text-stone-900 transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0' : ''
+            }`}
           title="Log out"
         >
           <LogOut className="w-4 h-4 flex-shrink-0 text-stone-400" />

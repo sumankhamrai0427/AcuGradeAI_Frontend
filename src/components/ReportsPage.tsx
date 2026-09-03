@@ -1,0 +1,167 @@
+import React, { useState } from 'react';
+import { ExamSubmission, ParentAccount } from '../types';
+import { FileText, Calendar, Filter, ChevronRight, CheckCircle2, Clock, BookOpen, AlertTriangle } from 'lucide-react';
+
+interface ReportsPageProps {
+  examHistory: ExamSubmission[];
+  parentAccount: ParentAccount;
+  onViewSubmissionReport: (submission: ExamSubmission) => void;
+}
+
+export const ReportsPage: React.FC<ReportsPageProps> = ({
+  examHistory,
+  parentAccount,
+  onViewSubmissionReport
+}) => {
+  const [selectedChildFilter, setSelectedChildFilter] = useState<string>('all');
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('all');
+
+  const subjects = Array.from(new Set(examHistory.map(e => e.subject)));
+
+  const filteredHistory = examHistory.filter(exam => {
+    if (selectedChildFilter !== 'all' && exam.studentId !== selectedChildFilter) return false;
+    if (selectedSubjectFilter !== 'all' && exam.subject !== selectedSubjectFilter) return false;
+    return true;
+  });
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8 pb-20 fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-stone-900 tracking-tight">Exam Reports</h1>
+          <p className="text-sm font-medium text-stone-500 mt-1">Review historical diagnostic performance across your family.</p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs flex flex-wrap gap-4 items-center">
+        <div className="flex items-center gap-2 text-sm font-bold text-stone-500 mr-2">
+          <Filter className="w-4 h-4" /> Filters:
+        </div>
+        
+        <select 
+          value={selectedChildFilter}
+          onChange={(e) => setSelectedChildFilter(e.target.value)}
+          className="bg-stone-50 border border-stone-200 text-stone-700 text-sm font-bold rounded-xl px-4 py-2 outline-none focus:border-yellow-400 focus:ring-4 focus:ring-yellow-50 transition-all cursor-pointer"
+        >
+          <option value="all">All Children</option>
+          {parentAccount.children.map(child => (
+            <option key={child.id} value={child.id}>{child.name}</option>
+          ))}
+        </select>
+
+        <select 
+          value={selectedSubjectFilter}
+          onChange={(e) => setSelectedSubjectFilter(e.target.value)}
+          className="bg-stone-50 border border-stone-200 text-stone-700 text-sm font-bold rounded-xl px-4 py-2 outline-none focus:border-yellow-400 focus:ring-4 focus:ring-yellow-50 transition-all cursor-pointer"
+        >
+          <option value="all">All Subjects</option>
+          {subjects.map(sub => (
+            <option key={sub} value={sub}>{sub}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Reports List */}
+      <div className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-stone-50 border-b border-stone-200">
+                <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Child</th>
+                <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Subject & Topic</th>
+                <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Score</th>
+                <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {filteredHistory.length > 0 ? filteredHistory.map((exam) => {
+                const child = parentAccount.children.find(c => c.id === exam.studentId);
+                const scorePercentage = (exam.marksObtained / exam.totalMarks) * 100;
+                
+                return (
+                  <tr key={exam.id} className="hover:bg-stone-50 transition-colors group cursor-pointer" onClick={() => onViewSubmissionReport(exam)}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-stone-400" />
+                        <div>
+                          <span className="block text-sm font-bold text-stone-900">
+                            {new Date(exam.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                          <span className="block text-xs text-stone-500 mt-0.5">
+                            {new Date(exam.submittedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center text-sm border border-stone-200">
+                          {child?.avatar || '👤'}
+                        </div>
+                        <span className="text-sm font-bold text-stone-900">{child?.name || 'Unknown'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-indigo-400 shrink-0" />
+                        <div>
+                          <span className="block text-sm font-bold text-stone-900">{exam.subject}</span>
+                          <span className="block text-xs text-stone-500 truncate max-w-[200px] mt-0.5" title={exam.topic}>{exam.topic}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-16 h-2 bg-stone-100 rounded-full overflow-hidden shrink-0">
+                          <div 
+                            className={`h-full rounded-full ${scorePercentage >= 80 ? 'bg-emerald-500' : scorePercentage >= 60 ? 'bg-yellow-400' : 'bg-rose-500'}`}
+                            style={{ width: `${scorePercentage}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-black text-stone-900">{exam.marksObtained}/{exam.totalMarks}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {scorePercentage >= 80 ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Excellent
+                        </span>
+                      ) : scorePercentage >= 60 ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-yellow-50 text-yellow-700 border border-yellow-200">
+                          <Clock className="w-3.5 h-3.5" /> Steady
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Needs Work
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <button className="text-xs font-bold text-yellow-600 bg-white border border-yellow-200 px-3 py-1.5 rounded-lg group-hover:bg-yellow-50 transition-colors inline-flex items-center gap-1">
+                        View Report <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <FileText className="w-12 h-12 text-stone-300 mb-4" />
+                      <p className="text-sm font-bold text-stone-700">No reports found</p>
+                      <p className="text-xs text-stone-500 mt-1">Adjust filters or complete an exam to see results.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
