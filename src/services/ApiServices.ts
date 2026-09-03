@@ -9,8 +9,8 @@ const ACCESS_TOKEN_KEY = 'acugrade_access_token';
 const REFRESH_TOKEN_KEY = 'acugrade_refresh_token';
 
 export function getStoredTokens(): AuthTokens | null {
-  const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
-  const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_KEY);
+  const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY);
+  const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_KEY) || localStorage.getItem(REFRESH_TOKEN_KEY);
   if (
     !accessToken || !refreshToken ||
     accessToken === 'undefined' || refreshToken === 'undefined' ||
@@ -22,23 +22,24 @@ export function getStoredTokens(): AuthTokens | null {
 }
 
 export function storeTokens(tokensOrAccessToken: AuthTokens | string, maybeRefreshToken?: string) {
+  let accToken = '';
+  let refToken = '';
+
   if (typeof tokensOrAccessToken === 'string') {
-    if (tokensOrAccessToken && tokensOrAccessToken !== 'undefined' && tokensOrAccessToken !== 'null') {
-      sessionStorage.setItem(ACCESS_TOKEN_KEY, tokensOrAccessToken);
-    }
-    if (maybeRefreshToken && maybeRefreshToken !== 'undefined' && maybeRefreshToken !== 'null') {
-      sessionStorage.setItem(REFRESH_TOKEN_KEY, maybeRefreshToken);
-    }
-    return;
+    accToken = tokensOrAccessToken;
+    refToken = maybeRefreshToken || '';
+  } else if (tokensOrAccessToken && typeof tokensOrAccessToken === 'object') {
+    accToken = tokensOrAccessToken.accessToken || '';
+    refToken = tokensOrAccessToken.refreshToken || '';
   }
-  if (tokensOrAccessToken && typeof tokensOrAccessToken === 'object') {
-    const { accessToken, refreshToken } = tokensOrAccessToken;
-    if (accessToken && accessToken !== 'undefined' && accessToken !== 'null') {
-      sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-    }
-    if (refreshToken && refreshToken !== 'undefined' && refreshToken !== 'null') {
-      sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    }
+
+  if (accToken && accToken !== 'undefined' && accToken !== 'null') {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, accToken);
+    localStorage.setItem(ACCESS_TOKEN_KEY, accToken);
+  }
+  if (refToken && refToken !== 'undefined' && refToken !== 'null') {
+    sessionStorage.setItem(REFRESH_TOKEN_KEY, refToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refToken);
   }
 }
 
@@ -165,6 +166,7 @@ class ApiServices {
   // ── Auth ──────────────────────────────────
   /** Returns raw axios response so LoginPage can read response.data directly */
   login(body: any) { return apiClient.post(POST_APIS.login, body); }
+  googleLogin(body: any) { return apiClient.post(POST_APIS.googleLogin, body); }
   register(body: any) { return this.post(POST_APIS.register, body); }
   getRoles() { return this.get(GET_APIS.roles); }
   verifySession() { return this.get(GET_APIS.verifySession); }

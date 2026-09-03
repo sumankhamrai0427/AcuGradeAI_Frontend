@@ -1,14 +1,18 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from './App.tsx';
 import { LegalPage } from './components/LegalPage.tsx';
 import { InfoPage } from './components/InfoPage.tsx';
 import './index.css';
 
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/about" element={<InfoPage type="about" />} />
@@ -18,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/terms" element={<LegalPage type="terms" />} />
         <Route path="/disclaimer" element={<LegalPage type="disclaimer" />} />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   </StrictMode>,
 );

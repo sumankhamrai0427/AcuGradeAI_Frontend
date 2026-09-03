@@ -417,7 +417,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   animation: float-animation 8s ease-in-out infinite 2s;
                 }
               `}</style>
-              
+
               <div className="absolute top-10 -left-10 text-4xl opacity-50 animate-float-delayed select-none pointer-events-none">✨</div>
               <div className="absolute bottom-20 -left-5 text-3xl opacity-50 animate-float-slow select-none pointer-events-none">🌟</div>
               <div className="absolute top-20 right-0 text-3xl opacity-40 animate-float-delayed select-none pointer-events-none">💡</div>
@@ -545,6 +545,73 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
+      {/* KNOW THE TIME */}
+      <section className="py-8 bg-gradient-to-br from-yellow-50 via-amber-50/50 to-white border-y border-yellow-200 overflow-hidden relative">
+        <style>{`
+          @keyframes float-gentle {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-14px); }
+          }
+          @keyframes tick-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+          }
+          @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(3deg); }
+            75% { transform: rotate(-3deg); }
+          }
+          @keyframes fade-slide-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-float-gentle { animation: float-gentle 4s ease-in-out infinite; }
+          .animate-tick-pulse { animation: tick-pulse 2s ease-in-out infinite; }
+          .animate-wiggle { animation: wiggle 3s ease-in-out infinite; }
+          .animate-fade-slide { animation: fade-slide-up 0.8s ease-out forwards; }
+        `}</style>
+
+        {/* Floating decorations */}
+        <div className="absolute inset-0 pointer-events-none">
+          <span className="absolute top-8 left-[5%] text-5xl opacity-15 animate-wiggle">⏰</span>
+          <span className="absolute top-16 right-[8%] text-4xl opacity-15 animate-bounce" style={{ animationDuration: '3s' }}>🕐</span>
+          <span className="absolute bottom-12 left-[15%] text-4xl opacity-15 animate-bounce" style={{ animationDuration: '4s', animationDelay: '1s' }}>📐</span>
+          <span className="absolute bottom-8 right-[10%] text-5xl opacity-15 animate-wiggle" style={{ animationDelay: '1.5s' }}>🌟</span>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+
+            {/* Image - animated floating */}
+            <div className="flex-1 flex justify-center animate-float-gentle">
+              <div className="relative">
+                <div className="absolute -inset-4 bg-yellow-200/30 rounded-[2rem] blur-2xl"></div>
+                <img
+                  src="/child-learning-clock.jpg"
+                  alt="Child learning to tell time with a clock"
+                  className="relative w-full max-w-md rounded-3xl border-2 border-yellow-300 shadow-2xl shadow-yellow-200/40"
+                />
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 text-center lg:text-left reveal-on-scroll">
+
+              <h2 className="text-4xl sm:text-5xl font-black text-stone-900 leading-tight">
+                Short on <span className="text-yellow-500">Time?</span> ⏳
+              </h2>
+
+              <p className="mt-4 text-stone-600 text-lg max-w-md">
+                Exams approaching fast? Study Buddy quickly finds your weak spots so you can focus on what really matters and learn faster.
+              </p>
+
+
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
       <section id="how-it-works" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -621,13 +688,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               const active = activeRole === role;
 
               return (
-                <button
+                <div
                   key={role}
-                  onClick={() => setActiveRole(role)}
-                  className={`text-left rounded-3xl p-6 border transition-all reveal-on-scroll ${active
-                    ? 'bg-white border-yellow-300 shadow-xl shadow-yellow-100/60'
-                    : 'bg-white/70 border-stone-200 hover:border-yellow-300'
-                    }`}
+                  className="text-left rounded-3xl p-6 border-2 border-yellow-300 bg-white shadow-xl shadow-yellow-100/60 transition-all reveal-on-scroll"
                   style={{ transitionDelay: `${i * 100}ms` }}
                 >
                   <div className="flex items-start justify-between">
@@ -639,10 +702,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       } flex items-center justify-center`}>
                       <Icon className="w-6 h-6" />
                     </div>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${active ? 'bg-yellow-50 text-yellow-700' : 'bg-stone-100 text-stone-500'
-                      }`}>
-                      {active ? 'Selected' : 'Explore'}
-                    </span>
                   </div>
 
                   <h3 className="mt-5 text-xl font-black">{content.title}</h3>
@@ -657,7 +716,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     ))}
                   </ul>
 
-                  <div className="mt-6 text-sm font-extrabold text-yellow-600 flex items-center gap-1">
+                  <div className="mt-6 text-sm font-extrabold text-yellow-500 flex items-center gap-1">
                     {role === 'student'
                       ? 'Start Learning'
                       : role === 'teacher'
@@ -665,7 +724,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         : 'Parent Login'}
                     <ArrowRight className="w-4 h-4" />
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -698,7 +757,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 animation: float-card 4s ease-in-out infinite;
               }
             `}</style>
-            
+
             <div className="hidden lg:block absolute top-1/2 left-[5%] right-[5%] h-1.5 bg-gradient-to-r from-blue-200 via-purple-300 to-green-300 -translate-y-1/2 rounded-full opacity-60"></div>
 
             <div className="grid lg:grid-cols-5 gap-6 lg:gap-4 relative z-10">
@@ -713,19 +772,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div className="animate-float-card w-full">
                     <div className="transition-transform hover:-translate-y-3 duration-300 relative">
                       <div className="absolute inset-0 bg-white/40 blur-xl rounded-full group-hover:bg-yellow-400/20 transition-colors"></div>
-                      
+
                       <div className={`relative w-full p-6 sm:p-8 lg:p-6 rounded-[2rem] bg-white/90 backdrop-blur-xl border border-white shadow-xl shadow-stone-200/50 flex flex-col items-center text-center z-10 overflow-hidden`}>
-                         <div className={`absolute top-0 right-0 w-24 h-24 ${colorClass} blur-3xl opacity-50 rounded-full -mr-10 -mt-10`}></div>
-                         
-                         <div className={`w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-3xl ${colorClass} shadow-sm border border-white/50 mb-4 relative z-10`}>
-                            {icon}
-                         </div>
-                         <h3 className={`font-black text-lg ${textClass} mb-1.5 relative z-10`}>{title}</h3>
-                         <p className="text-sm font-semibold text-stone-500 relative z-10">{text}</p>
+                        <div className={`absolute top-0 right-0 w-24 h-24 ${colorClass} blur-3xl opacity-50 rounded-full -mr-10 -mt-10`}></div>
+
+                        <div className={`w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-3xl ${colorClass} shadow-sm border border-white/50 mb-4 relative z-10`}>
+                          {icon}
+                        </div>
+                        <h3 className={`font-black text-lg ${textClass} mb-1.5 relative z-10`}>{title}</h3>
+                        <p className="text-sm font-semibold text-stone-500 relative z-10">{text}</p>
                       </div>
                     </div>
                   </div>
-                  
+
                   {i < 4 && <div className="lg:hidden w-1 h-8 bg-gradient-to-b from-stone-200 to-stone-300 rounded-full my-2"></div>}
                 </div>
               ))}
@@ -735,7 +794,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="mt-20 relative overflow-hidden rounded-[2.5rem] border border-yellow-200 bg-gradient-to-br from-yellow-50 via-white to-amber-50 p-8 sm:p-10 shadow-2xl shadow-yellow-500/10 reveal-on-scroll">
             <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-yellow-300 rounded-full blur-[80px] opacity-40"></div>
             <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-amber-400 rounded-full blur-[80px] opacity-20"></div>
-            
+
             <div className="relative z-10 flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-left">
               <div className="w-16 h-16 shrink-0 rounded-[1.5rem] bg-gradient-to-br from-yellow-400 to-amber-500 text-white flex items-center justify-center shadow-lg shadow-yellow-500/30">
                 <Sparkles className="w-8 h-8" />
@@ -785,7 +844,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             <div className="relative rounded-[2rem] border border-amber-200 shadow-2xl p-6 sm:p-8 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden reveal-on-scroll">
               <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-yellow-300 rounded-full blur-3xl opacity-30"></div>
-              
+
               <div className="relative z-10 flex items-center justify-between">
                 <div>
                   <div className="text-xs text-amber-700 font-bold uppercase tracking-wider">This Week</div>

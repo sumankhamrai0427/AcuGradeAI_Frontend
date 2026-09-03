@@ -38,6 +38,7 @@ export const GET_APIS = {
 export const POST_APIS = {
   // Auth
   login: `${BASE_URL}/api/v1/auth/login`,
+  googleLogin: `${BASE_URL}/api/v1/auth/google`,
   register: `${BASE_URL}/api/v1/auth/register`,
   childLogin: `${BASE_URL}/api/v1/auth/child-login`,
   logout: `${BASE_URL}/api/v1/auth/logout`,
