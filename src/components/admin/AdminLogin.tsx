@@ -20,10 +20,21 @@ import {
   BookMarked,
   AlertCircle,
   ChevronRight,
+  ChevronLeft,
+  ChevronDown,
   Settings,
   Activity,
   GraduationCap,
   CheckCircle2,
+  Play,
+  Bot,
+  FileText,
+  Trophy,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import ApiServices, {
   storeTokens,
@@ -35,7 +46,7 @@ import ApiServices, {
 // ─────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────
-type AdminView = 'dashboard' | 'users' | 'courses' | 'reports';
+type AdminView = string;
 
 // ─────────────────────────────────────────────────────────────
 // Stat Card Component
@@ -81,17 +92,19 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, collapsed, onCli
     id={id}
     onClick={onClick}
     title={collapsed ? label : undefined}
-    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group
+    className={`group w-full flex items-center py-2.5 rounded-xl text-sm transition-all relative overflow-hidden
+      ${collapsed ? 'justify-center px-0 gap-3' : 'gap-3 px-3'}
       ${active
-        ? 'bg-amber-400 text-stone-900 shadow-md shadow-amber-400/30'
-        : 'text-stone-600 hover:bg-amber-50 hover:text-amber-700'
+        ? 'text-yellow-700 font-bold bg-gradient-to-r from-yellow-50 to-white shadow-sm border border-yellow-100/50'
+        : 'text-stone-500 font-medium hover:text-stone-900 hover:bg-stone-50 border border-transparent'
       }
-      ${collapsed ? 'justify-center' : ''}
     `}
   >
-    <span className={`flex-shrink-0 transition-transform duration-200 ${active ? '' : 'group-hover:scale-110'}`}>{icon}</span>
-    {!collapsed && <span className="truncate">{label}</span>}
-    {!collapsed && active && <ChevronRight className="w-4 h-4 ml-auto opacity-60" />}
+    {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1/2 bg-yellow-400 rounded-r-full"></div>}
+    <div className={`w-4 h-4 flex-shrink-0 transition-colors relative z-10 ${active ? 'text-yellow-600' : 'text-stone-400 group-hover:text-stone-500'}`}>
+      {icon}
+    </div>
+    {!collapsed && <span className="truncate relative z-10">{label}</span>}
   </button>
 );
 
@@ -100,23 +113,6 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, collapsed, onCli
 // ─────────────────────────────────────────────────────────────
 const DashboardView: React.FC = () => (
   <div className="space-y-8">
-    {/* Welcome Banner */}
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-yellow-400 to-yellow-300 p-8 shadow-xl shadow-amber-400/25">
-      <div className="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
-      <div className="absolute right-16 bottom-0 w-32 h-32 rounded-full bg-amber-500/30 blur-xl" />
-      <div className="relative z-10">
-        <div className="flex items-center gap-2 mb-2">
-          <ShieldCheck className="w-5 h-5 text-stone-800" />
-          <span className="text-xs font-black uppercase tracking-widest text-stone-700">Admin Console</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight leading-tight">
-          Welcome to Admin<br />Dashboard
-        </h1>
-        <p className="mt-2 text-stone-700 font-medium text-sm max-w-md">
-          Manage users, courses and view platform analytics from your central command centre.
-        </p>
-      </div>
-    </div>
 
     {/* Stats Grid */}
     <div>
@@ -176,6 +172,32 @@ const DashboardView: React.FC = () => (
         ))}
       </div>
     </div>
+
+    {/* System Metrics */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="admin-card">
+        <h3 className="text-sm font-bold text-stone-800 mb-4">Revenue Growth</h3>
+        <div className="h-48 w-full flex items-end gap-2 mt-4 px-2">
+          {[40, 60, 45, 80, 55, 90, 70].map((h, i) => (
+            <div key={i} className="flex-1 bg-gradient-to-t from-amber-200 to-amber-400 rounded-t-md" style={{ height: `${h}%` }}></div>
+          ))}
+        </div>
+        <div className="flex justify-between mt-2 text-xs text-stone-400 font-medium px-2">
+          <span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span>
+        </div>
+      </div>
+      <div className="admin-card">
+        <h3 className="text-sm font-bold text-stone-800 mb-4">User Acquisition</h3>
+        <div className="h-48 w-full flex items-end gap-2 mt-4 px-2">
+          {[30, 50, 40, 70, 65, 85, 95].map((h, i) => (
+            <div key={i} className="flex-1 bg-gradient-to-t from-emerald-200 to-emerald-400 rounded-t-md" style={{ height: `${h}%` }}></div>
+          ))}
+        </div>
+        <div className="flex justify-between mt-2 text-xs text-stone-400 font-medium px-2">
+          <span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span>
+        </div>
+      </div>
+    </div>
   </div>
 );
 
@@ -226,7 +248,7 @@ const UsersView: React.FC = () => {
                     <span className={`px-2.5 py-1 rounded-lg text-xs font-bold
                       ${u.role === 'Parent' ? 'bg-amber-100 text-amber-700' :
                         u.role === 'Teacher' ? 'bg-blue-50 text-blue-600' :
-                        'bg-yellow-50 text-yellow-700'}`}>
+                          'bg-yellow-50 text-yellow-700'}`}>
                       {u.role}
                     </span>
                   </td>
@@ -346,6 +368,246 @@ const ReportsView: React.FC = () => {
 };
 
 // ─────────────────────────────────────────────────────────────
+// Manage Blogs View
+// ─────────────────────────────────────────────────────────────
+const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setActiveView }) => {
+  const blogs = [
+    { title: '10 Tips for Effective Online Learning', author: 'Sonia Khatun', category: 'Education', status: 'Published', date: 'Sep 1, 2026' },
+    { title: 'The Future of AI in Education', author: 'Admin User', category: 'Technology', status: 'Draft', date: 'Aug 28, 2026' },
+    { title: 'Understanding RAG Architecture', author: 'Tech Team', category: 'Engineering', status: 'Published', date: 'Aug 20, 2026' },
+    { title: 'Parenting in the Digital Age', author: 'Sonia Khatun', category: 'Parenting', status: 'Published', date: 'Aug 15, 2026' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-stone-900">Manage Blogs</h1>
+          <p className="text-sm text-stone-500 font-medium mt-1">Create and manage content for your platform.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <input
+              type="text"
+              placeholder="Search blogs..."
+              className="w-full sm:w-64 pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all"
+            />
+          </div>
+          <button
+            onClick={() => setActiveView('add-blogs' as AdminView)}
+            className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4" />
+            Add Blog
+          </button>
+        </div>
+      </div>
+
+      <div className="admin-card overflow-hidden !p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-stone-100 bg-stone-50/60">
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Title</th>
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Author</th>
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Category</th>
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Status</th>
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Date</th>
+                <th className="text-right px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-50">
+              {blogs.map((b, i) => (
+                <tr key={i} className="hover:bg-amber-50/40 transition-colors group">
+                  <td className="px-6 py-4">
+                    <p className="font-semibold text-stone-800">{b.title}</p>
+                  </td>
+                  <td className="px-6 py-4 text-stone-600 font-medium">{b.author}</td>
+                  <td className="px-6 py-4 text-stone-600">{b.category}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${b.status === 'Published' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                      {b.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-stone-500 text-xs">{b.date}</td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// Add Blog View
+// ─────────────────────────────────────────────────────────────
+const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setActiveView }) => {
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveView('manage-blogs' as AdminView)}
+            className="p-2 hover:bg-stone-100 rounded-xl transition-colors text-stone-500"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-black text-stone-900">Create New Blog</h1>
+            <p className="text-sm text-stone-500 font-medium mt-1">Draft a new post for your audience.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="px-4 py-2 rounded-xl text-sm font-semibold text-stone-600 hover:bg-stone-100 border border-stone-200 transition-all">
+            Save as Draft
+          </button>
+          <button className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-semibold shadow-sm transition-all">
+            Publish Post
+          </button>
+        </div>
+      </div>
+
+      <div className="admin-card space-y-6">
+        <div>
+          <label className="block text-sm font-bold text-stone-700 mb-2">Blog Title</label>
+          <input
+            type="text"
+            placeholder="Enter an engaging title..."
+            className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-bold text-stone-700 mb-2">Category</label>
+            <select className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all appearance-none">
+              <option>Education</option>
+              <option>Technology</option>
+              <option>Parenting</option>
+              <option>Platform News</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-stone-700 mb-2">Author</label>
+            <input
+              type="text"
+              defaultValue="Admin User"
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-stone-700 mb-2">Cover Image</label>
+          <div className="border-2 border-dashed border-stone-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-stone-50 hover:border-stone-300 transition-all cursor-pointer group">
+            <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-stone-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <ImageIcon className="w-6 h-6 text-stone-400" />
+            </div>
+            <p className="text-sm font-bold text-stone-700">Click to upload cover image</p>
+            <p className="text-xs text-stone-400 font-medium mt-1">SVG, PNG, JPG or GIF (max. 5MB)</p>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-stone-700 mb-2">Content</label>
+          <div className="border border-stone-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-amber-400 transition-all">
+            <div className="bg-stone-50 border-b border-stone-200 p-2 flex items-center gap-2">
+              {/* Dummy Toolbar */}
+              <button className="p-1.5 hover:bg-stone-200 rounded text-stone-600 font-bold px-2">B</button>
+              <button className="p-1.5 hover:bg-stone-200 rounded text-stone-600 italic px-2">I</button>
+              <button className="p-1.5 hover:bg-stone-200 rounded text-stone-600 underline px-2">U</button>
+              <div className="w-px h-4 bg-stone-300 mx-1"></div>
+              <button className="p-1.5 hover:bg-stone-200 rounded text-stone-600"><FileText className="w-4 h-4" /></button>
+            </div>
+            <textarea
+              rows={12}
+              placeholder="Write your blog content here..."
+              className="w-full p-4 bg-white text-sm font-medium text-stone-800 focus:outline-none resize-y"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// Category View
+// ─────────────────────────────────────────────────────────────
+const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
+  const categories = [
+    { name: 'Education', count: 24, status: 'Active' },
+    { name: 'Technology', count: 18, status: 'Active' },
+    { name: 'Parenting', count: 12, status: 'Active' },
+    { name: 'Platform News', count: 5, status: 'Active' },
+    { name: 'Engineering', count: 9, status: 'Active' },
+  ];
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-stone-900">Categories</h1>
+          <p className="text-sm text-stone-500 font-medium mt-1">Manage content categories and tags.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <input type="text" placeholder="Search categories..." className="w-full sm:w-64 pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all" />
+          </div>
+          <button className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all whitespace-nowrap">
+            <Plus className="w-4 h-4" />Add Category
+          </button>
+        </div>
+      </div>
+      <div className="admin-card overflow-hidden !p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-stone-100 bg-stone-50/60">
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Name</th>
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Items</th>
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Status</th>
+                <th className="text-right px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-50">
+              {categories.map((c, i) => (
+                <tr key={i} className="hover:bg-amber-50/40 transition-colors">
+                  <td className="px-6 py-4 font-semibold text-stone-800">{c.name}</td>
+                  <td className="px-6 py-4 text-stone-600 font-medium">{c.count}</td>
+                  <td className="px-6 py-4">
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-600">{c.status}</span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><Edit className="w-4 h-4" /></button>
+                      <button className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
 // Admin Dashboard Shell
 // ─────────────────────────────────────────────────────────────
 interface AdminDashboardProps {
@@ -354,19 +616,75 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
-  const [activeView, setActiveView] = useState<AdminView>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
-  const navItems: { id: AdminView; icon: React.ReactNode; label: string; navId: string }[] = [
-    { id: 'dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', navId: 'admin-nav-dashboard' },
-    { id: 'users', icon: <Users className="w-5 h-5" />, label: 'Users', navId: 'admin-nav-users' },
-    { id: 'courses', icon: <BookOpen className="w-5 h-5" />, label: 'Courses', navId: 'admin-nav-courses' },
-    { id: 'reports', icon: <BarChart3 className="w-5 h-5" />, label: 'Reports', navId: 'admin-nav-reports' },
-  ];
+  // navigate-based replacement for setActiveView — child views use this to navigate between pages
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeView: AdminView = location.pathname.split('/').pop() || 'dashboard';
+  const setActiveView = (view: string) => {
+    if (view.startsWith('/')) navigate(view);
+    else navigate('/' + view);
+  };
 
-  const handleNav = (view: AdminView) => {
-    setActiveView(view);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [profileMenuOpen]);
+
+  const [pageAccess, setPageAccess] = useState<any[]>(() => {
+    const stored = sessionStorage.getItem('acugrade_admin_page_access') || localStorage.getItem('acugrade_admin_page_access');
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'BarChart3': return <BarChart3 className="w-5 h-5" />;
+      case 'Users': return <Users className="w-5 h-5" />;
+      case 'BookOpen': return <BookOpen className="w-5 h-5" />;
+      case 'Play': return <Play className="w-5 h-5" />;
+      case 'Bot': return <Bot className="w-5 h-5" />;
+      case 'FileText': return <FileText className="w-5 h-5" />;
+      case 'Trophy': return <Trophy className="w-5 h-5" />;
+      case 'TrendingUp': return <TrendingUp className="w-5 h-5" />;
+      case 'Settings': return <Settings className="w-5 h-5" />;
+      case 'LayoutDashboard': return <LayoutDashboard className="w-5 h-5" />;
+      default: return <LayoutDashboard className="w-5 h-5" />;
+    }
+  };
+
+
+  const navItems = pageAccess.map(page => ({
+    id: page.pageRoute?.split('/').pop() || 'dashboard',
+    route: page.pageRoute || '/admin/dashboard',
+    icon: getIcon(page.icon),
+    label: page.pageName,
+    navId: `admin-nav-${page.pageRoute?.split('/').pop() || 'dashboard'}`
+  }));
+
+  const handleNav = (item: { id: string; route: string }) => {
+    navigate(item.route);
     setSidebarOpen(false);
   };
 
@@ -383,7 +701,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
 
       {/* ── Sidebar ─────────────────────────────── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-stone-100 flex flex-col shadow-xl
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col shadow-xl overflow-hidden
+          bg-gradient-to-b from-yellow-50/40 via-white to-orange-50/20 border-r border-stone-200/60
           transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:static lg:translate-x-0 lg:shadow-none
@@ -391,56 +710,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
           w-72
         `}
       >
+        {/* Decorative background blob in sidebar */}
+        <div className="absolute top-0 left-0 w-full h-40 bg-gradient-to-b from-yellow-100/30 to-transparent pointer-events-none"></div>
+
         {/* Brand */}
-        <div className={`p-5 border-b border-stone-100 flex items-center ${collapsed ? 'lg:justify-center' : 'justify-between'}`}>
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 min-w-10 bg-amber-400 rounded-xl flex items-center justify-center shadow-lg shadow-amber-400/30 flex-shrink-0">
-              <ShieldCheck className="w-5 h-5 text-white" />
-            </div>
+        <div className={`h-16 w-full flex items-center justify-between ${collapsed ? 'lg:justify-center px-4' : 'px-6'} border-b border-stone-100 flex-shrink-0 relative z-10 transition-all`}>
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-6 h-6 text-yellow-500 flex-shrink-0" />
             {!collapsed && (
               <div className="min-w-0">
-                <p className="font-black text-stone-900 tracking-tight text-base leading-none">SahajPath</p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500 mt-0.5">Admin Console</p>
+                <span className="text-lg font-bold text-stone-900 tracking-tight transition-all">
+                  SahajPath<span className="text-yellow-500">.</span>
+                </span>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-yellow-600 mt-0.5 leading-none">Admin Console</p>
               </div>
             )}
           </div>
           {/* Desktop collapse toggle */}
-          {!collapsed && (
-            <button
-              id="admin-sidebar-collapse"
-              onClick={() => setCollapsed(true)}
-              className="hidden lg:flex p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
-              title="Collapse sidebar"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            id="admin-sidebar-collapse"
+            onClick={() => setCollapsed(!collapsed)}
+            className={`hidden lg:flex p-1.5 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 bg-stone-50 border border-stone-100 rounded-lg transition-colors ${collapsed ? '' : 'ml-auto'}`}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+
           {/* Mobile close */}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-lg transition-colors"
+            className="lg:hidden p-1.5 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-lg transition-colors ml-auto"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Expand button when collapsed */}
-        {collapsed && (
-          <button
-            id="admin-sidebar-expand"
-            onClick={() => setCollapsed(false)}
-            className="hidden lg:flex mx-auto mt-3 p-2 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-colors"
-            title="Expand sidebar"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        )}
-
         {/* Nav */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-2">
-          {!collapsed && (
-            <p className="text-[10px] font-black uppercase tracking-widest text-stone-300 px-3 mb-3">Main Menu</p>
-          )}
+        <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto mt-2 relative z-10 custom-scrollbar">
           {navItems.map((item) => (
             <NavItem
               key={item.id}
@@ -449,41 +755,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
               label={item.label}
               active={activeView === item.id}
               collapsed={collapsed}
-              onClick={() => handleNav(item.id)}
+              onClick={() => handleNav(item)}
             />
           ))}
         </nav>
 
-        {/* Footer — Settings & Logout */}
-        <div className="p-3 border-t border-stone-100 space-y-1">
-          <NavItem
-            id="admin-nav-settings"
-            icon={<Settings className="w-5 h-5" />}
-            label="Settings"
-            active={false}
-            collapsed={collapsed}
-            onClick={() => {}}
-          />
+        {/* Footer Actions (Logout) */}
+        <div className="p-4 border-t border-stone-100 mt-auto relative z-10">
           <button
             id="admin-nav-logout"
             onClick={onLogout}
-            title={collapsed ? 'Logout' : undefined}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold
-              text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 group
-              ${collapsed ? 'justify-center' : ''}
-            `}
+            className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-stone-600 rounded-lg hover:bg-stone-50 hover:text-stone-900 transition-colors ${collapsed ? 'lg:justify-center lg:px-0' : ''}`}
+            title="Log out"
           >
-            <LogOut className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />
-            {!collapsed && 'Logout'}
+            <LogOut className="w-4 h-4 flex-shrink-0 text-stone-400" />
+            <span className={`truncate ${collapsed ? 'lg:hidden' : ''}`}>Log out</span>
           </button>
         </div>
       </aside>
 
       {/* ── Main Area ───────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
 
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-stone-100 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 shadow-sm">
+        <header className="sticky top-0 z-40 h-16 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs flex items-center justify-between px-4 sm:px-6 flex-shrink-0">
           <div className="flex items-center gap-3">
             <button
               id="admin-mobile-menu"
@@ -493,31 +788,73 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
               <Menu className="w-5 h-5" />
             </button>
             <div>
-              <h2 className="text-base font-black text-stone-900 capitalize">{activeView}</h2>
-              <p className="text-xs text-stone-400 font-medium hidden sm:block">
-                {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
+              <h2 className="text-base font-black text-stone-800">
+                Welcome, {user?.name || 'Admin'} 👋
+              </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Notification bell */}
-            <button
-              id="admin-notifications"
-              className="relative p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-400 rounded-full border-2 border-white" />
-            </button>
+          <div className="flex items-center gap-4 sm:gap-6">
+            {/* Date and Time */}
+            <div className="hidden sm:block text-right">
+              <p className="text-xs text-stone-700 font-semibold">
+                {new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+              </p>
+              <p className="text-[10px] text-stone-400 font-medium">
+                {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              </p>
+            </div>
 
-            {/* Admin Avatar */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-md shadow-amber-400/30">
-                <ShieldCheck className="w-4 h-4 text-white" />
-              </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-sm font-black text-stone-800 leading-none">{user?.name || 'SahajPath Admin'}</p>
-                <p className="text-xs text-stone-400 font-medium">{user?.email || 'admin@sahajpath.com'}</p>
+            <div className="flex items-center gap-3">
+              {/* Notification bell */}
+              <button
+                id="admin-notifications"
+                className="relative p-1.5 text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors"
+              >
+                <Bell className="w-5 h-5" />
+              </button>
+
+              {/* Admin Avatar */}
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 rounded-full sm:rounded-xl border border-transparent hover:bg-stone-50 hover:border-stone-200 transition-all cursor-pointer group"
+                >
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-yellow-50 to-amber-50 border border-yellow-200 flex items-center justify-center text-base sm:text-lg shadow-sm group-hover:scale-105 transition-transform">
+                    👨‍👩‍👧‍👦
+                  </div>
+                </button>
+
+                {/* Dropdown Menu */}
+                {profileMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-4 py-2.5 border-b border-stone-100 bg-stone-50/60 rounded-t-2xl">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold text-xs shrink-0">
+                          {(user?.name || 'A').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-stone-900 truncate">{user?.name || 'Admin'} (Admin)</p>
+                          <p className="text-[10px] text-stone-400 truncate">{user?.email || 'admin@sahajpath.com'}</p>
+                        </div>
+                        <CheckCircle2 className="w-4 h-4 text-yellow-600" />
+                      </div>
+                    </div>
+
+                    <div className="p-1">
+                      <button
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          onLogout();
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-stone-700 hover:bg-stone-100 transition-colors mt-1"
+                      >
+                        <LogOut className="w-4 h-4 text-stone-400" />
+                        <span className="font-medium text-stone-900">Log out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -525,10 +862,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {activeView === 'dashboard' && <DashboardView />}
-          {activeView === 'users' && <UsersView />}
-          {activeView === 'courses' && <CoursesView />}
-          {activeView === 'reports' && <ReportsView />}
+          {(() => {
+            // Dynamic view registry — add new pages here as backend adds them
+            const VIEW_MAP: Record<string, React.ReactNode> = {
+              dashboard:      <DashboardView />,
+              users:          <UsersView />,
+              academics:      <CoursesView />,
+              courses:        <CoursesView />,
+              analytics:      <ReportsView />,
+              reports:        <ReportsView />,
+              blogs:          <ManageBlogsView setActiveView={(v) => navigate('/' + v)} />,
+              'manage-blogs': <ManageBlogsView setActiveView={(v) => navigate('/' + v)} />,
+              'add-blogs':    <AddBlogView setActiveView={(v) => navigate('/' + v)} />,
+              category:       <CategoryView setActiveView={(v) => navigate('/' + v)} />,
+            };
+
+            return VIEW_MAP[activeView] ?? (
+              <div className="flex flex-col items-center justify-center h-full text-stone-400 font-medium py-20">
+                <div className="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mb-4">
+                  <Settings className="w-8 h-8 text-stone-300" />
+                </div>
+                <p className="text-lg text-stone-600 font-bold mb-1">Coming Soon</p>
+                <p className="text-sm">This module is currently under construction.</p>
+              </div>
+            );
+          })()}
         </main>
       </div>
 
@@ -667,6 +1025,7 @@ const AdminLogin: React.FC = () => {
       };
 
       sessionStorage.setItem('acugrade_admin_user', JSON.stringify(userData));
+      sessionStorage.setItem('acugrade_admin_page_access', JSON.stringify(result.pageAccess || []));
       setAdminUser(userData);
 
       setLoginSuccess(true);
@@ -782,9 +1141,8 @@ const AdminLogin: React.FC = () => {
               <div className="relative group">
                 <Mail
                   size={17}
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${
-                    fieldErrors.email ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
-                  }`}
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${fieldErrors.email ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                    }`}
                 />
                 <input
                   id="admin-email"
@@ -799,10 +1157,9 @@ const AdminLogin: React.FC = () => {
                   className={`w-full h-12 pl-11 pr-4 rounded-2xl text-sm font-semibold text-stone-900 outline-none transition-all
                     placeholder:text-stone-300 placeholder:font-normal
                     bg-stone-50/60 border-2
-                    ${
-                      fieldErrors.email
-                        ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
-                        : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
+                    ${fieldErrors.email
+                      ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
+                      : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
                     }`}
                 />
               </div>
@@ -819,9 +1176,8 @@ const AdminLogin: React.FC = () => {
               <div className="relative group">
                 <Lock
                   size={17}
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${
-                    fieldErrors.password ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
-                  }`}
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${fieldErrors.password ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                    }`}
                 />
                 <input
                   id="admin-password"
@@ -836,10 +1192,9 @@ const AdminLogin: React.FC = () => {
                   className={`w-full h-12 pl-11 pr-12 rounded-2xl text-sm font-semibold text-stone-900 outline-none transition-all
                     placeholder:text-stone-300 placeholder:font-normal
                     bg-stone-50/60 border-2
-                    ${
-                      fieldErrors.password
-                        ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
-                        : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
+                    ${fieldErrors.password
+                      ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
+                      : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
                     }`}
                 />
                 <button
@@ -932,9 +1287,8 @@ const AdminLogin: React.FC = () => {
                   <div className="relative group">
                     <Mail
                       size={17}
-                      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${
-                        resetFieldErrors.email ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
-                      }`}
+                      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${resetFieldErrors.email ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                        }`}
                     />
                     <input
                       id="reset-email"
@@ -947,10 +1301,9 @@ const AdminLogin: React.FC = () => {
                       placeholder="admin@sahajpath.com"
                       autoComplete="email"
                       className={`w-full h-12 pl-11 pr-4 rounded-2xl text-sm font-semibold text-stone-900 outline-none transition-all
-                        placeholder:text-stone-300 placeholder:font-normal bg-stone-50/60 border-2 ${
-                          resetFieldErrors.email
-                            ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
-                            : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
+                        placeholder:text-stone-300 placeholder:font-normal bg-stone-50/60 border-2 ${resetFieldErrors.email
+                          ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
+                          : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
                         }`}
                     />
                   </div>
@@ -967,9 +1320,8 @@ const AdminLogin: React.FC = () => {
                   <div className="relative group">
                     <Lock
                       size={17}
-                      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${
-                        resetFieldErrors.newPassword ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
-                      }`}
+                      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${resetFieldErrors.newPassword ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                        }`}
                     />
                     <input
                       id="new-password"
@@ -981,10 +1333,9 @@ const AdminLogin: React.FC = () => {
                       }}
                       placeholder="••••••••"
                       className={`w-full h-12 pl-11 pr-12 rounded-2xl text-sm font-semibold text-stone-900 outline-none transition-all
-                        placeholder:text-stone-300 placeholder:font-normal bg-stone-50/60 border-2 ${
-                          resetFieldErrors.newPassword
-                            ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
-                            : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
+                        placeholder:text-stone-300 placeholder:font-normal bg-stone-50/60 border-2 ${resetFieldErrors.newPassword
+                          ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
+                          : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
                         }`}
                     />
                     <button
@@ -1009,9 +1360,8 @@ const AdminLogin: React.FC = () => {
                   <div className="relative group">
                     <Lock
                       size={17}
-                      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${
-                        resetFieldErrors.confirmPassword ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
-                      }`}
+                      className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors pointer-events-none ${resetFieldErrors.confirmPassword ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                        }`}
                     />
                     <input
                       id="confirm-password"
@@ -1023,10 +1373,9 @@ const AdminLogin: React.FC = () => {
                       }}
                       placeholder="••••••••"
                       className={`w-full h-12 pl-11 pr-12 rounded-2xl text-sm font-semibold text-stone-900 outline-none transition-all
-                        placeholder:text-stone-300 placeholder:font-normal bg-stone-50/60 border-2 ${
-                          resetFieldErrors.confirmPassword
-                            ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
-                            : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
+                        placeholder:text-stone-300 placeholder:font-normal bg-stone-50/60 border-2 ${resetFieldErrors.confirmPassword
+                          ? 'border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-400/15'
+                          : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-400/15 focus:bg-white'
                         }`}
                     />
                     <button

@@ -227,6 +227,8 @@ class ApiServices {
   upgradeSubscription(body: any) { return this.post(POST_APIS.upgradeSubscription, body); }
 
   // ── Admin ─────────────────────────────────
+  adminLogin(body: any) { return apiClient.post(POST_APIS.adminLogin, body); }
+  adminResetPassword(body: any) { return this.post(POST_APIS.adminResetPassword, body); }
   adminStatistics() { return this.get(GET_APIS.adminStatistics); }
   resetQuota(studentId: string | number) { return this.post(POST_APIS.resetQuota(studentId)); }
 

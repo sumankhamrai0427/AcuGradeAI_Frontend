@@ -68,6 +68,8 @@ export const POST_APIS = {
   upgradeSubscription: `${BASE_URL}/api/v1/subscriptions/upgrade`,
 
   // Admin
+  adminLogin: `${BASE_URL}/api/v1/admin/login`,
+  adminResetPassword: `${BASE_URL}/api/v1/admin/reset-password`,
   resetQuota: (id: string | number) => `${BASE_URL}/api/v1/admin/children/${id}/reset-quota`,
 };
 
