@@ -136,32 +136,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
 
-    const checkHealth = async () => {
-      try {
-        const res = await ApiServices.checkHealth();
-        if (mounted) {
-          setIsBackendOnline(
-            res?.status === 'ok' ||
-            res?.statusCode === 200 ||
-            Boolean(res)
-          );
-        }
-      } catch {
-        if (mounted) setIsBackendOnline(false);
-      }
-    };
-
-    checkHealth();
-    const interval = setInterval(checkHealth, 8000);
-
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
-  }, []);
 
   const openAuth = (mode: 'login' | 'register' = 'login') => {
     setMobileMenuOpen(false);
@@ -1242,3 +1217,4 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     </div>
   );
 };
+

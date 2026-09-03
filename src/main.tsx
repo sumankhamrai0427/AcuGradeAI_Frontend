@@ -14,7 +14,7 @@ createRoot(document.getElementById('root')!).render(
     <GoogleOAuthProvider clientId={googleClientId}>
       <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
+        <Route path="/*" element={<App />} />
         <Route path="/about" element={<InfoPage type="about" />} />
         <Route path="/blog" element={<InfoPage type="blog" />} />
         <Route path="/contact" element={<InfoPage type="contact" />} />
@@ -26,3 +26,4 @@ createRoot(document.getElementById('root')!).render(
     </GoogleOAuthProvider>
   </StrictMode>,
 );
+

@@ -170,7 +170,13 @@ class ApiServices {
   register(body: any) { return this.post(POST_APIS.register, body); }
   getRoles() { return this.get(GET_APIS.roles); }
   verifySession() { return this.get(GET_APIS.verifySession); }
-  getMenuPermissions() { return this.get(GET_APIS.menuPermissions); }
+  async getMenuPermissions() { 
+    const res = await this.get(GET_APIS.menuPermissions);
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.pageAccess)) return res.pageAccess;
+    if (res && Array.isArray(res.data)) return res.data;
+    return [];
+  }
   childLogin(body: any) { return this.post(POST_APIS.childLogin, body); }
   logout(body: any) { return this.post(POST_APIS.logout, body); }
 

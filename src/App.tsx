@@ -50,6 +50,8 @@ import {
   LogOut,
   Loader2
 } from 'lucide-react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Sidebar, PageAccess } from './components/Sidebar';
 import { ExamArena } from './components/ExamArena';
 import { DiagnosticReport } from './components/DiagnosticReport';
 import { ParentDashboard } from './components/ParentDashboard';
@@ -120,12 +122,14 @@ export default function App() {
   });
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register' | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [pageAccess, setPageAccess] = useState<PageAccess[]>([]);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
   // Navigation & View State
-  const [activeTab, setActiveTab] = useState<
-    'arena' | 'dashboard' | 'learning-path' | 'gamification' | 'ptc' | 'fun-zone' | 'pricing' | 'admin' | 'blog' | 'about' | 'legal'
-  >('dashboard');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeTab = location.pathname.substring(1).split('/')[0] || 'dashboard';
+  const setActiveTab = (tab: string) => navigate('/' + tab);
   const [activePersona, setActivePersona] = useState<AppPersona>('parent');
   const [activeChildId, setActiveChildId] = useState<string | null>(null);
 
@@ -258,14 +262,22 @@ export default function App() {
       setBootstrapError(null);
       try {
         if (isAdminSession) {
-          setActiveTab('admin');
+          const perms = await ApiServices.getMenuPermissions();
+          setPageAccess(perms);
+          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
         } else if (isTeacherSession) {
-          setActiveTab('ptc');
+          const perms = await ApiServices.getMenuPermissions();
+          setPageAccess(perms);
+          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
         } else if (isStudentSession) {
-          setActiveTab('arena');
+          const perms = await ApiServices.getMenuPermissions();
+          setPageAccess(perms);
+          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
         } else if (isParentSession) {
-          // Only fetch parent and children on login bootstrap (Super Fast Login!)
           await loadParentAndChildren();
+          const perms = await ApiServices.getMenuPermissions();
+          setPageAccess(perms);
+          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
         } else {
           clearTokens();
           setAuthRole(null);
@@ -523,16 +535,6 @@ export default function App() {
     );
   }
 
-  if (isBootstrapping) {
-    return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-stone-50">
-        <div className="flex flex-col items-center gap-3 text-stone-500">
-          <Loader2 className="w-6 h-6 animate-spin" />
-          <p className="text-sm">Loading your workspace…</p>
-        </div>
-      </div>
-    );
-  }
 
   if (bootstrapError) {
     return (
@@ -624,9 +626,6 @@ export default function App() {
     );
   }
 
-  if (!parentAccount) {
-    return null; // shouldn't happen — isBootstrapping/bootstrapError cover this
-  }
 
   return (
     <div className="flex h-screen w-full bg-stone-50 font-sans text-stone-900 overflow-hidden">
@@ -639,479 +638,19 @@ export default function App() {
       )}
 
       {/* Left Sidebar (High Density Theme with Global Collapse / Expand) */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-stone-200 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
-          } ${mobileSidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full'}`}
-      >
-        {/* Brand Header */}
-        <div className={`p-4 border-b border-stone-100 flex items-center ${isSidebarCollapsed ? 'lg:flex-col lg:gap-2.5 justify-center' : 'justify-between'}`}>
-          <div
-            className="flex items-center gap-2.5 cursor-pointer min-w-0"
-            onClick={() => {
-              setActiveSubmissionReport(null);
-              setActiveTab('dashboard');
-              setMobileSidebarOpen(false);
-            }}
-            title="SahajPath — RAG K-Graph"
-          >
-            <div className="w-8 h-8 min-w-8 bg-yellow-400 rounded-lg flex items-center justify-center text-white font-bold shadow-xs">
-              <span>Σ</span>
-            </div>
-            <div className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
-              <span className="font-bold text-lg tracking-tight italic text-stone-900">SahajPath</span>
-              <span className="block text-[10px] text-stone-400 font-semibold tracking-wider uppercase">RAG K-Graph</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            {/* Single Desktop Toggle Button inside Sidebar with Rich Hover Effect */}
-            <button
-              id="desktop-sidebar-toggle"
-              onClick={toggleSidebar}
-              title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-              className="hidden lg:flex p-1.5 rounded-lg text-stone-500 hover:text-yellow-600 bg-stone-50/80 hover:bg-yellow-50 border border-stone-200/80 hover:border-yellow-300 shadow-2xs hover:shadow-xs transition-all duration-200 hover:scale-105 active:scale-95 group cursor-pointer"
-            >
-              {isSidebarCollapsed ? (
-                <ChevronRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              ) : (
-                <ChevronLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
-              )}
-            </button>
-
-            {/* Mobile Close Button */}
-            <button
-              onClick={() => setMobileSidebarOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Navigation Sections (Dynamic Persona-Gated Navigation) */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {activePersona === 'child' ? (
-            /* ============================================================ */
-            /* STUDENT / CHILD PERSONA SIDEBAR                              */
-            /* ============================================================ */
-            <>
-              {!isSidebarCollapsed ? (
-                <div className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest px-3 mb-2 mt-1 flex items-center justify-between">
-                  <span>Student Arena</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-50 text-yellow-700 font-semibold">
-                    {activeChild?.name}
-                  </span>
-                </div>
-              ) : (
-                <div className="hidden lg:block my-2 border-t border-stone-100" title={`Student Arena (${activeChild?.name})`} />
-              )}
-
-              <button
-                id="nav-sidebar-arena"
-                title="10-Mark Exam Arena"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('arena');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
-                  } ${activeTab === 'arena' && !activeSubmissionReport
-                    ? 'bg-yellow-400 text-stone-900 font-semibold shadow-xs'
-                    : 'text-stone-700 hover:bg-yellow-50/50 hover:text-yellow-900'
-                  }`}
-              >
-                <Play className={`w-4 h-4 flex-shrink-0 ${activeTab === 'arena' && !activeSubmissionReport ? 'text-white' : 'text-yellow-600'}`} />
-                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>10-Mark Exam Arena</span>
-              </button>
-
-              <button
-                id="nav-sidebar-learning-path"
-                title="Adaptive Learning Path"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('learning-path');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
-                  } ${activeTab === 'learning-path' && !activeSubmissionReport
-                    ? 'bg-yellow-400 text-stone-900 font-semibold shadow-xs'
-                    : 'text-stone-700 hover:bg-yellow-50/50 hover:text-yellow-900'
-                  }`}
-              >
-                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
-                  <Compass className={`w-4 h-4 flex-shrink-0 ${activeTab === 'learning-path' && !activeSubmissionReport ? 'text-white' : 'text-yellow-600'}`} />
-                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Adaptive Learning Path</span>
-                </div>
-              </button>
-
-              <button
-                id="nav-sidebar-gamification"
-                title={`Ranks & Badges (Lvl ${activeChild?.level || 1})`}
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('gamification');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
-                  } ${activeTab === 'gamification' && !activeSubmissionReport
-                    ? 'bg-yellow-400 text-stone-900 font-semibold shadow-xs'
-                    : 'text-stone-700 hover:bg-yellow-50/50 hover:text-yellow-900'
-                  }`}
-              >
-                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
-                  <Trophy className={`w-4 h-4 flex-shrink-0 ${activeTab === 'gamification' && !activeSubmissionReport ? 'text-white' : 'text-amber-500'}`} />
-                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Ranks & Badges</span>
-                </div>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isSidebarCollapsed ? 'lg:hidden' : ''} ${activeTab === 'gamification' && !activeSubmissionReport ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>
-                  Lvl {activeChild?.level || 1}
-                </span>
-              </button>
-
-              <button
-                id="nav-sidebar-fun-zone"
-                title="Brain Breaks & Games"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('fun-zone');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
-                  } ${activeTab === 'fun-zone' && !activeSubmissionReport
-                    ? 'bg-yellow-400 text-stone-900 font-semibold shadow-xs'
-                    : 'text-stone-700 hover:bg-yellow-50/50 hover:text-yellow-900'
-                  }`}
-              >
-                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
-                  <Smile className={`w-4 h-4 flex-shrink-0 ${activeTab === 'fun-zone' && !activeSubmissionReport ? 'text-white' : 'text-pink-500'}`} />
-                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Brain Breaks & Games</span>
-                </div>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isSidebarCollapsed ? 'lg:hidden' : ''} ${activeTab === 'fun-zone' && !activeSubmissionReport ? 'bg-white/20 text-white' : 'bg-pink-100 text-pink-700'}`}>
-                  Fun
-                </span>
-              </button>
-
-              {examHistory.length > 0 && (
-                <button
-                  id="nav-sidebar-results"
-                  title="My Results & Analysis"
-                  onClick={() => {
-                    setActiveSubmissionReport(examHistory[0]);
-                    setMobileSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center py-2.5 rounded-xl text-sm font-medium transition-all ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
-                    } ${activeSubmissionReport
-                      ? 'bg-yellow-400 text-stone-900 font-semibold shadow-xs'
-                      : 'text-stone-700 hover:bg-yellow-50/50 hover:text-yellow-900'
-                    }`}
-                >
-                  <Award className={`w-4 h-4 flex-shrink-0 ${activeSubmissionReport ? 'text-white' : 'text-amber-500'}`} />
-                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>My Results & Analysis</span>
-                </button>
-              )}
-
-              {/* Student Quick Action to return to Parent View */}
-              <div className="pt-4 mt-4 border-t border-stone-100">
-                {!isSidebarCollapsed && (
-                  <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-3 mb-2">
-                    Parent Access
-                  </div>
-                )}
-                <button
-                  onClick={handleSwitchToParent}
-                  title="Switch to Parent View"
-                  className={`w-full flex items-center rounded-xl text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-yellow-50 hover:text-yellow-700 transition-colors border border-stone-200 ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 lg:py-2.5 px-3 py-2.5 gap-2.5' : 'px-3 py-2.5 gap-2.5'
-                    }`}
-                >
-                  <span className="text-base">👨‍👩‍👧‍👦</span>
-                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Switch to Parent View</span>
-                </button>
-              </div>
-            </>
-          ) : (
-            /* ============================================================ */
-            /* PARENT PERSONA SIDEBAR                                       */
-            /* ============================================================ */
-            <>
-              {!isSidebarCollapsed ? (
-                <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-3 mb-2 mt-1">
-                  Family & Management
-                </div>
-              ) : (
-                <div className="hidden lg:block my-2 border-t border-stone-100" title="Family & Management" />
-              )}
-
-              <button
-                id="nav-sidebar-dashboard"
-                title="Family Dashboard"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('dashboard');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
-                  } ${activeTab === 'dashboard' && !activeSubmissionReport
-                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                  }`}
-              >
-                <BarChart3 className="w-4 h-4 flex-shrink-0 text-yellow-600" />
-                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Family Dashboard</span>
-              </button>
-
-              <button
-                id="nav-sidebar-ptc"
-                title="Parent-Teacher Hub"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('ptc');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
-                  } ${activeTab === 'ptc' && !activeSubmissionReport
-                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                  }`}
-              >
-                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
-                  <MessageSquare className="w-4 h-4 flex-shrink-0 text-sky-600" />
-                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Parent-Teacher Hub</span>
-                </div>
-                <span className={`text-[10px] bg-sky-50 text-sky-700 font-bold px-1.5 py-0.5 rounded border border-sky-100 ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
-                  Live
-                </span>
-              </button>
-
-              <button
-                id="nav-sidebar-pricing"
-                title="Subscription Plans"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('pricing');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
-                  } ${activeTab === 'pricing'
-                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                  }`}
-              >
-                <Sparkles className="w-4 h-4 flex-shrink-0 text-yellow-500" />
-                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Subscription Plans</span>
-              </button>
-
-              {!isSidebarCollapsed ? (
-                <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-3 mb-2 mt-5">
-                  Academic Progress & Tools
-                </div>
-              ) : (
-                <div className="hidden lg:block my-3 border-t border-stone-100" title="Academic Progress & Tools" />
-              )}
-
-              <button
-                id="nav-sidebar-arena"
-                title="10-Mark Exam Arena"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('arena');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
-                  } ${activeTab === 'arena' && !activeSubmissionReport
-                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                  }`}
-              >
-                <Play className="w-4 h-4 flex-shrink-0 text-yellow-600" />
-                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>10-Mark Exam Arena</span>
-              </button>
-
-              <button
-                id="nav-sidebar-learning-path"
-                title="Adaptive Path"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('learning-path');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
-                  } ${activeTab === 'learning-path' && !activeSubmissionReport
-                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                  }`}
-              >
-                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
-                  <Compass className="w-4 h-4 flex-shrink-0 text-yellow-600" />
-                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Adaptive Path</span>
-                </div>
-              </button>
-
-              <button
-                id="nav-sidebar-gamification"
-                title="Leaderboard & Ranks"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('gamification');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 justify-between px-3' : 'justify-between px-3'
-                  } ${activeTab === 'gamification' && !activeSubmissionReport
-                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                  }`}
-              >
-                <div className={`flex items-center ${isSidebarCollapsed ? 'lg:gap-0 gap-3' : 'gap-3'}`}>
-                  <Trophy className="w-4 h-4 flex-shrink-0 text-amber-500" />
-                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Leaderboard</span>
-                </div>
-                <span className={`text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
-                  Ranks
-                </span>
-              </button>
-
-              {/* Super Admin Panel link ONLY shown if session is Admin */}
-              {isAdminSession && (
-                <button
-                  id="nav-sidebar-admin"
-                  title="Super Admin Panel"
-                  onClick={() => {
-                    setActiveSubmissionReport(null);
-                    setActiveTab('admin');
-                    setMobileSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
-                    } ${activeTab === 'admin'
-                      ? 'bg-amber-50 text-amber-800 font-semibold'
-                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                    }`}
-                >
-                  <ShieldCheck className="w-4 h-4 flex-shrink-0 text-amber-600" />
-                  <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Super Admin Panel</span>
-                </button>
-              )}
-
-              {!isSidebarCollapsed ? (
-                <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest px-3 mb-2 mt-5">
-                  Pedagogy & Resources
-                </div>
-              ) : (
-                <div className="hidden lg:block my-3 border-t border-stone-100" title="Pedagogy & Resources" />
-              )}
-
-              <button
-                id="nav-sidebar-blog"
-                title="Curriculum Blog"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('blog');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
-                  } ${activeTab === 'blog'
-                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                  }`}
-              >
-                <BookOpen className="w-4 h-4 flex-shrink-0" />
-                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Curriculum Blog</span>
-              </button>
-
-              <button
-                id="nav-sidebar-about"
-                title="About & Pedagogy"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('about');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
-                  } ${activeTab === 'about'
-                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                  }`}
-              >
-                <Info className="w-4 h-4 flex-shrink-0" />
-                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>About & Pedagogy</span>
-              </button>
-
-              <button
-                id="nav-sidebar-legal"
-                title="Policies & Disclaimers"
-                onClick={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('legal');
-                  setMobileSidebarOpen(false);
-                }}
-                className={`w-full flex items-center py-2 rounded-md text-sm font-medium transition-colors ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'
-                  } ${activeTab === 'legal'
-                    ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-                  }`}
-              >
-                <FileText className="w-4 h-4 flex-shrink-0" />
-                <span className={`truncate ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Policies & Disclaimers</span>
-              </button>
-            </>
-          )}
-        </nav>
-
-        {/* Bottom Current Plan Widget (High Density) */}
-        <div className="p-3 border-t border-stone-100">
-          {/* Collapsed view on Desktop */}
-          {isSidebarCollapsed ? (
-            <div
-              onClick={() => isFreePlan ? setShowUpgradeModal(true) : setActiveTab('pricing')}
-              title={`Active Plan: ${parentAccount.subscriptionTier === 'free' ? 'Free Plan (1 Exam/Day)' : 'Unlimited Family Exams'} — Click to view`}
-              className="hidden lg:flex flex-col items-center justify-center p-2.5 bg-stone-900 rounded-xl text-white cursor-pointer hover:bg-stone-800 transition-colors shadow-2xs group"
-            >
-              <Sparkles className="w-5 h-5 text-yellow-400 group-hover:scale-110 transition-transform" />
-              <span className="text-[9px] font-bold text-yellow-300 mt-1 uppercase">
-                {parentAccount.subscriptionTier === 'free' ? 'Free' : 'Pro'}
-              </span>
-            </div>
-          ) : null}
-
-          {/* Full view on Expanded Desktop / Mobile Drawer */}
-          <div className={`bg-stone-900 rounded-xl p-3.5 text-white space-y-2 ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] text-stone-400 uppercase font-semibold">Active Plan</p>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-stone-800 text-yellow-300 font-mono">
-                {parentAccount.subscriptionTier === 'free' ? 'Free Plan' : parentAccount.subscriptionTier === 'scholar_pro' ? 'Scholar Pro' : 'Genius Pro'}
-              </span>
-            </div>
-            <p className="text-xs font-bold truncate">
-              {parentAccount.subscriptionTier === 'free' ? 'Foundation (1 Exam/Day)' : 'Unlimited Family Exams'}
-            </p>
-
-            <div className="h-1.5 w-full bg-stone-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-yellow-500 rounded-full transition-all"
-                style={{
-                  width: isFreePlan ? (dailyQuotaUsed >= 1 ? '100%' : '0%') : '100%'
-                }}
-              />
-            </div>
-
-            <div className="flex items-center justify-between pt-1">
-              <p className="text-[10px] text-stone-400">
-                {isFreePlan ? `${dailyQuotaUsed}/1 Daily Test Taken` : 'Unlimited Exams Available'}
-              </p>
-              {isFreePlan ? (
-                <button
-                  onClick={() => setShowUpgradeModal(true)}
-                  className="text-[10px] font-bold text-yellow-400 hover:text-yellow-300 underline"
-                >
-                  Upgrade
-                </button>
-              ) : (
-                <span className="text-[10px] text-yellow-400 font-semibold">Active</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </aside>
+      <div className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-stone-200 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'} ${mobileSidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full'}`}>
+        <Sidebar pageAccess={pageAccess} isSidebarCollapsed={isSidebarCollapsed} setMobileSidebarOpen={setMobileSidebarOpen} onToggleSidebar={toggleSidebar} onLogout={handleLogout} activePersona={activePersona} activeChildName={activeChild?.name} />
+      </div>
 
       {/* Main Workspace Area (High Density Theme) */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {isBootstrapping || !parentAccount ? (
+           <div className="flex-1 flex flex-col items-center justify-center gap-3">
+             <Loader2 className="w-8 h-8 animate-spin text-stone-400" />
+             <p className="text-sm font-medium text-stone-500">Loading your workspace...</p>
+           </div>
+        ) : (
+          <>
         {/* Top Header Bar */}
         <header className="h-14 lg:h-16 bg-white border-b border-stone-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 flex-shrink-0 z-20">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -1123,6 +662,7 @@ export default function App() {
             >
               <Menu className="w-5 h-5" />
             </button>
+
 
             <h1 className="text-base sm:text-lg font-semibold text-stone-800 truncate">
               {getPageTitle()}
@@ -1141,7 +681,7 @@ export default function App() {
                 >
                   Parent View
                 </button>
-                {parentAccount.children.map((child) => (
+                {(parentAccount?.children || []).map((child) => (
                   <button
                     key={child.id}
                     onClick={() => handleSwitchToChild(child.id)}
@@ -1191,7 +731,7 @@ export default function App() {
                 id="header-persona-switcher"
                 onClick={() => setShowPersonaMenu(!showPersonaMenu)}
                 className="flex items-center gap-1.5 p-1 sm:px-2 sm:py-1 rounded-full sm:rounded-xl border border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50 transition-all text-xs shadow-2xs group cursor-pointer"
-                title={isParentActive ? `Parent Account (${parentAccount.name})` : `Active Student (${activeChild?.name})`}
+                title={isParentActive ? `Parent Account (${parentAccount?.name})` : `Active Student (${activeChild?.name})`}
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-50 to-amber-50 border border-yellow-200 flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
                   {isParentActive ? '👨‍👩‍👧‍👦' : activeChild?.avatar || '👤'}
@@ -1208,11 +748,11 @@ export default function App() {
                   <div className="px-4 py-2.5 border-b border-stone-100 bg-stone-50/60 rounded-t-2xl">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold text-xs shrink-0">
-                        {parentAccount.name.charAt(0).toUpperCase()}
+                        {(parentAccount?.name || "P").charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-stone-900 truncate">{parentAccount.name}</p>
-                        <p className="text-[10px] text-stone-400 truncate">{parentAccount.email || 'Parent Account'}</p>
+                        <p className="text-xs font-bold text-stone-900 truncate">{parentAccount?.name}</p>
+                        <p className="text-[10px] text-stone-400 truncate">{parentAccount?.email || 'Parent Account'}</p>
                       </div>
                     </div>
                   </div>
@@ -1237,7 +777,7 @@ export default function App() {
                       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Children Profiles</p>
                     </div>
 
-                    {parentAccount.children.map((child) => {
+                    {(parentAccount?.children || []).map((child) => {
                       const isSelected = activePersona === 'child' && activeChildId === child.id;
                       return (
                         <button
@@ -1301,6 +841,9 @@ export default function App() {
             />
           ) : (
             <>
+              {activeTab === 'home' && (
+                <LandingPage onOpenAuth={() => {}} />
+              )}
               {activeTab === 'dashboard' && (
                 <ParentDashboard
                   parentAccount={parentAccount}
@@ -1463,6 +1006,8 @@ export default function App() {
             Empowering evolution through adaptive RAG intelligence & parent-educator alignment.
           </p>
         </footer>
+          </>
+        )}
       </main>
 
       {/* Child 4-Digit Security PIN Verification Modal */}
