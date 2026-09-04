@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { PublicHeader } from './common/PublicHeader';
+import { PublicFooter } from './common/PublicFooter';
 import { GraduationCap, ArrowLeft } from 'lucide-react';
 
 interface LegalPageProps {
@@ -31,21 +33,7 @@ export const LegalPage: React.FC<LegalPageProps> = ({ type }) => {
       <div className="absolute -bottom-32 -left-32 w-[600px] h-[600px] bg-amber-300/20 rounded-full blur-3xl -z-10 mix-blend-multiply" />
 
       {/* Navbar */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-stone-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 min-h-[72px] flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-yellow-400 text-stone-900 flex items-center justify-center shadow-lg shadow-yellow-200 group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="font-black text-lg tracking-tight text-stone-900">SahajPath</div>
-              <div className="text-[10px] text-stone-500 font-semibold uppercase tracking-wider">
-                Smarter Learning
-              </div>
-            </div>
-          </Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       {/* Main Content */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-4 z-10">
@@ -89,19 +77,7 @@ export const LegalPage: React.FC<LegalPageProps> = ({ type }) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-stone-950 text-stone-400 border-t border-stone-800 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-yellow-400 text-stone-900 flex items-center justify-center">
-              <GraduationCap className="w-3 h-3" />
-            </div>
-            <span className="font-bold text-white text-sm">SahajPath</span>
-          </div>
-          <div className="text-xs font-medium">
-            © {new Date().getFullYear()} SahajPath. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 };

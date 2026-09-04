@@ -1,55 +1,56 @@
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export const API_V1 = `${BASE_URL}/api/v1`;
 
 export const GET_APIS = {
   // Auth
-  roles: `${BASE_URL}/api/v1/auth/roles`,
-  verifySession: `${BASE_URL}/api/v1/auth/verify`,
-  menuPermissions: `${BASE_URL}/api/v1/auth/menu-permissions`,
+  roles: `${API_V1}/auth/roles`,
+  verifySession: `${API_V1}/auth/verify`,
+  menuPermissions: `${API_V1}/auth/menu-permissions`,
 
   // Master Data
-  childRegistrationOptions: `${BASE_URL}/api/v1/master/child-registration-options`,
+  childRegistrationOptions: `${API_V1}/master/child-registration-options`,
 
   // Parent
-  parentDashboard: `${BASE_URL}/api/v1/parents/dashboard`,
-  parentMe: `${BASE_URL}/api/v1/parents/me`,
-  parentChildren: `${BASE_URL}/api/v1/parents/me/children`,
-  childOverview: (id: string | number) => `${BASE_URL}/api/v1/parents/me/children/${id}/overview`,
-  childLearningPath: (id: string | number) => `${BASE_URL}/api/v1/parents/me/children/${id}/learning-path`,
+  parentDashboard: `${API_V1}/parents/dashboard`,
+  parentMe: `${API_V1}/parents/me`,
+  parentChildren: `${API_V1}/parents/me/children`,
+  childOverview: (id: string | number) => `${API_V1}/parents/me/children/${id}/overview`,
+  childLearningPath: (id: string | number) => `${API_V1}/parents/me/children/${id}/learning-path`,
 
   // Runbooks
-  runbooks: `${BASE_URL}/api/v1/runbooks`,
+  runbooks: `${API_V1}/runbooks`,
 
   // Gamification
-  badges: `${BASE_URL}/api/v1/gamification/badges`,
-  leaderboard: `${BASE_URL}/api/v1/leaderboard`,
+  badges: `${API_V1}/gamification/badges`,
+  leaderboard: `${API_V1}/leaderboard`,
 
   // Communication
-  teachers: `${BASE_URL}/api/v1/teachers`,
-  conversations: `${BASE_URL}/api/v1/conversations`,
-  dossiers: `${BASE_URL}/api/v1/dossiers`,
-  dossierPreview: (id: string | number) => `${BASE_URL}/api/v1/dossiers/preview/${id}`,
-  publicDossier: (token: string) => `${BASE_URL}/api/v1/dossiers/public/${encodeURIComponent(token)}`,
-  ptmSchedules: `${BASE_URL}/api/v1/ptm/schedules`,
+  teachers: `${API_V1}/teachers`,
+  conversations: `${API_V1}/conversations`,
+  dossiers: `${API_V1}/dossiers`,
+  dossierPreview: (id: string | number) => `${API_V1}/dossiers/preview/${id}`,
+  publicDossier: (token: string) => `${API_V1}/dossiers/public/${encodeURIComponent(token)}`,
+  ptmSchedules: `${API_V1}/ptm/schedules`,
 
   // Subscriptions
-  subscriptionPlans: `${BASE_URL}/api/v1/subscriptions/plans`,
+  subscriptionPlans: `${API_V1}/subscriptions/plans`,
 
   // Admin & Health
-  adminStatistics: `${BASE_URL}/api/v1/admin/statistics`,
-  health: `${BASE_URL}/api/v1/health`,
+  adminStatistics: `${API_V1}/admin/statistics`,
+  health: `${API_V1}/health`,
 };
 
 export const POST_APIS = {
   // Auth
-  login: `${BASE_URL}/api/v1/auth/login`,
-  googleLogin: `${BASE_URL}/api/v1/auth/google`,
-  register: `${BASE_URL}/api/v1/auth/register`,
-  childLogin: `${BASE_URL}/api/v1/auth/child-login`,
-  logout: `${BASE_URL}/api/v1/auth/logout`,
-  refreshToken: `${BASE_URL}/api/v1/auth/refresh`,
+  login: `${API_V1}/auth/login`,
+  googleLogin: `${API_V1}/auth/google`,
+  register: `${API_V1}/auth/register`,
+  childLogin: `${API_V1}/auth/child-login`,
+  logout: `${API_V1}/auth/logout`,
+  refreshToken: `${API_V1}/auth/refresh`,
 
   // Parent
-  addChild: `${BASE_URL}/api/v1/parents/add-child`,
+  addChild: `${API_V1}/parents/add-child`,
 
   // Exams
   generateExam: `${BASE_URL}/api/v1/exams/generate`,
@@ -57,34 +58,34 @@ export const POST_APIS = {
   submitExam: (id: string) => `${BASE_URL}/api/v1/exams/${id}/submit`,
 
   // Runbooks
-  createRunbook: `${BASE_URL}/api/v1/runbooks`,
+  createRunbook: `${API_V1}/runbooks`,
 
   // Gamification
-  awardXp: `${BASE_URL}/api/v1/gamification/award-xp`,
+  awardXp: `${API_V1}/gamification/award-xp`,
 
   // Communication
-  createConversation: `${BASE_URL}/api/v1/conversations`,
-  sendMessage: (id: string) => `${BASE_URL}/api/v1/conversations/${id}/messages`,
-  createDossier: `${BASE_URL}/api/v1/dossiers`,
-  schedulePTM: `${BASE_URL}/api/v1/ptm/schedule`,
+  createConversation: `${API_V1}/conversations`,
+  sendMessage: (id: string) => `${API_V1}/conversations/${id}/messages`,
+  createDossier: `${API_V1}/dossiers`,
+  schedulePTM: `${API_V1}/ptm/schedule`,
 
   // Subscriptions
-  upgradeSubscription: `${BASE_URL}/api/v1/subscriptions/upgrade`,
+  upgradeSubscription: `${API_V1}/subscriptions/upgrade`,
 
   // Admin
-  adminLogin: `${BASE_URL}/api/v1/admin/login`,
-  adminResetPassword: `${BASE_URL}/api/v1/admin/reset-password`,
-  resetQuota: (id: string | number) => `${BASE_URL}/api/v1/admin/children/${id}/reset-quota`,
+  adminLogin: `${API_V1}/admin/login`,
+  adminResetPassword: `${API_V1}/admin/reset-password`,
+  resetQuota: (id: string | number) => `${API_V1}/admin/children/${id}/reset-quota`,
 };
 
 export const PUT_APIS = {
-  updateChild: (id: string | number) => `${BASE_URL}/api/v1/parents/me/children/${id}`,
-  updateRunbook: (id: string) => `${BASE_URL}/api/v1/runbooks/${id}`,
-  markMessageRead: (id: string) => `${BASE_URL}/api/v1/messages/${id}/read`,
+  updateChild: (id: string | number) => `${API_V1}/parents/me/children/${id}`,
+  updateRunbook: (id: string) => `${API_V1}/runbooks/${id}`,
+  markMessageRead: (id: string) => `${API_V1}/messages/${id}/read`,
 };
 
 export const DELETE_APIS = {
-  deleteChild: (id: string | number) => `${BASE_URL}/api/v1/parents/me/children/${id}`,
-  deleteRunbook: (id: string) => `${BASE_URL}/api/v1/runbooks/${id}`,
-  deleteDossier: (id: string) => `${BASE_URL}/api/v1/dossiers/${encodeURIComponent(id)}`,
+  deleteChild: (id: string | number) => `${API_V1}/parents/me/children/${id}`,
+  deleteRunbook: (id: string) => `${API_V1}/runbooks/${id}`,
+  deleteDossier: (id: string) => `${API_V1}/dossiers/${encodeURIComponent(id)}`,
 };
