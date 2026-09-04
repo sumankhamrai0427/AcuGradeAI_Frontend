@@ -57,6 +57,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar, PageAccess } from './components/Sidebar';
 import { AIChatWidget } from './components/AIChatWidget2';
 import { ExamArena } from './components/ExamArena';
+import { KidsExamArena } from './components/KidsExamArena';
 import { DiagnosticReport } from './components/DiagnosticReport';
 import { ParentDashboard } from './components/ParentDashboard';
 import { ChildrenPage } from './components/ChildrenPage';
@@ -530,7 +531,7 @@ export default function App() {
     if (activeSubmissionReport) return 'Diagnostic Dossier & Analysis';
     switch (activeTab) {
       case 'dashboard': return isParentActive ? 'Parent Dashboard' : `${activeChild?.name}'s Study Dashboard`;
-      case 'arena': return '10-Mark Diagnostic Exam Arena';
+      case 'arena': return ['Class 1', 'Class 2', 'Class 3', 'Class 4'].includes(activeChild?.classGrade || '') ? 'Kids Magic Exam Arena ✨' : '10-Mark Diagnostic Exam Arena';
       case 'learning-path': return 'Adaptive Learning Paths & RAG Knowledge Engine';
       case 'gamification': return 'Academic Leaderboard & Badge Hall of Fame';
       case 'ptc': return 'Parent-Teacher Communication & Dossier Bridge';
@@ -769,44 +770,69 @@ export default function App() {
                       <Bell className="w-5 h-5" />
                       <span className="absolute top-1.5 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse border-2 border-white"></span>
                     </button>
-
                     {showNotificationMenu && (
-                      <div className="absolute right-0 mt-2 w-[340px] bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-stone-200/50 p-5 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
-                        <div className="flex items-start gap-4 mb-1">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 flex items-center justify-center text-white shadow-[0_8px_16px_-6px_rgba(245,158,11,0.5)] shrink-0">
-                            <span className="text-2xl">📊</span>
-                          </div>
-                          <div className="flex flex-col pt-0.5">
-                            <span className="text-base font-black text-stone-900 tracking-tight">Want a quick feedback on {activeChild?.name?.split(' ')[0] || 'your child'}?</span>
-                            <span className="text-xs font-medium text-stone-500 mt-1 leading-relaxed">
-                              Take a short test now — get an instant <span className="text-yellow-600 font-semibold">performance report</span> instantly.
-                            </span>
-                          </div>
-                        </div>
+                      <div className="absolute right-0 mt-2 w-[340px] bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-stone-200/50 p-3 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right flex flex-col gap-2 max-h-[420px] overflow-y-auto custom-scrollbar">
+                        {(parentAccount?.children || []).map((child) => {
+                          const isKids = ['Class 1', 'Class 2', 'Class 3', 'Class 4'].includes(child.classGrade || '');
+                          
+                          return (
+                            <div key={child.id} className={`p-4 rounded-2xl border ${isKids ? 'bg-sky-50/50 border-sky-100' : 'bg-stone-50 border-stone-100'}`}>
+                              <div className="flex items-start gap-4 mb-1">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0 ${isKids ? 'bg-gradient-to-tr from-sky-400 to-indigo-500' : 'bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500'}`}>
+                                  <span className="text-xl">{isKids ? '🎈' : '📊'}</span>
+                                </div>
+                                <div className="flex flex-col pt-0.5">
+                                  <span className="text-sm font-black text-stone-900 tracking-tight leading-tight">
+                                    {isKids 
+                                      ? `Ready for a fun adventure with ${child.name?.split(' ')[0] || 'your child'}?` 
+                                      : `Want a quick feedback on ${child.name?.split(' ')[0] || 'your child'}?`}
+                                  </span>
+                                  <span className="text-[10px] font-medium text-stone-500 mt-1 leading-tight">
+                                    {isKids
+                                      ? <>Play a short game now — earn shiny <span className="text-sky-600 font-semibold">stars</span> instantly.</>
+                                      : <>Take a short test now — get an instant <span className="text-yellow-600 font-semibold">report</span>.</>}
+                                  </span>
+                                </div>
+                              </div>
 
-                        <div className="flex items-center gap-2 my-4 px-1">
-                          {['📖 Curriculum-based', '⚡ Instant results', '📊 AI analysis'].map(tag => (
-                            <span key={tag} className="text-[10px] font-semibold text-stone-500 bg-stone-100 rounded-full px-2 py-0.5 whitespace-nowrap">{tag}</span>
-                          ))}
-                        </div>
+                              <div className="flex items-center gap-1.5 my-3 px-1">
+                                {isKids 
+                                  ? ['🎈 Fun Games', '⭐ Stars', '🏆 Badges'].map(tag => (
+                                      <span key={tag} className="text-[9px] font-semibold text-stone-500 bg-white rounded-full px-1.5 py-0.5 border border-stone-200/50 whitespace-nowrap">{tag}</span>
+                                    ))
+                                  : ['📖 Curriculum', '⚡ Results', '📊 AI analysis'].map(tag => (
+                                      <span key={tag} className="text-[9px] font-semibold text-stone-500 bg-white rounded-full px-1.5 py-0.5 border border-stone-200/50 whitespace-nowrap">{tag}</span>
+                                    ))}
+                              </div>
 
-                        <button 
-                          disabled={isQuickTestLoading}
-                          onClick={handleStartQuickTestClick}
-                          className="group w-full px-5 py-3 rounded-2xl bg-stone-900 text-yellow-400 text-sm font-bold hover:bg-stone-800 transition-all hover:shadow-[0_8px_20px_-6px_rgba(28,25,23,0.5)] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 relative overflow-hidden"
-                        >
-                          <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                          {isQuickTestLoading ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Loading Test...</span>
-                            </>
-                          ) : (
-                            <>
-                              Start Quick Test <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </>
-                          )}
-                        </button>
+                              <button 
+                                disabled={isQuickTestLoading}
+                                onClick={() => {
+                                  setShowNotificationMenu(false);
+                                  if (isKids) {
+                                    setActiveChildId(child.id);
+                                    setActiveTab('arena');
+                                  } else {
+                                    handleLaunchQuickTest(child.id);
+                                  }
+                                }}
+                                className={`group w-full px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 relative overflow-hidden ${isKids ? 'bg-sky-500 hover:bg-sky-600 text-white shadow-[0_4px_10px_-3px_rgba(14,165,233,0.5)]' : 'bg-stone-900 text-yellow-400 hover:bg-stone-800 shadow-[0_4px_10px_-3px_rgba(28,25,23,0.5)]'}`}
+                              >
+                                <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                                {isQuickTestLoading ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    <span>Loading...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    {isKids ? 'Start Playing!' : 'Start Quick Test'} <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -965,17 +991,31 @@ export default function App() {
                   )}
 
                   {activeTab === 'arena' && (
-                    <ExamArena
-                      parentAccount={currentParentAccount}
-                      activeChildId={activeChildId}
-                      activePersona={activePersona}
-                      onChildSelect={(cId) => setActiveChildId(cId)}
-                      onExamComplete={handleExamComplete}
-                      onOpenUpgradeModal={() => setShowUpgradeModal(true)}
-                      onResetDailyQuota={handleResetDailyQuota}
-                      initialExam={preloadedExam}
-                      onClearInitialExam={() => setPreloadedExam(null)}
-                    />
+                    ['Class 1', 'Class 2', 'Class 3', 'Class 4'].includes(activeChild?.classGrade || '') ? (
+                      <KidsExamArena
+                        parentAccount={currentParentAccount}
+                        activeChildId={activeChildId}
+                        activePersona={activePersona}
+                        onChildSelect={(cId) => setActiveChildId(cId)}
+                        onExamComplete={handleExamComplete}
+                        onOpenUpgradeModal={() => setShowUpgradeModal(true)}
+                        onResetDailyQuota={handleResetDailyQuota}
+                        initialExam={preloadedExam}
+                        onClearInitialExam={() => setPreloadedExam(null)}
+                      />
+                    ) : (
+                      <ExamArena
+                        parentAccount={currentParentAccount}
+                        activeChildId={activeChildId}
+                        activePersona={activePersona}
+                        onChildSelect={(cId) => setActiveChildId(cId)}
+                        onExamComplete={handleExamComplete}
+                        onOpenUpgradeModal={() => setShowUpgradeModal(true)}
+                        onResetDailyQuota={handleResetDailyQuota}
+                        initialExam={preloadedExam}
+                        onClearInitialExam={() => setPreloadedExam(null)}
+                      />
+                    )
                   )}
 
                   {activeTab === 'learning-path' && activeChild && (
