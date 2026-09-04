@@ -57,6 +57,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar, PageAccess } from './components/Sidebar';
 import { AIChatWidget } from './components/AIChatWidget2';
 import { ExamArena } from './components/ExamArena';
+import { KidsExamArena } from './components/KidsExamArena';
 import { DiagnosticReport } from './components/DiagnosticReport';
 import { ParentDashboard } from './components/ParentDashboard';
 import { ChildrenPage } from './components/ChildrenPage';
@@ -158,6 +159,8 @@ export default function App() {
   const [isQuickTestLoading, setIsQuickTestLoading] = useState(false);
   const [preloadedExam, setPreloadedExam] = useState<Exam | null>(null);
   const personaMenuRef = useRef<HTMLDivElement>(null);
+  const [showNotificationMenu, setShowNotificationMenu] = useState(false);
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
 
   // Close persona dropdown when clicking anywhere outside
   useEffect(() => {
@@ -174,6 +177,22 @@ export default function App() {
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [showPersonaMenu]);
+
+  // Close notification dropdown when clicking anywhere outside
+  useEffect(() => {
+    if (!showNotificationMenu) return;
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (notificationMenuRef.current && !notificationMenuRef.current.contains(event.target as Node)) {
+        setShowNotificationMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showNotificationMenu]);
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -267,18 +286,18 @@ export default function App() {
         if (isAdminSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
+          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else if (isTeacherSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
+          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else if (isStudentSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
+          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else if (isParentSession) {
           const perms = await loadParentAndChildren();
-          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
+          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else {
           clearTokens();
           setAuthRole(null);
@@ -512,7 +531,7 @@ export default function App() {
     if (activeSubmissionReport) return 'Diagnostic Dossier & Analysis';
     switch (activeTab) {
       case 'dashboard': return isParentActive ? 'Parent Dashboard' : `${activeChild?.name}'s Study Dashboard`;
-      case 'arena': return '10-Mark Diagnostic Exam Arena';
+      case 'arena': return ['Class 1', 'Class 2', 'Class 3', 'Class 4'].includes(activeChild?.classGrade || '') ? 'Kids Magic Exam Arena ✨' : '10-Mark Diagnostic Exam Arena';
       case 'learning-path': return 'Adaptive Learning Paths & RAG Knowledge Engine';
       case 'gamification': return 'Academic Leaderboard & Badge Hall of Fame';
       case 'ptc': return 'Parent-Teacher Communication & Dossier Bridge';
@@ -710,245 +729,271 @@ export default function App() {
             <p className="text-sm font-bold text-stone-700">Loading your workspace...</p>
           </div>
         )}
-        
+
         <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-500 ${(isBootstrapping || !parentAccount) ? 'blur-sm pointer-events-none opacity-60' : ''}`}>
-            {/* Top Header Bar */}
-            <header className="h-14 lg:h-16 bg-gradient-to-r from-yellow-50/90 via-white/90 to-orange-50/90 backdrop-blur-xl border-b border-stone-200/50 flex items-center justify-between px-4 sm:px-6 lg:px-8 flex-shrink-0 z-20 sticky top-0">
-              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                {/* Mobile-only Sidebar Toggle (hidden on desktop) */}
-                <button
-                  id="mobile-sidebar-toggle"
-                  onClick={() => setMobileSidebarOpen(true)}
-                  className="lg:hidden p-1.5 rounded-lg text-stone-600 hover:bg-stone-100 hover:text-yellow-600 transition-colors"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
+          {/* Top Header Bar */}
+          <header className="h-14 lg:h-16 bg-gradient-to-r from-yellow-50/90 via-white/90 to-orange-50/90 backdrop-blur-xl border-b border-stone-200/50 flex items-center justify-between px-4 sm:px-6 lg:px-8 flex-shrink-0 z-20 sticky top-0">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              {/* Mobile-only Sidebar Toggle (hidden on desktop) */}
+              <button
+                id="mobile-sidebar-toggle"
+                onClick={() => setMobileSidebarOpen(true)}
+                className="lg:hidden p-1.5 rounded-lg text-stone-600 hover:bg-stone-100 hover:text-yellow-600 transition-colors"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
 
 
-                <h1 className="text-base sm:text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-stone-800 to-stone-500 truncate">
-                  Welcome, {isParentActive ? (parentAccount?.name || 'Parent') : (activeChild?.name || 'Student')} <span className="text-stone-800">👋</span>
-                </h1>
+              <h1 className="text-base sm:text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-stone-800 to-stone-500 truncate">
+                Welcome, {isParentActive ? (parentAccount?.name || 'Parent') : (activeChild?.name || 'Student')} <span className="text-stone-800">👋</span>
+              </h1>
+            </div>
+
+            {/* Persona Menu & Actions */}
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex flex-col items-end mr-2">
+                <span className="text-sm font-semibold text-stone-700">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+                <span className="text-xs text-stone-400 font-medium">
+                  {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                </span>
               </div>
 
-              {/* Persona Menu & Actions */}
-              <div className="flex items-center gap-4">
-                <div className="hidden sm:flex flex-col items-end mr-2">
-                  <span className="text-sm font-semibold text-stone-700">
-                    {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
-                  <span className="text-xs text-stone-400 font-medium">
-                    {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                  </span>
-                </div>
-
-                {/* Notification Bell */}
-                <button className="relative p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors">
-                  <Bell className="w-5 h-5" />
-                </button>
-
-                <div className="relative" ref={personaMenuRef}>
+              {/* Notification Bell & Dropdown — only active when children exist */}
+              {(parentAccount?.children?.length ?? 0) > 0 ? (
+                <div className="relative" ref={notificationMenuRef}>
                   <button
-                    id="header-persona-switcher"
-                    onClick={() => setShowPersonaMenu(!showPersonaMenu)}
-                    className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-50 to-amber-50 border border-yellow-200 shadow-sm flex items-center justify-center text-xl hover:scale-105 transition-transform cursor-pointer"
-                    title={isParentActive ? `Parent Account (${parentAccount?.name})` : `Active Student (${activeChild?.name})`}
+                    onClick={() => setShowNotificationMenu(!showNotificationMenu)}
+                    className="relative p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors"
                   >
-                    {isParentActive ? '👨‍👩‍👧‍👦' : activeChild?.avatar || '👤'}
+                    <Bell className="w-5 h-5" />
+                    <span className="absolute top-1.5 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse border-2 border-white"></span>
                   </button>
+                  {showNotificationMenu && (
+                    <div className="absolute right-0 mt-2 w-[340px] bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-stone-200/50 p-3 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right flex flex-col gap-2 max-h-[420px] overflow-y-auto custom-scrollbar">
+                      {(parentAccount?.children || []).map((child) => {
+                        const isKids = ['Class 1', 'Class 2', 'Class 3', 'Class 4'].includes(child.classGrade || '');
 
-                  {/* Dropdown Menu Modal */}
-                  {showPersonaMenu && (
-                    <div
-                      id="persona-dropdown-menu"
-                      className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
-                    >
-                      <button
-                        onClick={handleSwitchToParent}
-                        className={`w-full px-4 py-2.5 border-b border-stone-100 rounded-t-2xl flex items-center justify-between text-left transition-colors hover:bg-stone-50 ${isParentActive ? 'bg-yellow-50/60' : 'bg-stone-50/60'}`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold text-xs shrink-0">
-                            {(parentAccount?.name || "P").charAt(0).toUpperCase()}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold text-stone-900 truncate">{parentAccount?.name} (Parent)</p>
-                            <p className="text-[10px] text-stone-500 truncate">{parentAccount?.email || 'Parent Account'}</p>
-                          </div>
-                        </div>
-                        {isParentActive && <CheckCircle className="w-4 h-4 text-yellow-600 shrink-0" />}
-                      </button>
-
-                      <div className="p-1 space-y-0.5">
-                        <div className="my-1 px-3 py-1">
-                          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Children Profiles</p>
-                        </div>
-
-                        {(parentAccount?.children || []).length === 0 ? (
-                          <div className="px-3 py-2 flex flex-col items-center justify-center text-center">
-                            <span className="text-stone-300 mb-1">👦👧</span>
-                            <p className="text-[10px] text-stone-500 font-medium">No children added yet</p>
-                          </div>
-                        ) : (parentAccount?.children || []).map((child) => {
-                          const isSelected = activePersona === 'child' && activeChildId === child.id;
-                          return (
-                            <button
-                              key={child.id}
-                              onClick={() => handleSwitchToChild(child.id)}
-                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isSelected ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
-                                }`}
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <span className="text-base">{child.avatar}</span>
-                                <div>
-                                  <div className="font-medium text-stone-900">{child.name}</div>
-                                  <div className="text-[10px] text-stone-500">
-                                    {child.classGrade} • {child.targetBoard} • Avg {child.averageScore}/10
-                                  </div>
-                                </div>
+                        return (
+                          <div key={child.id} className={`p-4 rounded-2xl border ${isKids ? 'bg-sky-50/50 border-sky-100' : 'bg-stone-50 border-stone-100'}`}>
+                            <div className="flex items-start gap-4 mb-1">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0 ${isKids ? 'bg-gradient-to-tr from-sky-400 to-indigo-500' : 'bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500'}`}>
+                                <span className="text-xl">{isKids ? '🎈' : '📊'}</span>
                               </div>
-                              {isSelected && <CheckCircle className="w-4 h-4 text-yellow-600 shrink-0" />}
+                              <div className="flex flex-col pt-0.5">
+                                <span className="text-sm font-black text-stone-900 tracking-tight leading-tight">
+                                  {isKids
+                                    ? `Ready for a fun adventure with ${child.name?.split(' ')[0] || 'your child'}?`
+                                    : `Want a quick feedback on ${child.name?.split(' ')[0] || 'your child'}?`}
+                                </span>
+                                <span className="text-[10px] font-medium text-stone-500 mt-1 leading-tight">
+                                  {isKids
+                                    ? <>Play a short game now — earn shiny <span className="text-sky-600 font-semibold">stars</span> instantly.</>
+                                    : <>Take a short test now — get an instant <span className="text-yellow-600 font-semibold">report</span>.</>}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 my-3 px-1">
+                              {isKids
+                                ? ['🎈 Fun Games', '⭐ Stars', '🏆 Badges'].map(tag => (
+                                  <span key={tag} className="text-[9px] font-semibold text-stone-500 bg-white rounded-full px-1.5 py-0.5 border border-stone-200/50 whitespace-nowrap">{tag}</span>
+                                ))
+                                : ['📖 Curriculum', '⚡ Results', '📊 AI analysis'].map(tag => (
+                                  <span key={tag} className="text-[9px] font-semibold text-stone-500 bg-white rounded-full px-1.5 py-0.5 border border-stone-200/50 whitespace-nowrap">{tag}</span>
+                                ))}
+                            </div>
+
+                            <button
+                              disabled={isQuickTestLoading}
+                              onClick={() => {
+                                setShowNotificationMenu(false);
+                                if (isKids) {
+                                  setActiveChildId(child.id);
+                                  setActiveTab('arena');
+                                } else {
+                                  handleLaunchQuickTest(child.id);
+                                }
+                              }}
+                              className={`group w-full px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 relative overflow-hidden ${isKids ? 'bg-sky-500 hover:bg-sky-600 text-white shadow-[0_4px_10px_-3px_rgba(14,165,233,0.5)]' : 'bg-stone-900 text-yellow-400 hover:bg-stone-800 shadow-[0_4px_10px_-3px_rgba(28,25,23,0.5)]'}`}
+                            >
+                              <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                              {isQuickTestLoading ? (
+                                <>
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                  <span>Loading...</span>
+                                </>
+                              ) : (
+                                <>
+                                  {isKids ? 'Start Playing!' : 'Start Quick Test'} <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                                </>
+                              )}
                             </button>
-                          );
-                        })}
-
-                        <div className="my-1 border-t border-stone-100" />
-                        
-                        <button
-                          onClick={() => {
-                            setShowPersonaMenu(false);
-                            setShowAddChildModal(true);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span>Add Child</span>
-                        </button>
-
-                        <div className="my-1 border-t border-stone-100" />
-
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-stone-500 hover:bg-stone-100 hover:text-stone-800 font-medium transition-colors"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          <span>Log out</span>
-                        </button>
-                      </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
-              </div>
-            </header>
+              ) : (
+                /* No children — plain inactive bell */
+                <button className="p-2 rounded-full text-stone-400 cursor-default" disabled>
+                  <Bell className="w-5 h-5" />
+                </button>
+              )}
 
-            {/* Scrollable Main Content Frame (High Density Theme) */}
-            <div className="flex-1 overflow-y-auto bg-stone-50 p-4 sm:p-6 lg:p-8">
-              
-              {/* Child Registration Success Widget - persistently visible on dashboard whenever parent has registered student(s) */}
-              {activeTab === 'dashboard' && (parentAccount?.children?.length ?? 0) > 0 && (
-                <div className="flex justify-center mb-8 relative z-10 animate-in zoom-in duration-500">
-                  <div className="relative group">
-                    {/* Glowing Aura */}
-                    <div className="absolute -inset-2 bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-[pulse_2s_ease-in-out_infinite]"></div>
-                    
-                    {/* The Pill / Circular Element */}
-                    <div className="relative px-6 py-3 bg-white/95 backdrop-blur-xl ring-1 ring-white/50 rounded-full flex items-center gap-4 sm:gap-5 shadow-2xl">
-                      <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-yellow-400 to-amber-500 flex items-center justify-center text-white shadow-inner shrink-0 animate-bounce">
-                        <span className="text-xl">🎉</span>
+              <div className="relative" ref={personaMenuRef}>
+                <button
+                  id="header-persona-switcher"
+                  onClick={() => setShowPersonaMenu(!showPersonaMenu)}
+                  className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-50 to-amber-50 border border-yellow-200 shadow-sm flex items-center justify-center text-xl hover:scale-105 transition-transform cursor-pointer"
+                  title={isParentActive ? `Parent Account (${parentAccount?.name})` : `Active Student (${activeChild?.name})`}
+                >
+                  {isParentActive ? '👨‍👩‍👧‍👦' : activeChild?.avatar || '👤'}
+                </button>
+
+                {/* Dropdown Menu Modal */}
+                {showPersonaMenu && (
+                  <div
+                    id="persona-dropdown-menu"
+                    className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+                  >
+                    <button
+                      onClick={handleSwitchToParent}
+                      className={`w-full px-4 py-2.5 border-b border-stone-100 rounded-t-2xl flex items-center justify-between text-left transition-colors hover:bg-stone-50 ${isParentActive ? 'bg-yellow-50/60' : 'bg-stone-50/60'}`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold text-xs shrink-0">
+                          {(parentAccount?.name || "P").charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-stone-900 truncate">{parentAccount?.name} (Parent)</p>
+                          <p className="text-[10px] text-stone-500 truncate">{parentAccount?.email || 'Parent Account'}</p>
+                        </div>
                       </div>
-                      
-                      <div className="flex flex-col pr-4 sm:pr-5 border-r border-stone-200">
-                        <span className="text-sm font-extrabold text-stone-900">Child Added Successfully!</span>
-                        <span className="text-xs font-semibold text-stone-500 mt-0.5">
-                          You now have <span className="text-yellow-600 font-bold">{parentAccount?.children?.length || 1}</span> active profile(s)
-                        </span>
+                      {isParentActive && <CheckCircle className="w-4 h-4 text-yellow-600 shrink-0" />}
+                    </button>
+
+                    <div className="p-1 space-y-0.5">
+                      <div className="my-1 px-3 py-1">
+                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Children Profiles</p>
                       </div>
-                      
-                      <button 
-                        disabled={isQuickTestLoading}
-                        onClick={handleStartQuickTestClick}
-                        className="px-5 py-2 rounded-full bg-stone-900 text-yellow-400 text-xs font-bold hover:bg-stone-800 transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-60"
+
+                      {(parentAccount?.children || []).length === 0 ? (
+                        <div className="px-3 py-2 flex flex-col items-center justify-center text-center">
+                          <span className="text-stone-300 mb-1">👦👧</span>
+                          <p className="text-[10px] text-stone-500 font-medium">No children added yet</p>
+                        </div>
+                      ) : (parentAccount?.children || []).map((child) => {
+                        const isSelected = activePersona === 'child' && activeChildId === child.id;
+                        return (
+                          <button
+                            key={child.id}
+                            onClick={() => handleSwitchToChild(child.id)}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isSelected ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
+                              }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-base">{child.avatar}</span>
+                              <div>
+                                <div className="font-medium text-stone-900">{child.name}</div>
+                                <div className="text-[10px] text-stone-500">
+                                  {child.classGrade} • {child.targetBoard} • Avg {child.averageScore}/10
+                                </div>
+                              </div>
+                            </div>
+                            {isSelected && <CheckCircle className="w-4 h-4 text-yellow-600 shrink-0" />}
+                          </button>
+                        );
+                      })}
+
+                      <div className="my-1 border-t border-stone-100" />
+
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-stone-500 hover:bg-stone-100 hover:text-stone-800 font-medium transition-colors"
                       >
-                        {isQuickTestLoading ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            <span>Loading Test...</span>
-                          </>
-                        ) : (
-                          <>
-                            Start Quick Test <ArrowRight className="w-3.5 h-3.5" />
-                          </>
-                        )}
+                        <LogOut className="w-4 h-4" />
+                        <span>Log out</span>
                       </button>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            </div>
+          </header>
 
-              {activeSubmissionReport ? (
-                <DiagnosticReport
-                  submission={activeSubmissionReport}
-                  onRetakeOrNextExam={handleRetakeOrNextExam}
-                  onBackToDashboard={() => {
-                    setActiveSubmissionReport(null);
-                    setActiveTab('dashboard');
-                  }}
-                  onNavigateToLearningPath={() => {
-                    setActiveSubmissionReport(null);
-                    setActiveTab('learning-path');
-                  }}
-                  onNavigateToPTC={() => {
-                    setActiveSubmissionReport(null);
-                    setActiveTab('ptc');
-                  }}
-                  onNavigateToFunZone={() => {
-                    setActiveSubmissionReport(null);
-                    setActiveTab('fun-zone');
-                  }}
-                />
-              ) : (
-                <>
-                  {activeTab === 'home' && (
-                    <LandingPage onOpenAuth={() => { }} />
-                  )}
-                  {activeTab === 'dashboard' && parentAccount && (
-                    <ParentDashboard
-                      parentAccount={parentAccount}
-                      activeChildId={activeChildId}
-                      onChildSelect={(cId) => {
-                        setActiveChildId(cId);
-                      }}
-                      onLaunchExamForChild={(cId) => {
-                        setActiveChildId(cId);
-                        setActiveTab('arena');
-                      }}
-                      onOpenAddChildModal={() => setShowAddChildModal(true)}
-                      onOpenUpgradeModal={() => setShowUpgradeModal(true)}
-                      examHistory={examHistory}
-                      onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
-                      onUpdateChild={handleUpdateChild}
-                    />
-                  )}
+          {/* Scrollable Main Content Frame (High Density Theme) */}
+          <div className="flex-1 overflow-y-auto bg-stone-50 p-4 sm:p-6 lg:p-8">
 
-                  {activeTab === 'children' && parentAccount && (
-                    <ChildrenPage 
-                      parentAccount={parentAccount}
-                      activeChildId={activeChildId}
-                      onChildSelect={setActiveChildId}
-                      onNavigateToArena={() => setActiveTab('arena')}
-                    />
-                  )}
-  
-                  {activeTab === 'reports' && parentAccount && (
-                    <ReportsPage 
-                      examHistory={examHistory}
-                      parentAccount={parentAccount}
-                      onViewSubmissionReport={(submission) => setActiveSubmissionReport(submission)}
-                    />
-                  )}
 
-                  {activeTab === 'arena' && (
-                    <ExamArena
-                      parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
+            {activeSubmissionReport ? (
+              <DiagnosticReport
+                submission={activeSubmissionReport}
+                onRetakeOrNextExam={handleRetakeOrNextExam}
+                onBackToDashboard={() => {
+                  setActiveSubmissionReport(null);
+                  setActiveTab('dashboard');
+                }}
+                onNavigateToLearningPath={() => {
+                  setActiveSubmissionReport(null);
+                  setActiveTab('learning-path');
+                }}
+                onNavigateToPTC={() => {
+                  setActiveSubmissionReport(null);
+                  setActiveTab('ptc');
+                }}
+                onNavigateToFunZone={() => {
+                  setActiveSubmissionReport(null);
+                  setActiveTab('fun-zone');
+                }}
+              />
+            ) : (
+              <>
+                {activeTab === 'home' && (
+                  <LandingPage onOpenAuth={() => { }} />
+                )}
+                {activeTab === 'dashboard' && parentAccount && (
+                  <ParentDashboard
+                    parentAccount={parentAccount}
+                    activeChildId={activeChildId}
+                    onChildSelect={(cId) => {
+                      setActiveChildId(cId);
+                    }}
+                    onLaunchExamForChild={(cId) => {
+                      setActiveChildId(cId);
+                      setActiveTab('arena');
+                    }}
+                    onOpenAddChildModal={() => setShowAddChildModal(true)}
+                    onOpenUpgradeModal={() => setShowUpgradeModal(true)}
+                    examHistory={examHistory}
+                    onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
+                    onUpdateChild={handleUpdateChild}
+                  />
+                )}
+
+                {activeTab === 'children' && parentAccount && (
+                  <ChildrenPage
+                    parentAccount={parentAccount}
+                    activeChildId={activeChildId}
+                    onChildSelect={setActiveChildId}
+                    onNavigateToArena={() => setActiveTab('arena')}
+                  />
+                )}
+
+                {activeTab === 'reports' && parentAccount && (
+                  <ReportsPage
+                    examHistory={examHistory}
+                    parentAccount={parentAccount}
+                    onViewSubmissionReport={(submission) => setActiveSubmissionReport(submission)}
+                  />
+                )}
+
+                {activeTab === 'arena' && (
+                  ['Class 1', 'Class 2', 'Class 3', 'Class 4'].includes(activeChild?.classGrade || '') ? (
+                    <KidsExamArena
+                      parentAccount={currentParentAccount}
                       activeChildId={activeChildId}
                       activePersona={activePersona}
                       onChildSelect={(cId) => setActiveChildId(cId)}
@@ -958,66 +1003,79 @@ export default function App() {
                       initialExam={preloadedExam}
                       onClearInitialExam={() => setPreloadedExam(null)}
                     />
-                  )}
-
-                  {activeTab === 'learning-path' && activeChild && (
-                    <AdaptiveLearningPath
-                      activeChild={activeChild}
-                      learningNodes={learningNodes}
-                      onLaunchTopicExam={handleLaunchTopicExam}
-                    />
-                  )}
-
-                  {activeTab === 'gamification' && activeChild && (
-                    <GamificationHub
-                      activeChild={activeChild}
-                      allBadges={badges}
-                      leaderboard={leaderboard}
+                  ) : (
+                    <ExamArena
+                      parentAccount={currentParentAccount}
+                      activeChildId={activeChildId}
                       activePersona={activePersona}
+                      onChildSelect={(cId) => setActiveChildId(cId)}
+                      onExamComplete={handleExamComplete}
+                      onOpenUpgradeModal={() => setShowUpgradeModal(true)}
+                      onResetDailyQuota={handleResetDailyQuota}
+                      initialExam={preloadedExam}
+                      onClearInitialExam={() => setPreloadedExam(null)}
                     />
-                  )}
+                  )
+                )}
 
-                  {activeTab === 'ptc' && activeChild && (
-                    <ParentTeacherCommunication
-                      parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
-                      activeChild={activeChild}
-                      recentSubmissions={examHistory}
-                      onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
-                    />
-                  )}
+                {activeTab === 'learning-path' && activeChild && (
+                  <AdaptiveLearningPath
+                    activeChild={activeChild}
+                    learningNodes={learningNodes}
+                    onLaunchTopicExam={handleLaunchTopicExam}
+                  />
+                )}
 
-                  {activeTab === 'fun-zone' && (
-                    <FunZone
-                      activeChild={activeChild}
-                      onAwardXP={handleAwardXP}
-                      onLaunchExam={() => {
-                        setActiveSubmissionReport(null);
-                        setActiveTab('arena');
-                      }}
-                    />
-                  )}
+                {activeTab === 'gamification' && activeChild && (
+                  <GamificationHub
+                    activeChild={activeChild}
+                    allBadges={badges}
+                    leaderboard={leaderboard}
+                    activePersona={activePersona}
+                  />
+                )}
 
-                  {activeTab === 'pricing' && (
-                    <SubscriptionPlans
-                      parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
-                      onUpgradeTier={handleUpgradeTier}
-                    />
-                  )}
+                {activeTab === 'ptc' && activeChild && (
+                  <ParentTeacherCommunication
+                    parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
+                    activeChild={activeChild}
+                    recentSubmissions={examHistory}
+                    onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
+                  />
+                )}
 
-                  {activeTab === 'admin' && (
-                    <SuperAdminPanel
-                      parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
-                      onUpdateParentTier={handleUpgradeTier}
-                      onResetChildQuota={handleResetDailyQuota}
-                    />
-                  )}
+                {activeTab === 'fun-zone' && (
+                  <FunZone
+                    activeChild={activeChild}
+                    onAwardXP={handleAwardXP}
+                    onLaunchExam={() => {
+                      setActiveSubmissionReport(null);
+                      setActiveTab('arena');
+                    }}
+                  />
+                )}
 
-                  {activeTab === 'blog' && <BlogSection />}
-                  {activeTab === 'about' && <AboutSection />}
-                  {activeTab === 'legal' && <LegalSection />}
-                </>
-              )}
-            </div>
+                {activeTab === 'pricing' && (
+                  <SubscriptionPlans
+                    parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
+                    onUpgradeTier={handleUpgradeTier}
+                  />
+                )}
+
+                {activeTab === 'admin' && (
+                  <SuperAdminPanel
+                    parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
+                    onUpdateParentTier={handleUpgradeTier}
+                    onResetChildQuota={handleResetDailyQuota}
+                  />
+                )}
+
+                {activeTab === 'blog' && <BlogSection />}
+                {activeTab === 'about' && <AboutSection />}
+                {activeTab === 'legal' && <LegalSection />}
+              </>
+            )}
+          </div>
         </div>
       </main>
 

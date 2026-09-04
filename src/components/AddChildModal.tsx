@@ -116,6 +116,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [boards, setBoards] = useState<MasterOption[]>([]);
   const [classes, setClasses] = useState<MasterOption[]>([]);
@@ -175,7 +176,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const newErrors: Record<string, string> = {};
@@ -198,24 +199,32 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
 
     setErrors({});
 
-    onAddChild({
-      name: name.trim(),
-      avatar,
-      classGrade,
-      targetBoard,
-      schoolName: schoolName.trim() || undefined,
-      email: email.trim() || undefined,
-      password: password.trim(),
-      pin: password.trim()
-    });
+    setIsSubmitting(true);
+    try {
+      await onAddChild({
+        name: name.trim(),
+        avatar,
+        classGrade,
+        targetBoard,
+        schoolName: schoolName.trim() || undefined,
+        email: email.trim() || undefined,
+        password: password.trim(),
+        pin: password.trim()
+      });
 
-    // Reset & close
-    setName('');
-    setSchoolName('');
-    setEmail(parentEmail || '');
-    setPassword('');
-    setConfirmPassword('');
-    onClose();
+      // Reset & close only on success
+      setName('');
+      setSchoolName('');
+      setEmail(parentEmail || '');
+      setPassword('');
+      setConfirmPassword('');
+      onClose();
+    } catch (err) {
+      console.error('Failed to add child:', err);
+      setErrors({ general: 'Something went wrong. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -355,15 +364,24 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border-2 border-yellow-400 text-xs font-bold text-stone-700 hover:bg-yellow-50 transition-colors"
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-xl border-2 border-yellow-400 text-xs font-bold text-stone-700 hover:bg-yellow-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-yellow-400 border-2 border-yellow-500 text-stone-900 text-xs font-bold hover:bg-yellow-500 shadow-xs transition-colors"
+              disabled={isSubmitting}
+              className="px-5 py-2 rounded-xl bg-yellow-400 border-2 border-yellow-500 text-stone-900 text-xs font-bold hover:bg-yellow-500 shadow-xs transition-colors disabled:opacity-60 flex items-center gap-2"
             >
-              Create Child Profile
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Creating Profile...
+                </>
+              ) : (
+                'Create Child Profile'
+              )}
             </button>
           </div>
         </form>

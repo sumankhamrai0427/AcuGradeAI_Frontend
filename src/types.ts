@@ -1,6 +1,10 @@
 export type Board = 'CBSE' | 'ICSE' | 'ISC' | 'UK-Cambridge' | 'NCERT' | 'NEET' | 'IIT';
 
 export type ClassGrade = 
+  | 'Class 1'
+  | 'Class 2'
+  | 'Class 3'
+  | 'Class 4'
   | 'Class 5' 
   | 'Class 6' 
   | 'Class 7' 
