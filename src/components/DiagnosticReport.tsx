@@ -438,7 +438,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
                         <span>{eq.topic}</span>
                         <span>•</span>
                         <span className={eq.isCorrect ? 'text-yellow-700 font-semibold' : 'text-rose-600 font-semibold'}>
-                          {eq.marksAwarded} / 1 Mark
+                          {eq.marksAwarded} / {(eq as any).questionMarks || (eq.isCorrect ? eq.marksAwarded : 1)} {((eq as any).questionMarks || (eq.isCorrect ? eq.marksAwarded : 1)) > 1 ? 'Marks' : 'Mark'}
                         </span>
                       </div>
                     </div>
@@ -448,7 +448,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold hidden sm:inline-block ${
                       eq.isCorrect ? 'bg-yellow-100 text-yellow-800' : 'bg-rose-100 text-rose-800'
                     }`}>
-                      {eq.isCorrect ? 'Correct (+1.0)' : 'Incorrect (0.0)'}
+                      {eq.isCorrect ? `Correct (+${eq.marksAwarded}.0)` : 'Incorrect (0.0)'}
                     </span>
                     {isExpanded ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
                   </div>

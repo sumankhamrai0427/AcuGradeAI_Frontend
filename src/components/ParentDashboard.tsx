@@ -84,14 +84,14 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   const totalChildren = parentAccount.children.length;
   const totalFamilyExams = examHistory.length;
 
-  const avgScoreNum = parentAccount.children.length > 0
-    ? (parentAccount.children.reduce((acc, c) => acc + (c.averageScore || 0), 0) / totalChildren)
-    : 0;
-  
-  const hasData = totalChildren > 0 && (totalFamilyExams > 0 || avgScoreNum > 0);
+  const totalMarksObtained = examHistory.reduce((acc, e) => acc + (e.marksObtained || 0), 0);
+  const totalMaxMarks = examHistory.reduce((acc, e) => acc + (e.totalMarks || 10), 0);
+  const familyAccuracyPct = totalMaxMarks > 0 ? (totalMarksObtained / totalMaxMarks) * 100 : 0;
 
-  const avgFamilyScore = hasData ? avgScoreNum.toFixed(1) + '%' : 'N/A';
-  const overallReadinessPct = hasData ? Math.min(100, Math.round(avgScoreNum * 10)) + '%' : 'N/A';
+  const hasData = totalChildren > 0 && totalFamilyExams > 0;
+
+  const avgFamilyScore = hasData ? familyAccuracyPct.toFixed(1) + '%' : 'N/A';
+  const overallReadinessPct = hasData ? Math.min(100, Math.round(familyAccuracyPct)) + '%' : 'N/A';
   const maxFamilyStreak = parentAccount.children.reduce((max, c) => Math.max(max, c.streakDays || 0), 0);
   const learningStreakText = hasData ? (maxFamilyStreak > 0 ? `${maxFamilyStreak} Day${maxFamilyStreak > 1 ? 's' : ''}` : '0 Days') : 'N/A';
 
@@ -131,16 +131,16 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
   // AI Learning Speed Dynamic Benchmark
   const targetBoard = activeChild?.targetBoard || parentAccount.children[0]?.targetBoard || 'Board';
-  const learningSpeedTier = avgScoreNum >= 8
+  const learningSpeedTier = familyAccuracyPct >= 80
     ? 'Accelerated'
-    : avgScoreNum >= 6
+    : familyAccuracyPct >= 60
       ? 'Steady'
       : totalFamilyExams > 0
         ? 'Emerging'
         : 'Calibrating';
 
   const benchmarkSubtitle = totalFamilyExams > 0
-    ? `${avgScoreNum >= 8 ? 'Top 10%' : avgScoreNum >= 6 ? 'Top 25%' : 'Foundation'} benchmark in ${targetBoard}`
+    ? `${familyAccuracyPct >= 80 ? 'Top 10%' : familyAccuracyPct >= 60 ? 'Top 25%' : 'Foundation'} benchmark in ${targetBoard}`
     : `Syllabus calibration ready for ${targetBoard}`;
 
   // Helper: Case-insensitive semantic classifier to map concepts/topics to their accurate Academic Subjects
@@ -479,29 +479,42 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                 </div>
 
                 {/* Progress Indicators */}
-                <div className="grid grid-cols-3 gap-4 border-y border-stone-100 py-4 relative z-10">
-                  <div className="col-span-1">
-                    <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Overall Progress</span>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${Math.round(child.averageScore * 10)}%` }} />
+                {(() => {
+                  const childExams = (child.recentExams && child.recentExams.length > 0)
+                    ? child.recentExams
+                    : examHistory.filter(e => String(e.studentId) === String(child.id));
+                  const childTotalObtained = childExams.reduce((acc, e) => acc + (e.marksObtained || 0), 0);
+                  const childTotalPossible = childExams.reduce((acc, e) => acc + (e.totalMarks || 10), 0);
+                  const childScorePct = childTotalPossible > 0
+                    ? (childTotalObtained / childTotalPossible) * 100
+                    : (child.averageScore > 10 ? child.averageScore : (child.averageScore * 10));
+                  const latestExam = childExams[0];
+                  return (
+                    <div className="grid grid-cols-3 gap-4 border-y border-stone-100 py-4 relative z-10">
+                      <div className="col-span-1">
+                        <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Overall Progress</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${Math.round(childScorePct)}%` }} />
+                          </div>
+                          <span className="text-xs font-bold text-stone-800">{Math.round(childScorePct)}%</span>
+                        </div>
                       </div>
-                      <span className="text-xs font-bold text-stone-800">{Math.round(child.averageScore * 10)}%</span>
+                      <div className="col-span-1 text-center border-l border-stone-100 pl-4">
+                        <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Exam Readiness</span>
+                        <span className="text-sm font-bold text-stone-800">
+                          {child.totalExamsTaken > 0 ? `${Math.round(childScorePct)}%` : '—'}
+                        </span>
+                      </div>
+                      <div className="col-span-1 text-right border-l border-stone-100">
+                        <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Latest Result</span>
+                        <span className="text-sm font-bold text-stone-800">
+                          {latestExam ? `${latestExam.marksObtained}/${latestExam.totalMarks}` : (child.totalExamsTaken > 0 ? `${Math.round(childScorePct)}%` : '—')}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-span-1 text-center border-l border-stone-100 pl-4">
-                    <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Exam Readiness</span>
-                    <span className="text-sm font-bold text-stone-800">
-                      {child.totalExamsTaken > 0 ? `${Math.max(0, Math.round((child.averageScore * 10) - 4))}%` : '—'}
-                    </span>
-                  </div>
-                  <div className="col-span-1 text-right border-l border-stone-100">
-                    <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Latest Result</span>
-                    <span className="text-sm font-bold text-stone-800">
-                      {child.totalExamsTaken > 0 ? `${child.averageScore}/10` : '—'}
-                    </span>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 {/* Strengths & Weaknesses */}
                 <div className="grid grid-cols-2 gap-4 text-xs relative z-10">

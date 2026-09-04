@@ -910,9 +910,9 @@ export default function App() {
                   {activeTab === 'home' && (
                     <LandingPage onOpenAuth={() => { }} />
                   )}
-                  {activeTab === 'dashboard' && (
+                  {activeTab === 'dashboard' && parentAccount && (
                     <ParentDashboard
-                      parentAccount={currentParentAccount}
+                      parentAccount={parentAccount}
                       activeChildId={activeChildId}
                       onChildSelect={(cId) => {
                         setActiveChildId(cId);
@@ -929,26 +929,26 @@ export default function App() {
                     />
                   )}
 
-                  {activeTab === 'children' && currentParentAccount && (
+                  {activeTab === 'children' && parentAccount && (
                     <ChildrenPage 
-                      parentAccount={currentParentAccount}
+                      parentAccount={parentAccount}
                       activeChildId={activeChildId}
                       onChildSelect={setActiveChildId}
                       onNavigateToArena={() => setActiveTab('arena')}
                     />
                   )}
   
-                  {activeTab === 'reports' && currentParentAccount && (
+                  {activeTab === 'reports' && parentAccount && (
                     <ReportsPage 
                       examHistory={examHistory}
-                      parentAccount={currentParentAccount}
+                      parentAccount={parentAccount}
                       onViewSubmissionReport={(submission) => setActiveSubmissionReport(submission)}
                     />
                   )}
 
                   {activeTab === 'arena' && (
                     <ExamArena
-                      parentAccount={currentParentAccount}
+                      parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
                       activeChildId={activeChildId}
                       activePersona={activePersona}
                       onChildSelect={(cId) => setActiveChildId(cId)}
@@ -979,7 +979,7 @@ export default function App() {
 
                   {activeTab === 'ptc' && activeChild && (
                     <ParentTeacherCommunication
-                      parentAccount={currentParentAccount}
+                      parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
                       activeChild={activeChild}
                       recentSubmissions={examHistory}
                       onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
@@ -999,14 +999,14 @@ export default function App() {
 
                   {activeTab === 'pricing' && (
                     <SubscriptionPlans
-                      parentAccount={currentParentAccount}
+                      parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
                       onUpgradeTier={handleUpgradeTier}
                     />
                   )}
 
                   {activeTab === 'admin' && (
                     <SuperAdminPanel
-                      parentAccount={currentParentAccount}
+                      parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
                       onUpdateParentTier={handleUpgradeTier}
                       onResetChildQuota={handleResetDailyQuota}
                     />
