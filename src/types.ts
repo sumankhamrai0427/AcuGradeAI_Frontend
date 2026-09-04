@@ -92,7 +92,7 @@ export interface KGraphInsight {
 }
 
 export interface DiagnosticAnalysis {
-  overallBand: 'Needs Foundation' | 'Developing' | 'Proficient' | 'Advanced Mastery' | 'Competitive Ready';
+  overallBand: 'Needs Foundation' | 'Developing' | 'Proficient' | 'Advanced Mastery' | 'Competitive Ready' | 'Master';
   masteryScorePercentage: number;
   strengths: string[];
   areasToImprove: string[];

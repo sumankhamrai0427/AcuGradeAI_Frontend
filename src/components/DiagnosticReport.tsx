@@ -97,11 +97,16 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
   };
 
   // Calculate XP earned from this exam
+  const isKid = ['Class 1', 'Class 2', 'Class 3', 'Class 4'].includes(submission?.classGrade || '');
+  const totalMarks = submission?.totalMarks || (isKid ? 5 : 15);
   const marksObtained = submission?.marksObtained || 0;
+  const accuracyPct = Math.round((marksObtained / (totalMarks || 1)) * 100);
+  const isPerfect = marksObtained >= totalMarks && totalMarks > 0;
+
   const timeTakenSeconds = submission?.timeTakenSeconds || 0;
   const baseXP = marksObtained * 10;
-  const perfectBonus = marksObtained === 10 ? 50 : 0;
-  const speedBonus = timeTakenSeconds < 360 ? 25 : 0;
+  const perfectBonus = isPerfect ? 50 : 0;
+  const speedBonus = timeTakenSeconds < (isKid ? 180 : 360) ? 25 : 0;
   const totalExamXP = baseXP + perfectBonus + speedBonus + 30; // 30 streak XP
 
   return (
@@ -153,7 +158,9 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
             ⚡
           </div>
           <div>
-            <h3 className="font-bold text-sm text-white">Diagnostic Sprint Rewards Unlocked!</h3>
+            <h3 className="font-bold text-sm text-white">
+              {isKid ? 'Kids Adventure Rewards Unlocked! 🌟' : 'Diagnostic Sprint Rewards Unlocked!'}
+            </h3>
             <p className="text-xs text-amber-100">
               +{totalExamXP} AcuPoints (XP) awarded to candidate's global knowledge rank.
             </p>
@@ -174,7 +181,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-yellow-50 text-yellow-700 border border-yellow-300">
-                10-Mark Diagnostic Analytical Result
+                {isKid ? '5-Mark Adventure Challenge Result 🌟' : `${totalMarks}-Mark Diagnostic Analytical Result 🎯`}
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-700">
                 {submission.board} • {submission.classGrade}
@@ -190,10 +197,10 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
           <div className="flex items-center gap-4 bg-stone-50 p-4 rounded-2xl border border-stone-100 shrink-0">
             <div className="text-center">
               <div className="text-3xl sm:text-4xl font-extrabold text-yellow-600">
-                {submission.marksObtained}<span className="text-lg sm:text-xl text-stone-400 font-normal">/10</span>
+                {submission.marksObtained}<span className="text-lg sm:text-xl text-stone-400 font-normal">/{totalMarks}</span>
               </div>
               <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mt-0.5">
-                Marks Scored
+                Marks Scored ({accuracyPct}%)
               </div>
             </div>
 
@@ -201,13 +208,13 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
 
             <div>
               <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold ${
-                submission.marksObtained >= 8
+                accuracyPct >= 80
                   ? 'bg-yellow-100 text-yellow-800'
-                  : submission.marksObtained >= 5
+                  : accuracyPct >= 50
                   ? 'bg-amber-100 text-amber-800'
                   : 'bg-rose-100 text-rose-800'
               }`}>
-                {analysis.overallBand}
+                {accuracyPct >= 80 ? 'Master 🏆' : accuracyPct >= 50 ? 'Proficient ⭐' : 'Developing 🎈'}
               </span>
               <div className="text-[11px] text-stone-500 mt-1 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -324,7 +331,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
           <div className="mt-6 p-5 rounded-2xl bg-stone-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-yellow-300 block mb-1">
-                AI-RAG Recommended Next Level Exam
+                {isKid ? 'Next Fun Adventure Challenge 🚀' : 'AI-RAG Recommended Next Level Exam'}
               </span>
               <h4 className="text-base font-bold">
                 {nextExam.classGrade} {nextExam.board} {nextExam.subject} ({nextExam.difficulty.toUpperCase()} Level)
@@ -337,9 +344,9 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
             <button
               id="take-next-level-exam-btn"
               onClick={() => onRetakeOrNextExam(nextExam.board, nextExam.classGrade, nextExam.subject, nextExam.difficulty)}
-              className="px-6 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-stone-900 text-xs sm:text-sm font-bold shadow-md flex items-center justify-center gap-2 shrink-0 transition-colors"
+              className="px-6 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-stone-900 text-xs sm:text-sm font-bold shadow-md flex items-center justify-center gap-2 shrink-0 transition-colors cursor-pointer"
             >
-              <span>Take Next Level Exam</span>
+              <span>{isKid ? 'Play Next Adventure! 🚀' : 'Take Next Level Exam'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

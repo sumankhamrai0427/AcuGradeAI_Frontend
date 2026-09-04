@@ -42,49 +42,6 @@ interface KidsExamArenaProps {
 const BOARDS: Board[] = ['CBSE', 'ICSE', 'ISC', 'UK-Cambridge', 'NCERT', 'NEET', 'IIT'];
 const KIDS_GRADES: ClassGrade[] = ['Class 1', 'Class 2', 'Class 3', 'Class 4'];
 
-const MOCK_EXAMS_BY_CLASS: Record<string, Exam> = {
-  'Class 1': {
-    id: 'mock-class-1', title: 'Class 1 Adventure', board: 'CBSE', classGrade: 'Class 1', subject: 'Mathematics', difficulty: 'simple', totalMarks: 5, questionCount: 5, timeLimitMinutes: 10, ragKnowledgeNodesUsed: [], createdAt: new Date().toISOString(),
-    questions: [
-      { id: 'c1q1', questionNumber: 1, type: 'mcq', questionText: 'What sound does a cow make? 🐄', options: ['A. Moo', 'B. Baa', 'C. Oink', 'D. Quack'], correctAnswer: 'A', explanation: 'Cows say moo!', difficulty: 'simple', marks: 1, topic: 'Animals', board: 'CBSE' },
-      { id: 'c1q2', questionNumber: 2, type: 'mcq', questionText: 'How many wheels does a bicycle have? 🚲', options: ['A. 1', 'B. 2', 'C. 3', 'D. 4'], correctAnswer: 'B', explanation: 'A bicycle has 2 wheels.', difficulty: 'simple', marks: 1, topic: 'Counting', board: 'CBSE' },
-      { id: 'c1q3', questionNumber: 3, type: 'numerical', questionText: '1 + 1 = ? 🤔', correctAnswer: '2', explanation: 'One and one make two.', difficulty: 'simple', marks: 1, topic: 'Math', board: 'CBSE' },
-      { id: 'c1q4', questionNumber: 4, type: 'mcq', questionText: 'Which one is a fruit? 🍎', options: ['A. Carrot', 'B. Potato', 'C. Apple', 'D. Onion'], correctAnswer: 'C', explanation: 'Apple is a fruit.', difficulty: 'simple', marks: 1, topic: 'Food', board: 'CBSE' },
-      { id: 'c1q5', questionNumber: 5, type: 'objective', questionText: 'What color is the sun? ☀️', correctAnswer: 'YELLOW', explanation: 'The sun looks yellow.', difficulty: 'simple', marks: 1, topic: 'Colors', board: 'CBSE' }
-    ]
-  },
-  'Class 2': {
-    id: 'mock-class-2', title: 'Class 2 Explorer', board: 'CBSE', classGrade: 'Class 2', subject: 'Mathematics', difficulty: 'simple', totalMarks: 5, questionCount: 5, timeLimitMinutes: 10, ragKnowledgeNodesUsed: [], createdAt: new Date().toISOString(),
-    questions: [
-      { id: 'c2q1', questionNumber: 1, type: 'mcq', questionText: 'Which animal is known as the king of the jungle? 🦁', options: ['A. Tiger', 'B. Lion', 'C. Elephant', 'D. Bear'], correctAnswer: 'B', explanation: 'The lion is the king of the jungle.', difficulty: 'simple', marks: 1, topic: 'Animals', board: 'CBSE' },
-      { id: 'c2q2', questionNumber: 2, type: 'numerical', questionText: '5 + 3 = ? 🎈', correctAnswer: '8', explanation: 'Five plus three is eight.', difficulty: 'simple', marks: 1, topic: 'Math', board: 'CBSE' },
-      { id: 'c2q3', questionNumber: 3, type: 'mcq', questionText: 'Which month comes after March? 🗓️', options: ['A. May', 'B. February', 'C. April', 'D. June'], correctAnswer: 'C', explanation: 'April comes after March.', difficulty: 'simple', marks: 1, topic: 'Calendar', board: 'CBSE' },
-      { id: 'c2q4', questionNumber: 4, type: 'mcq', questionText: 'How many days are in a week? 📅', options: ['A. 5', 'B. 6', 'C. 7', 'D. 8'], correctAnswer: 'C', explanation: 'There are 7 days in a week.', difficulty: 'simple', marks: 1, topic: 'Calendar', board: 'CBSE' },
-      { id: 'c2q5', questionNumber: 5, type: 'objective', questionText: 'Opposite of HOT is? 🧊', correctAnswer: 'COLD', explanation: 'The opposite of hot is cold.', difficulty: 'simple', marks: 1, topic: 'English', board: 'CBSE' }
-    ]
-  },
-  'Class 3': {
-    id: 'mock-class-3', title: 'Class 3 Challenger', board: 'CBSE', classGrade: 'Class 3', subject: 'Science', difficulty: 'simple', totalMarks: 5, questionCount: 5, timeLimitMinutes: 10, ragKnowledgeNodesUsed: [], createdAt: new Date().toISOString(),
-    questions: [
-      { id: 'c3q1', questionNumber: 1, type: 'mcq', questionText: 'Which planet do we live on? 🌍', options: ['A. Mars', 'B. Earth', 'C. Jupiter', 'D. Venus'], correctAnswer: 'B', explanation: 'We live on planet Earth.', difficulty: 'simple', marks: 1, topic: 'Science', board: 'CBSE' },
-      { id: 'c3q2', questionNumber: 2, type: 'numerical', questionText: '12 - 5 = ? ✏️', correctAnswer: '7', explanation: '12 minus 5 equals 7.', difficulty: 'simple', marks: 1, topic: 'Math', board: 'CBSE' },
-      { id: 'c3q3', questionNumber: 3, type: 'mcq', questionText: 'What is the past tense of "Go"? 🏃', options: ['A. Goes', 'B. Going', 'C. Gone', 'D. Went'], correctAnswer: 'D', explanation: '"Went" is the past tense of "Go".', difficulty: 'simple', marks: 1, topic: 'English', board: 'CBSE' },
-      { id: 'c3q4', questionNumber: 4, type: 'mcq', questionText: 'Water boils at what temperature? 🌡️', options: ['A. 50°C', 'B. 100°C', 'C. 0°C', 'D. 200°C'], correctAnswer: 'B', explanation: 'Water boils at 100 degrees Celsius.', difficulty: 'simple', marks: 1, topic: 'Science', board: 'CBSE' },
-      { id: 'c3q5', questionNumber: 5, type: 'objective', questionText: 'Name the shape with 4 equal sides. 🟩', correctAnswer: 'SQUARE', explanation: 'A square has 4 equal sides.', difficulty: 'simple', marks: 1, topic: 'Math', board: 'CBSE' }
-    ]
-  },
-  'Class 4': {
-    id: 'mock-class-4', title: 'Class 4 Champion', board: 'CBSE', classGrade: 'Class 4', subject: 'Science', difficulty: 'simple', totalMarks: 5, questionCount: 5, timeLimitMinutes: 10, ragKnowledgeNodesUsed: [], createdAt: new Date().toISOString(),
-    questions: [
-      { id: 'c4q1', questionNumber: 1, type: 'mcq', questionText: 'Which gas do plants absorb from the atmosphere? 🌱', options: ['A. Oxygen', 'B. Carbon Dioxide', 'C. Nitrogen', 'D. Hydrogen'], correctAnswer: 'B', explanation: 'Plants absorb Carbon Dioxide for photosynthesis.', difficulty: 'simple', marks: 1, topic: 'Science', board: 'CBSE' },
-      { id: 'c4q2', questionNumber: 2, type: 'numerical', questionText: '8 x 4 = ? ✖️', correctAnswer: '32', explanation: '8 multiplied by 4 is 32.', difficulty: 'simple', marks: 1, topic: 'Math', board: 'CBSE' },
-      { id: 'c4q3', questionNumber: 3, type: 'mcq', questionText: 'Which part of speech describes a noun? 📝', options: ['A. Verb', 'B. Adverb', 'C. Adjective', 'D. Pronoun'], correctAnswer: 'C', explanation: 'An adjective describes a noun.', difficulty: 'simple', marks: 1, topic: 'English', board: 'CBSE' },
-      { id: 'c4q4', questionNumber: 4, type: 'mcq', questionText: 'What fraction is equivalent to 1/2? 🍕', options: ['A. 2/4', 'B. 1/3', 'C. 3/5', 'D. 2/3'], correctAnswer: 'A', explanation: '2/4 reduces to 1/2.', difficulty: 'simple', marks: 1, topic: 'Math', board: 'CBSE' },
-      { id: 'c4q5', questionNumber: 5, type: 'objective', questionText: 'What is the capital of India? 🇮🇳', correctAnswer: 'NEW DELHI', explanation: 'New Delhi is the capital of India.', difficulty: 'simple', marks: 1, topic: 'Geography', board: 'CBSE' }
-    ]
-  }
-};
-
 export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
   parentAccount,
   activeChildId,
@@ -165,23 +122,27 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
   const hasReachedDailyLimit = isFreeTier && activeChild?.dailyExamsTakenToday >= 1;
 
   const handleStartExam = async () => {
+    if (!activeChild) return;
     setIsGenerating(true);
-    setGenerationStep('Getting Fun Questions Ready... 🎈');
+    setGenerationStep('Gathering Fun Adventure Questions from Database... 🎈');
 
     try {
-      setTimeout(() => {
-        const grade = activeChild?.classGrade || 'Class 1';
-        const mockExam = MOCK_EXAMS_BY_CLASS[grade] || MOCK_EXAMS_BY_CLASS['Class 1'];
-        setActiveExam(mockExam);
+      const res: any = await ApiServices.generateQuickTest(activeChild.id, 5);
+      const generatedExam = res?.exam || res;
+      if (generatedExam && generatedExam.questions && generatedExam.questions.length > 0) {
+        setActiveExam(generatedExam);
         setCurrentQuestionIdx(0);
         setAnswers({});
         setFlaggedQuestions({});
-        setTimeRemainingSeconds(mockExam.timeLimitMinutes * 60);
-        setIsGenerating(false);
-        setGenerationStep('');
-      }, 1000);
-    } catch (err) {
-      console.error('Error starting mock exam:', err);
+        setTimeRemainingSeconds((generatedExam.timeLimitMinutes || 10) * 60);
+      } else {
+        alert('Could not load test questions from database. Please try again!');
+      }
+    } catch (err: any) {
+      console.error('API test generation error:', err);
+      const errMsg = err?.response?.data?.error?.message || err?.message || 'Error generating test questions';
+      alert(errMsg);
+    } finally {
       setIsGenerating(false);
       setGenerationStep('');
     }
@@ -206,20 +167,31 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
     setIsSubmitting(true);
     setShowConfirmSubmit(false);
 
-    const totalSecondsSpent = (activeExam.timeLimitMinutes || 15) * 60 - timeRemainingSeconds;
+    const totalSecondsSpent = (activeExam.timeLimitMinutes || 10) * 60 - timeRemainingSeconds;
+    const sanitizedTime = Math.max(10, totalSecondsSpent);
 
-    setTimeout(() => {
-      // Mock Submission Evaluation
+    try {
+      const res: any = await ApiServices.submitExam(activeExam.id, {
+        answers,
+        timeTakenSeconds: sanitizedTime,
+      });
+
+      const submission: ExamSubmission = res?.submission || res;
+      onExamComplete(submission);
+      setActiveExam(null);
+    } catch (err: any) {
+      console.error('Error submitting exam, applying client evaluation fallback:', err);
       let marksObtained = 0;
       const evaluations = activeExam.questions.map((q) => {
         let isCorrect = false;
         const studentAnswer = answers[q.id] || '';
         if (q.type === 'mcq' || q.type === 'logical') {
-          isCorrect = studentAnswer.toUpperCase() === q.correctAnswer.toUpperCase();
+          isCorrect = studentAnswer.toUpperCase() === q.correctAnswer.toUpperCase() ||
+                      studentAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
         } else if (q.type === 'numerical' || q.type === 'objective') {
-          isCorrect = studentAnswer.trim().toLowerCase() === q.correctAnswer.toLowerCase();
+          isCorrect = studentAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
         }
-        
+
         if (isCorrect) marksObtained += (q.marks || 1);
 
         return {
@@ -231,7 +203,7 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
           studentAnswer,
           correctAnswer: q.correctAnswer,
           isCorrect,
-          marksAwarded: isCorrect ? q.marks : 0,
+          marksAwarded: isCorrect ? (q.marks || 1) : 0,
           explanation: q.explanation,
           referenceLinks: [],
           topic: q.topic
@@ -239,7 +211,7 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
       });
 
       const submission: ExamSubmission = {
-        id: `mock-sub-${Date.now()}`,
+        id: `kids-sub-${Date.now()}`,
         examId: activeExam.id,
         examTitle: activeExam.title,
         studentId: activeChild?.id || 'unknown',
@@ -250,19 +222,19 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
         difficulty: activeExam.difficulty,
         answers,
         marksObtained,
-        totalMarks: activeExam.totalMarks,
-        accuracyPercentage: (marksObtained / activeExam.totalMarks) * 100,
-        timeTakenSeconds: Math.max(10, totalSecondsSpent),
+        totalMarks: activeExam.totalMarks || 5,
+        accuracyPercentage: Math.round((marksObtained / (activeExam.totalMarks || 5)) * 100),
+        timeTakenSeconds: sanitizedTime,
         submittedAt: new Date().toISOString(),
         evaluations,
         analysis: {
-          overallBand: 'Proficient',
-          masteryScorePercentage: (marksObtained / activeExam.totalMarks) * 100,
-          strengths: ['Great job completing the test!'],
+          overallBand: marksObtained >= 4 ? 'Master' : marksObtained >= 3 ? 'Proficient' : 'Developing',
+          masteryScorePercentage: Math.round((marksObtained / (activeExam.totalMarks || 5)) * 100),
+          strengths: ['Great job solving interactive puzzles! 🌟'],
           areasToImprove: [],
           kGraphInsights: [],
-          evolutionaryRoadmap: 'Keep practicing to earn more stars! 🌟',
-          encouragementNote: 'You did amazing! Super star! ✨',
+          evolutionaryRoadmap: 'Keep practicing to unlock more badges and super stars! 🚀',
+          encouragementNote: 'You did amazing! Keep playing and learning! ✨',
           recommendedNextExam: {
             board: activeExam.board,
             classGrade: activeExam.classGrade,
@@ -275,9 +247,10 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
       };
 
       onExamComplete(submission);
-      setIsSubmitting(false);
       setActiveExam(null);
-    }, 1500);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -292,37 +265,37 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
     const answeredCount = Object.keys(answers).filter((k) => answers[k]?.trim() !== '').length;
 
     return (
-      <div className="max-w-5xl mx-auto px-4 py-6 font-comic">
-        {/* Top Sticky Status Bar */}
-        <div className="bg-white rounded-3xl border-4 border-sky-200 shadow-xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4 sticky top-20 z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-yellow-300 border-4 border-yellow-400 flex items-center justify-center font-black text-xl text-yellow-800 shadow-sm">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-1 font-comic">
+        {/* Top Status Bar */}
+        <div className="bg-white rounded-2xl border-2 border-sky-200 shadow-md p-2.5 sm:p-3 mb-3.5 flex flex-wrap items-center justify-between gap-3 w-full">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-yellow-300 border-2 border-yellow-400 flex items-center justify-center font-black text-base text-yellow-800 shadow-xs">
               {currentQuestionIdx + 1}/{totalQuestions}
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <span className="font-black text-sky-900 text-lg sm:text-2xl">{activeExam.title} 🌟</span>
+              <div className="flex items-center gap-2">
+                <span className="font-black text-sky-900 text-sm sm:text-base">{activeExam.title} 🌟</span>
               </div>
-              <p className="text-sm text-sky-600 font-bold">
+              <p className="text-xs text-sky-600 font-bold">
                 Student: <span className="text-sky-800">{activeChild?.name}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Timer */}
-            <div className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-4 font-black text-lg ${timeRemainingSeconds < 180
+            <div className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border-2 font-black text-sm ${timeRemainingSeconds < 180
               ? 'bg-rose-100 border-rose-300 text-rose-600 animate-bounce'
               : 'bg-emerald-100 border-emerald-300 text-emerald-700'
               }`}>
-              <Clock className="w-5 h-5" />
+              <Clock className="w-4 h-4" />
               <span>{formatTime(timeRemainingSeconds)}</span>
             </div>
 
             {/* Finish / Submit Button */}
             <button
               onClick={() => setShowConfirmSubmit(true)}
-              className="px-6 py-2.5 rounded-full bg-yellow-400 hover:bg-yellow-500 border-4 border-yellow-500 text-yellow-950 text-lg font-black shadow-lg hover:scale-105 transition-transform"
+              className="px-4 py-1.5 rounded-full bg-yellow-400 hover:bg-yellow-500 border-2 border-yellow-500 text-yellow-950 text-sm font-black shadow-sm hover:scale-105 transition-transform cursor-pointer"
             >
               Finish! 🎯
             </button>
@@ -330,63 +303,69 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
         </div>
 
         {/* Main Grid: Question Content + Question Palette */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Question Card (Col 1-3) */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-3xl border-4 border-sky-200 shadow-xl p-6 sm:p-10 relative overflow-hidden">
+            <div className="bg-white rounded-2xl border-2 border-sky-200 shadow-md p-4 sm:p-5 relative overflow-hidden">
               {/* Question Header */}
-              <div className="flex items-center justify-between pb-4 border-b-4 border-sky-100 mb-6">
-                <div className="flex items-center gap-3">
-                  <span className="px-4 py-2 rounded-2xl text-lg font-black bg-sky-500 text-white shadow-sm">
+              <div className="flex items-center justify-between pb-2.5 border-b border-sky-100 mb-3.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-sky-500 text-white shadow-xs">
                     Question {currentQuestionIdx + 1}
                   </span>
-                  <span className="px-3 py-1 rounded-xl text-sm font-bold bg-pink-100 text-pink-700 border-2 border-pink-200">
+                  <span className="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-pink-100 text-pink-700 border border-pink-200">
                     Topic: {currentQ.topic}
                   </span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-black text-purple-700 bg-purple-100 border-2 border-purple-200 px-3 py-1.5 rounded-xl">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-purple-700 bg-purple-100 border border-purple-200 px-2.5 py-0.5 rounded-lg">
                     ⭐ {currentQ.marks || 1} Star{(currentQ.marks || 1) > 1 ? 's' : ''}
                   </span>
                   <button
                     onClick={() => toggleFlagQuestion(currentQ.id)}
-                    className={`p-2.5 rounded-xl border-4 flex items-center gap-1 transition-transform hover:scale-110 ${flaggedQuestions[currentQ.id]
+                    className={`p-1.5 rounded-lg border flex items-center gap-1 transition-transform hover:scale-110 ${flaggedQuestions[currentQ.id]
                       ? 'bg-amber-100 border-amber-400 text-amber-700'
                       : 'bg-white border-stone-200 text-stone-400'
                       }`}
                     title="Mark to check later!"
                   >
-                    <Flag className={`w-5 h-5 ${flaggedQuestions[currentQ.id] ? 'fill-amber-500 text-amber-500' : ''}`} />
+                    <Flag className={`w-3.5 h-3.5 ${flaggedQuestions[currentQ.id] ? 'fill-amber-500 text-amber-500' : ''}`} />
                   </button>
                 </div>
               </div>
 
               {/* Question Statement */}
-              <div className="text-sky-950 text-xl sm:text-3xl font-bold leading-tight mb-8 whitespace-pre-line">
+              <div className="text-sky-950 text-sm sm:text-base md:text-lg font-bold leading-snug mb-3.5 whitespace-pre-line">
                 {currentQ.questionText}
               </div>
 
               {/* Response Inputs based on Type */}
-              <div className="space-y-4 pt-2">
+              <div className="space-y-2 pt-0.5">
                 {(currentQ.type === 'mcq' || currentQ.type === 'logical') && currentQ.options && (
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {currentQ.options.map((opt, oIdx) => {
-                      const letter = opt.trim().charAt(0).toUpperCase();
-                      const isSelected = answers[currentQ.id]?.toUpperCase() === letter || answers[currentQ.id] === opt;
+                      let letter = String.fromCharCode(65 + oIdx);
+                      let cleanText = opt;
+                      const match = opt.match(/^([A-D])[\.\)]\s*(.*)$/i);
+                      if (match) {
+                        letter = match[1].toUpperCase();
+                        cleanText = match[2];
+                      }
+                      const isSelected = answers[currentQ.id]?.toUpperCase() === letter || answers[currentQ.id] === opt || answers[currentQ.id] === cleanText;
                       return (
                         <label
                           key={oIdx}
                           onClick={() => handleSelectAnswer(currentQ.id, letter)}
-                          className={`flex items-center gap-4 p-5 rounded-2xl border-4 cursor-pointer transition-all hover:-translate-y-1 ${isSelected
-                            ? 'bg-emerald-100 border-emerald-400 shadow-md text-emerald-950'
+                          className={`flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border-2 cursor-pointer transition-all hover:-translate-y-0.5 ${isSelected
+                            ? 'bg-emerald-100 border-emerald-400 shadow-xs text-emerald-950 font-black'
                             : 'bg-white border-stone-200 hover:border-sky-300 text-stone-700'
                             }`}
                         >
-                          <div className={`w-10 h-10 rounded-full border-4 flex items-center justify-center shrink-0 text-xl font-black transition-colors ${isSelected ? 'bg-emerald-400 border-emerald-500 text-white' : 'bg-stone-100 border-stone-300 text-stone-500'
+                          <div className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 text-xs sm:text-sm font-black transition-colors ${isSelected ? 'bg-emerald-500 border-emerald-600 text-white' : 'bg-stone-100 border-stone-300 text-stone-500'
                             }`}>
                             {letter}
                           </div>
-                          <span className="text-lg sm:text-2xl font-bold leading-snug">{opt}</span>
+                          <span className="text-xs sm:text-sm md:text-base font-bold leading-normal">{cleanText || opt}</span>
                         </label>
                       );
                     })}
@@ -394,8 +373,8 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
                 )}
 
                 {currentQ.type === 'numerical' && (
-                  <div className="space-y-4">
-                    <label className="block text-lg font-black text-sky-700">
+                  <div className="space-y-2">
+                    <label className="block text-xs font-black text-sky-700">
                       Type your number here:
                     </label>
                     <input
@@ -403,14 +382,14 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
                       value={answers[currentQ.id] || ''}
                       onChange={(e) => handleSelectAnswer(currentQ.id, e.target.value)}
                       placeholder="e.g. 5"
-                      className="w-full max-w-sm px-6 py-4 rounded-2xl border-4 border-sky-300 text-sky-950 font-black text-3xl focus:ring-4 focus:ring-yellow-400 focus:outline-hidden"
+                      className="w-full max-w-xs px-3 py-2 rounded-xl border-2 border-sky-300 text-sky-950 font-black text-xl focus:ring-2 focus:ring-yellow-400 focus:outline-hidden"
                     />
                   </div>
                 )}
 
                 {currentQ.type === 'objective' && (
-                  <div className="space-y-4">
-                    <label className="block text-lg font-black text-sky-700">
+                  <div className="space-y-2">
+                    <label className="block text-xs font-black text-sky-700">
                       Type your answer here:
                     </label>
                     <input
@@ -418,35 +397,35 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
                       value={answers[currentQ.id] || ''}
                       onChange={(e) => handleSelectAnswer(currentQ.id, e.target.value)}
                       placeholder="Your answer..."
-                      className="w-full px-6 py-4 rounded-2xl border-4 border-sky-300 text-sky-950 font-black text-xl sm:text-2xl focus:ring-4 focus:ring-yellow-400 focus:outline-hidden"
+                      className="w-full px-3 py-2 rounded-xl border-2 border-sky-300 text-sky-950 font-bold text-sm sm:text-base focus:ring-2 focus:ring-yellow-400 focus:outline-hidden"
                     />
                   </div>
                 )}
               </div>
 
               {/* Navigation Footer Controls */}
-              <div className="flex items-center justify-between mt-10 pt-8 border-t-4 border-sky-100">
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-sky-100">
                 <button
                   disabled={currentQuestionIdx === 0}
                   onClick={() => setCurrentQuestionIdx((p) => Math.max(0, p - 1))}
-                  className="flex items-center gap-2 px-6 py-3 rounded-full border-4 border-sky-300 text-lg font-black text-sky-700 hover:bg-sky-50 hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 transition-all"
+                  className="flex items-center gap-1 px-4 py-1.5 rounded-full border border-sky-300 text-xs sm:text-sm font-black text-sky-700 hover:bg-sky-50 hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 transition-all cursor-pointer"
                 >
-                  <ArrowLeft className="w-6 h-6" />
+                  <ArrowLeft className="w-3.5 h-3.5" />
                   Back
                 </button>
 
                 {currentQuestionIdx < totalQuestions - 1 ? (
                   <button
                     onClick={() => setCurrentQuestionIdx((p) => Math.min(totalQuestions - 1, p + 1))}
-                    className="flex items-center gap-2 px-8 py-3 rounded-full bg-sky-500 hover:bg-sky-600 border-4 border-sky-600 text-white text-lg font-black shadow-lg hover:scale-105 transition-all"
+                    className="flex items-center gap-1 px-5 py-1.5 rounded-full bg-sky-500 hover:bg-sky-600 border border-sky-600 text-white text-xs sm:text-sm font-black shadow-sm hover:scale-105 transition-all cursor-pointer"
                   >
                     Next
-                    <ArrowRight className="w-6 h-6" />
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 ) : (
                   <button
                     onClick={() => setShowConfirmSubmit(true)}
-                    className="flex items-center gap-2 px-8 py-3 rounded-full bg-yellow-400 hover:bg-yellow-500 border-4 border-yellow-500 text-yellow-950 text-lg font-black shadow-lg hover:scale-105 transition-all"
+                    className="flex items-center gap-1 px-5 py-1.5 rounded-full bg-yellow-400 hover:bg-yellow-500 border border-yellow-500 text-yellow-950 text-xs sm:text-sm font-black shadow-sm hover:scale-105 transition-all cursor-pointer"
                   >
                     Done! 🏆
                   </button>
@@ -457,35 +436,35 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
 
           {/* Right Palette (Col 4) */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-3xl border-4 border-sky-200 shadow-xl p-5 sticky top-48">
-              <h3 className="text-lg font-black text-sky-900 uppercase tracking-wider mb-4 flex items-center justify-between">
+            <div className="bg-white rounded-2xl border-2 border-sky-200 shadow-md p-3.5 sm:p-4">
+              <h3 className="text-xs font-black text-sky-900 uppercase tracking-wider mb-2.5 flex items-center justify-between">
                 <span>Map 🗺️</span>
-                <span className="text-sm text-emerald-600 font-black bg-emerald-100 px-3 py-1 rounded-full border-2 border-emerald-200">{answeredCount}/10</span>
+                <span className="text-[11px] text-emerald-700 font-black bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">{answeredCount}/{totalQuestions}</span>
               </h3>
 
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="grid grid-cols-2 gap-2 mb-1">
                 {activeExam.questions.map((q, idx) => {
                   const isCurrent = idx === currentQuestionIdx;
                   const isAnswered = !!answers[q.id]?.trim();
                   const isFlagged = !!flaggedQuestions[q.id];
 
-                  let btnBg = 'bg-stone-50 border-stone-200 text-stone-500 hover:bg-stone-100';
-                  if (isAnswered) btnBg = 'bg-emerald-400 border-emerald-500 text-white font-black shadow-sm';
-                  if (isFlagged) btnBg = 'bg-amber-300 border-amber-400 text-amber-900 font-black shadow-sm';
-                  if (isCurrent) btnBg = 'bg-yellow-400 border-yellow-500 text-yellow-950 font-black scale-110 shadow-md';
+                  let btnBg = 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100';
+                  if (isAnswered) btnBg = 'bg-emerald-400 border-emerald-500 text-white font-black shadow-xs';
+                  if (isFlagged) btnBg = 'bg-amber-300 border-amber-400 text-amber-900 font-black shadow-xs';
+                  if (isCurrent) btnBg = 'bg-yellow-400 border-yellow-500 text-yellow-950 font-black scale-105 shadow-xs';
 
                   return (
                     <button
                       key={q.id}
                       onClick={() => setCurrentQuestionIdx(idx)}
-                      className={`h-12 rounded-2xl border-4 text-xl flex items-center justify-center transition-all relative ${btnBg}`}
+                      className={`h-8 sm:h-9 rounded-lg border text-sm font-black flex items-center justify-center transition-all relative cursor-pointer ${btnBg}`}
                     >
                       {idx + 1}
                       {isFlagged && (
-                        <span className="absolute -top-2 -right-2 text-xl drop-shadow-md">🚩</span>
+                        <span className="absolute -top-1 -right-1 text-[10px] drop-shadow-xs">🚩</span>
                       )}
                       {isAnswered && !isCurrent && !isFlagged && (
-                        <span className="absolute -top-2 -right-2 text-xl drop-shadow-md">⭐</span>
+                        <span className="absolute -top-1 -right-1 text-[10px] drop-shadow-xs">⭐</span>
                       )}
                     </button>
                   );
@@ -536,76 +515,84 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
 
   // Configuration & Exam Setup Screen for Kids
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 font-comic">
-      <div className="bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 text-white rounded-[2.5rem] p-8 sm:p-12 shadow-2xl mb-10 relative overflow-hidden border-8 border-sky-300/30">
-        <div className="relative z-10 text-center max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-black bg-yellow-300 text-yellow-900 border-4 border-yellow-400 mb-6 shadow-md transform -rotate-2">
-            <Star className="w-5 h-5 fill-current" />
-            Super Fun Learning Zone! 🎈
+    <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-4 font-sans space-y-5">
+      <div className="bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden border border-white/20">
+        <div className="relative z-10 text-center max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-yellow-300 text-yellow-950 border border-yellow-400 shadow-xs">
+            <Star className="w-3.5 h-3.5 fill-current text-yellow-600" />
+            <span>Super Fun Learning Zone! 🎈</span>
           </div>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight mb-6 drop-shadow-lg leading-tight">
+
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight drop-shadow-xs">
             Ready for an Adventure? 🚀
           </h1>
-          <p className="text-sky-100 text-lg sm:text-xl font-bold leading-relaxed mb-8 drop-shadow-md">
+
+          <p className="text-sky-100 text-xs sm:text-sm font-medium leading-relaxed max-w-xl mx-auto">
             Let's play a game of questions! Answer them correctly to earn shiny stars and badges.
           </p>
 
-          <div className="inline-flex items-center gap-4 bg-white/20 backdrop-blur-md px-6 py-4 rounded-3xl border-4 border-white/40 shadow-xl">
-            <span className="text-4xl bg-white p-2 rounded-full shadow-inner">{activeChild?.avatar || '👦'}</span>
-            <div className="text-left">
-              <span className="text-sky-100 text-sm font-bold block uppercase tracking-wider">Player 1 Ready:</span>
-              <span className="font-black text-2xl text-white drop-shadow-sm">{activeChild?.name} ({selectedGrade})</span>
+          <div className="pt-2">
+            <div className="inline-flex items-center gap-3 bg-white/20 backdrop-blur-md px-5 py-2.5 rounded-2xl border border-white/30 shadow-md">
+              <span className="text-2xl bg-white p-1 rounded-full shadow-inner">{activeChild?.avatar || '👦'}</span>
+              <div className="text-left">
+                <span className="text-sky-100 text-[10px] font-bold block uppercase tracking-wider">Player 1 Ready:</span>
+                <span className="font-bold text-base text-white drop-shadow-xs">{activeChild?.name} ({selectedGrade} • {selectedBoard})</span>
+              </div>
             </div>
           </div>
         </div>
         
         {/* Floating background elements */}
-        <div className="absolute top-10 left-10 text-6xl opacity-30 animate-bounce delay-100">🌟</div>
-        <div className="absolute bottom-10 right-10 text-6xl opacity-30 animate-bounce delay-300">🎈</div>
-        <div className="absolute top-20 right-20 text-5xl opacity-30 animate-pulse">🚀</div>
+        <div className="absolute top-4 left-6 text-3xl opacity-25 animate-bounce delay-100 pointer-events-none">🌟</div>
+        <div className="absolute bottom-4 right-6 text-3xl opacity-25 animate-bounce delay-300 pointer-events-none">🎈</div>
+        <div className="absolute top-8 right-12 text-2xl opacity-20 animate-pulse pointer-events-none">🚀</div>
       </div>
 
       {hasReachedDailyLimit && (
-        <div className="bg-rose-100 border-4 border-rose-300 rounded-3xl p-6 mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-lg">
-          <div className="flex items-start gap-4">
-            <div className="text-4xl">😴</div>
+        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">😴</div>
             <div>
-              <h4 className="text-xl font-black text-rose-900 mb-1">Time for a break!</h4>
-              <p className="text-base text-rose-700 font-bold">
+              <h4 className="text-sm font-bold text-rose-900">Time for a break!</h4>
+              <p className="text-xs text-rose-700">
                 {activeChild?.name} has played enough today. Tell Mom or Dad to unlock more games!
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onOpenUpgradeModal}
-              className="px-6 py-3 rounded-full bg-rose-500 border-4 border-rose-600 text-white text-lg font-black hover:bg-rose-600 shadow-lg hover:scale-105 transition-transform"
-            >
-              Get More Tests!
-            </button>
-          </div>
+          <button
+            onClick={onOpenUpgradeModal}
+            className="px-4 py-2 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 shadow-xs transition-transform"
+          >
+            Get More Tests!
+          </button>
         </div>
       )}
 
-      <div className="bg-white rounded-[2.5rem] border-4 border-sky-200 shadow-xl p-8 sm:p-12 relative">
-        <h2 className="text-3xl font-black text-sky-900 mb-8 text-center">Pick Your Quest! 🗺️</h2>
+      <div className="bg-white rounded-3xl border border-stone-200 shadow-sm p-6 sm:p-8 text-center space-y-4">
+        <div>
+          <h2 className="text-xl font-bold text-stone-900 flex items-center justify-center gap-2">
+            <span>Pick Your Quest!</span> 🗺️
+          </h2>
+          <p className="text-xs text-stone-500 mt-1">Click below to start your quick 5-question fun challenge</p>
+        </div>
 
         {/* Action Button */}
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center pt-2">
           <button
+            type="button"
             disabled={isGenerating}
             onClick={handleStartExam}
-            className="group px-10 py-5 rounded-full bg-emerald-400 hover:bg-emerald-500 border-4 border-emerald-500 text-white font-black text-2xl shadow-[0_8px_0_rgb(16,185,129)] active:shadow-[0_0px_0_rgb(16,185,129)] active:translate-y-2 flex items-center justify-center gap-4 transition-all disabled:opacity-60 disabled:transform-none disabled:shadow-none"
+            className="group px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-base shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 transition-all disabled:opacity-60 cursor-pointer"
           >
             {isGenerating ? (
               <>
-                <span className="text-3xl animate-spin">🌀</span>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>{generationStep || 'Building Magic...'}</span>
               </>
             ) : (
               <>
                 <span>Start Playing!</span>
-                <Play className="w-8 h-8 fill-white group-hover:scale-125 transition-transform" />
+                <Play className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
               </>
             )}
           </button>

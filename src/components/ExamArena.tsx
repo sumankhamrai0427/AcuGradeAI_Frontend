@@ -227,21 +227,16 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
       <div className="max-w-5xl mx-auto px-4 py-4">
         {/* Top Sticky Status Bar */}
         <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-4 mb-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-yellow-50 border border-yellow-300 flex items-center justify-center font-bold text-yellow-700">
-              {currentQuestionIdx + 1}/{totalQuestions}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-stone-900 text-sm sm:text-base">{activeExam.title}</span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-300">
+                {activeExam.totalMarks || 15} Marks Total
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-stone-900 text-sm sm:text-base">{activeExam.title}</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-300">
-                  {activeExam.totalMarks || 15} Marks Total
-                </span>
-              </div>
-              <p className="text-xs text-stone-500">
-                Candidate: <span className="font-medium text-stone-700">{activeChild?.name}</span> ({activeExam.board} • {activeExam.classGrade})
-              </p>
-            </div>
+            <p className="text-xs text-stone-500">
+              Candidate: <span className="font-medium text-stone-700">{activeChild?.name}</span> ({activeExam.board} • {activeExam.classGrade})
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -254,18 +249,6 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
               <span>{formatTime(timeRemainingSeconds)}</span>
             </div>
 
-            {/* Scratchpad Toggle */}
-            <button
-              id="toggle-scratchpad-btn"
-              onClick={() => setShowScratchpad(!showScratchpad)}
-              className={`p-2 rounded-xl border text-xs flex items-center gap-1.5 transition-colors ${showScratchpad ? 'bg-amber-50 border-amber-300 text-amber-800 font-semibold' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
-                }`}
-              title="Open Scratchpad / Calculation Notes"
-            >
-              <Calculator className="w-4 h-4" />
-              <span className="hidden sm:inline">Scratchpad</span>
-            </button>
-
             {/* Finish / Submit Button */}
             <button
               id="finish-exam-btn"
@@ -276,31 +259,6 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             </button>
           </div>
         </div>
-
-        {/* Scratchpad Drawer */}
-        {showScratchpad && (
-          <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 mb-6 animate-in fade-in slide-in-from-top-2 duration-150">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-amber-900 flex items-center gap-1.5">
-                <Calculator className="w-3.5 h-3.5 text-amber-700" />
-                Working Scratchpad (Draft equations & steps)
-              </span>
-              <button
-                onClick={() => setScratchpadNote('')}
-                className="text-[11px] text-amber-700 hover:underline"
-              >
-                Clear
-              </button>
-            </div>
-            <textarea
-              id="exam-scratchpad-textarea"
-              value={scratchpadNote}
-              onChange={(e) => setScratchpadNote(e.target.value)}
-              placeholder="Jot down formulas, unit conversions, or calculations here (not graded)..."
-              className="w-full h-24 p-2.5 rounded-xl border border-amber-200 bg-white text-xs font-mono text-stone-800 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
-            />
-          </div>
-        )}
 
         {/* Main Grid: Question Content + Question Palette */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">

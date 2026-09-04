@@ -246,9 +246,9 @@ export default function App() {
     });
     setExamHistory(recentExams);
     setPageAccess(pageAccess);
-    if (!activeChildId && enrichedChildren[0]) setActiveChildId(enrichedChildren[0].id);
+    setActiveChildId((prev) => (prev || (enrichedChildren && enrichedChildren[0] ? enrichedChildren[0].id : null)));
     return pageAccess;
-  }, [activeChildId]);
+  }, []);
 
   const loadGamification = useCallback(async () => {
     const [badgeList, leaderboardList] = await Promise.all([
@@ -283,21 +283,22 @@ export default function App() {
       setIsBootstrapping(true);
       setBootstrapError(null);
       try {
+        const isRoot = location.pathname === '/' || location.pathname === '';
         if (isAdminSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
+          if (perms.length > 0 && isRoot) navigate(perms[0].pageRoute, { replace: true });
         } else if (isTeacherSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
+          if (perms.length > 0 && isRoot) navigate(perms[0].pageRoute, { replace: true });
         } else if (isStudentSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
+          if (perms.length > 0 && isRoot) navigate(perms[0].pageRoute, { replace: true });
         } else if (isParentSession) {
           const perms = await loadParentAndChildren();
-          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
+          if (perms.length > 0 && isRoot) navigate(perms[0].pageRoute, { replace: true });
         } else {
           clearTokens();
           setAuthRole(null);
