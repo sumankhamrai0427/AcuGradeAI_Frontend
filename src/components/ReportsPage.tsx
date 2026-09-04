@@ -16,11 +16,18 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
   const [selectedChildFilter, setSelectedChildFilter] = useState<string>('all');
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('all');
 
-  const subjects = Array.from(new Set(examHistory.map(e => e.subject)));
+  const subjects = Array.from(new Set(examHistory.map(e => e.subject).filter(Boolean)));
 
   const filteredHistory = examHistory.filter(exam => {
-    if (selectedChildFilter !== 'all' && exam.studentId !== selectedChildFilter) return false;
-    if (selectedSubjectFilter !== 'all' && exam.subject !== selectedSubjectFilter) return false;
+    if (selectedChildFilter !== 'all') {
+      const matchId = String(exam.studentId) === String(selectedChildFilter);
+      const childObj = parentAccount.children.find(c => String(c.id) === String(selectedChildFilter));
+      const matchName = childObj && exam.studentName && childObj.name.toLowerCase() === exam.studentName.toLowerCase();
+      if (!matchId && !matchName) return false;
+    }
+    if (selectedSubjectFilter !== 'all') {
+      if ((exam.subject || '').toLowerCase() !== selectedSubjectFilter.toLowerCase()) return false;
+    }
     return true;
   });
 
@@ -79,8 +86,9 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
             </thead>
             <tbody className="divide-y divide-stone-100">
               {filteredHistory.length > 0 ? filteredHistory.map((exam) => {
-                const child = parentAccount.children.find(c => c.id === exam.studentId);
+                const child = parentAccount.children.find(c => String(c.id) === String(exam.studentId) || (exam.studentName && c.name?.toLowerCase() === exam.studentName.toLowerCase()));
                 const scorePercentage = (exam.marksObtained / exam.totalMarks) * 100;
+                const displayTopic = (exam as any).topic || exam.evaluations?.[0]?.topic || exam.examTitle || 'Diagnostic Assessment';
                 
                 return (
                   <tr key={exam.id} className="hover:bg-stone-50 transition-colors group cursor-pointer" onClick={() => onViewSubmissionReport(exam)}>
@@ -102,7 +110,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
                         <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center text-sm border border-stone-200">
                           {child?.avatar || '👤'}
                         </div>
-                        <span className="text-sm font-bold text-stone-900">{child?.name || 'Unknown'}</span>
+                        <span className="text-sm font-bold text-stone-900">{child?.name || exam.studentName || 'Student'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -110,7 +118,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
                         <BookOpen className="w-4 h-4 text-indigo-400 shrink-0" />
                         <div>
                           <span className="block text-sm font-bold text-stone-900">{exam.subject}</span>
-                          <span className="block text-xs text-stone-500 truncate max-w-[200px] mt-0.5" title={exam.topic}>{exam.topic}</span>
+                          <span className="block text-xs text-stone-500 truncate max-w-[200px] mt-0.5" title={displayTopic}>{displayTopic}</span>
                         </div>
                       </div>
                     </td>
