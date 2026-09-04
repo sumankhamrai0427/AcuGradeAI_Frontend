@@ -417,15 +417,26 @@ export default function App() {
 
   // Add child
   const handleAddChild = async (
-    childData: Omit<ChildAccount, 'id' | 'totalExamsTaken' | 'averageScore' | 'streakDays' | 'dailyExamsTakenToday' | 'topicMastery'>
+    childData: {
+      name: string;
+      avatar?: string;
+      classGrade: string;
+      targetBoard: string;
+      schoolName?: string;
+      email?: string;
+      password?: string;
+      pin?: string;
+    }
   ) => {
     const created = await ApiServices.addChild({
       name: childData.name,
-      avatar: childData.avatar,
+      avatar: childData.avatar || '👦',
       classGrade: childData.classGrade,
       targetBoard: childData.targetBoard,
       schoolName: childData.schoolName,
-      pin: childData.pin,
+      email: childData.email,
+      password: childData.password || childData.pin,
+      pin: childData.password || childData.pin,
     });
     setParentAccount((prev) => (prev ? { ...prev, children: [...prev.children, { ...created, topicMastery: {} }] } : prev));
     setActiveChildId(created.id);

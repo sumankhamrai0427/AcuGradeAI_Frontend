@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
-import { ChildAccount, Board, ClassGrade } from '../types';
-import { Plus, X, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChildAccount } from '../types';
+import ApiServices from '../services/ApiServices';
+import { Plus, X, User, Loader2 } from 'lucide-react';
+
+interface MasterOption {
+  id: number;
+  name: string;
+  description?: string;
+}
 
 interface AddChildModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddChild: (childData: Omit<ChildAccount, 'id' | 'totalExamsTaken' | 'averageScore' | 'streakDays' | 'dailyExamsTakenToday' | 'topicMastery'>) => void;
+  onAddChild: (childData: {
+    name: string;
+    avatar?: string;
+    classGrade: string;
+    targetBoard: string;
+    schoolName?: string;
+    email?: string;
+    password?: string;
+    pin?: string;
+  }) => void | Promise<void>;
   parentEmail?: string;
 }
 
-const BOARDS: Board[] = ['CBSE', 'ICSE', 'ISC', 'UK-Cambridge', 'NCERT', 'NEET', 'IIT'];
-const GRADES: ClassGrade[] = [
-  'Class 5', 'Class 6', 'Class 7', 'Class 8', 
-  'Class 9', 'Class 10', 'Class 11', 'Class 12'
-];
 const AVATARS = ['👦', '👧', '🧑‍🎓', '🚀', '🌟', '📚', '⚡', '🎯'];
 
 export const AddChildModal: React.FC<AddChildModalProps> = ({
@@ -24,16 +35,65 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState('👦');
-  const [classGrade, setClassGrade] = useState<ClassGrade>('Class 8');
-  const [targetBoard, setTargetBoard] = useState<Board>('CBSE');
+  const [classGrade, setClassGrade] = useState<string>('');
+  const [targetBoard, setTargetBoard] = useState<string>('');
   const [schoolName, setSchoolName] = useState('');
   const [email, setEmail] = useState(parentEmail || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const [boards, setBoards] = useState<MasterOption[]>([]);
+  const [classes, setClasses] = useState<MasterOption[]>([]);
+  const [isLoadingMasters, setIsLoadingMasters] = useState(false);
+
+  // Fetch Master Data directly from Database on Modal Open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let isMounted = true;
+    setIsLoadingMasters(true);
+
+    ApiServices.getChildRegistrationOptions()
+      .then((res: any) => {
+        if (!isMounted) return;
+        const fetchedBoards: MasterOption[] = res?.boards || res?.data?.boards || [];
+        const fetchedClasses: MasterOption[] = res?.classes || res?.data?.classes || [];
+
+        setBoards(fetchedBoards);
+        if (fetchedBoards.length > 0) {
+          setTargetBoard((prev) => {
+            const exists = fetchedBoards.some((b) => b.name === prev);
+            return exists && prev ? prev : fetchedBoards[0].name;
+          });
+        } else {
+          setTargetBoard('');
+        }
+
+        setClasses(fetchedClasses);
+        if (fetchedClasses.length > 0) {
+          setClassGrade((prev) => {
+            const exists = fetchedClasses.some((c) => c.name === prev);
+            return exists && prev ? prev : fetchedClasses[0].name;
+          });
+        } else {
+          setClassGrade('');
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch master data from database:', err);
+        if (isMounted) {
+          setBoards([]);
+          setClasses([]);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingMasters(false);
+      });
+  }, [isOpen]);
 
   // Update email if parentEmail prop changes when modal opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen && parentEmail && !email) {
       setEmail(parentEmail);
     }
@@ -46,6 +106,8 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
     
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = "Full name is required";
+    if (!targetBoard) newErrors.targetBoard = "Curriculum board is required";
+    if (!classGrade) newErrors.classGrade = "Class/grade is required";
     if (!email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -69,7 +131,8 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
       targetBoard,
       schoolName: schoolName.trim() || undefined,
       email: email.trim() || undefined,
-      pin: password.trim() // storing password in the pin field for now
+      password: password.trim(),
+      pin: password.trim()
     });
 
     // Reset & close
@@ -98,8 +161,6 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-
-
           <div>
             <label className="block text-xs font-semibold text-stone-700 mb-1">
               Child / Student Full Name <span className="text-red-500">*</span>
@@ -124,13 +185,24 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
               </label>
               <select
                 value={targetBoard}
-                onChange={(e) => setTargetBoard(e.target.value as Board)}
-                className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
+                onChange={(e) => {
+                  setTargetBoard(e.target.value);
+                  if (errors.targetBoard) setErrors({ ...errors, targetBoard: '' });
+                }}
+                disabled={isLoadingMasters || boards.length === 0}
+                className={`w-full px-3 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden bg-white ${errors.targetBoard ? 'border-red-500 bg-red-50' : 'border-stone-300'}`}
               >
-                {BOARDS.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
+                {boards.length === 0 ? (
+                  <option value="">{isLoadingMasters ? 'Loading boards...' : 'No boards in database'}</option>
+                ) : (
+                  boards.map((b) => (
+                    <option key={b.id || b.name} value={b.name}>
+                      {b.name}
+                    </option>
+                  ))
+                )}
               </select>
+              {errors.targetBoard && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.targetBoard}</p>}
             </div>
 
             <div>
@@ -139,13 +211,24 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
               </label>
               <select
                 value={classGrade}
-                onChange={(e) => setClassGrade(e.target.value as ClassGrade)}
-                className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
+                onChange={(e) => {
+                  setClassGrade(e.target.value);
+                  if (errors.classGrade) setErrors({ ...errors, classGrade: '' });
+                }}
+                disabled={isLoadingMasters || classes.length === 0}
+                className={`w-full px-3 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden bg-white ${errors.classGrade ? 'border-red-500 bg-red-50' : 'border-stone-300'}`}
               >
-                {GRADES.map((g) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
+                {classes.length === 0 ? (
+                  <option value="">{isLoadingMasters ? 'Loading classes...' : 'No classes in database'}</option>
+                ) : (
+                  classes.map((g) => (
+                    <option key={g.id || g.name} value={g.name}>
+                      {g.name}
+                    </option>
+                  ))
+                )}
               </select>
+              {errors.classGrade && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.classGrade}</p>}
             </div>
           </div>
 

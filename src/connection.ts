@@ -6,6 +6,9 @@ export const GET_APIS = {
   verifySession: `${BASE_URL}/api/v1/auth/verify`,
   menuPermissions: `${BASE_URL}/api/v1/auth/menu-permissions`,
 
+  // Master Data
+  childRegistrationOptions: `${BASE_URL}/api/v1/master/child-registration-options`,
+
   // Parent
   parentDashboard: `${BASE_URL}/api/v1/parents/dashboard`,
   parentMe: `${BASE_URL}/api/v1/parents/me`,
@@ -46,7 +49,7 @@ export const POST_APIS = {
   refreshToken: `${BASE_URL}/api/v1/auth/refresh`,
 
   // Parent
-  addChild: `${BASE_URL}/api/v1/parents/me/children`,
+  addChild: `${BASE_URL}/api/v1/parents/add-child`,
 
   // Exams
   generateExam: `${BASE_URL}/api/v1/exams/generate`,

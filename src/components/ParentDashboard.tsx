@@ -92,7 +92,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
   const avgFamilyScore = hasData ? avgScoreNum.toFixed(1) + '%' : 'N/A';
   const overallReadinessPct = hasData ? Math.min(100, Math.round(avgScoreNum * 10)) + '%' : 'N/A';
-  const learningStreakText = hasData ? '6 Days' : 'N/A';
+  const maxFamilyStreak = parentAccount.children.reduce((max, c) => Math.max(max, c.streakDays || 0), 0);
+  const learningStreakText = hasData ? (maxFamilyStreak > 0 ? `${maxFamilyStreak} Day${maxFamilyStreak > 1 ? 's' : ''}` : '0 Days') : 'N/A';
 
   // Real-Time Weekly Delta calculation
   const now = useMemo(() => new Date().getTime(), []);
@@ -436,8 +437,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
           ) : parentAccount.children.map((child) => {
             const isChildActive = activeChildId === child.id;
             const childMasteryEntries = Object.entries(child.topicMastery || {}).sort((a, b) => Number(b[1]) - Number(a[1]));
-            const strongestTopic = childMasteryEntries.length > 0 ? childMasteryEntries[0][0] : 'Mathematics';
-            const weakestTopic = childMasteryEntries.length > 0 ? childMasteryEntries[childMasteryEntries.length - 1][0] : 'English';
+            const strongestTopic = childMasteryEntries.length > 0 ? childMasteryEntries[0][0] : '—';
+            const weakestTopic = childMasteryEntries.length > 0 ? childMasteryEntries[childMasteryEntries.length - 1][0] : '—';
 
             return (
               <div
@@ -479,11 +480,15 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                   </div>
                   <div className="col-span-1 text-center border-l border-stone-100 pl-4">
                     <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Exam Readiness</span>
-                    <span className="text-sm font-bold text-stone-800">{Math.max(0, Math.round((child.averageScore * 10) - 4))}%</span>
+                    <span className="text-sm font-bold text-stone-800">
+                      {child.totalExamsTaken > 0 ? `${Math.max(0, Math.round((child.averageScore * 10) - 4))}%` : '—'}
+                    </span>
                   </div>
                   <div className="col-span-1 text-right border-l border-stone-100">
                     <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Latest Result</span>
-                    <span className="text-sm font-bold text-stone-800">{child.averageScore}/10</span>
+                    <span className="text-sm font-bold text-stone-800">
+                      {child.totalExamsTaken > 0 ? `${child.averageScore}/10` : '—'}
+                    </span>
                   </div>
                 </div>
 
@@ -502,7 +507,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                 {/* Footer Actions */}
                 <div className="flex items-center justify-between mt-1 pt-3 relative z-10">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-500">
-                    <Flame className="w-4 h-4" /> 6 Day Streak
+                    <Flame className="w-4 h-4" /> {child.streakDays || 0} Day Streak
                   </div>
                   <button
                     onClick={() => {

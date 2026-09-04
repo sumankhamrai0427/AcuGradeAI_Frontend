@@ -180,6 +180,9 @@ class ApiServices {
   childLogin(body: any) { return this.post(POST_APIS.childLogin, body); }
   logout(body: any) { return this.post(POST_APIS.logout, body); }
 
+  // ── Master Data ───────────────────────────
+  getChildRegistrationOptions() { return this.get(GET_APIS.childRegistrationOptions); }
+
   // ── Parent ────────────────────────────────
   getParentDashboard() { return this.get(GET_APIS.parentDashboard); }
   getMe() { return this.get(GET_APIS.parentMe); }
