@@ -235,7 +235,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-stone-900 text-sm sm:text-base">{activeExam.title}</span>
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-300">
-                  10 Marks Total
+                  {activeExam.totalMarks || 15} Marks Total
                 </span>
               </div>
               <p className="text-xs text-stone-500">
@@ -272,7 +272,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
               onClick={() => setShowConfirmSubmit(true)}
               className="px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs sm:text-sm font-semibold shadow-xs transition-colors"
             >
-              Submit 10 Marks
+              Submit Exam
             </button>
           </div>
         </div>
@@ -321,7 +321,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-stone-700 bg-stone-100 px-2 py-1 rounded-md">
-                    1.0 Mark
+                    {currentQ.marks || 1} {(currentQ.marks || 1) > 1 ? 'Marks' : 'Mark'}
                   </span>
                   <button
                     id="flag-question-btn"
@@ -440,7 +440,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                     onClick={() => setShowConfirmSubmit(true)}
                     className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs sm:text-sm font-semibold shadow-xs"
                   >
-                    Submit 10 Marks
+                    Submit Exam ({activeExam.totalMarks || 15} Marks)
                     <CheckCircle2 className="w-4 h-4" />
                   </button>
                 )}
@@ -510,12 +510,12 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
               <div className="w-12 h-12 rounded-xl bg-yellow-50 border border-yellow-200 flex items-center justify-center text-yellow-600 mb-4">
                 <Award className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-stone-900 mb-2">Submit 10-Mark Diagnostic?</h3>
+              <h3 className="text-lg font-bold text-stone-900 mb-2">Submit Assessment ({activeExam.totalMarks || 15} Marks)?</h3>
               <p className="text-xs sm:text-sm text-stone-600 mb-4">
                 You have answered <span className="font-semibold text-stone-900">{answeredCount} out of {totalQuestions} questions</span>.
                 {totalQuestions - answeredCount > 0 && (
                   <span className="text-amber-600 block mt-1 font-medium">
-                    ⚠️ You have {totalQuestions - answeredCount} unanswered questions that will receive 0 marks.
+                    ⚠️ You have {totalQuestions - answeredCount} unanswered question{totalQuestions - answeredCount > 1 ? 's' : ''} that will receive 0 marks.
                   </span>
                 )}
               </p>
