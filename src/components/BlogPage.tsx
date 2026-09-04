@@ -12,6 +12,7 @@ import {
   X,
   ChevronRight,
   MessageSquare,
+  Share2,
 } from "lucide-react";
 import blogsData from "../data/blogs.json";
 import { PublicHeader } from "./common/PublicHeader";
@@ -129,11 +130,15 @@ const ArticleDetail: React.FC<{ post: BlogPostData; onBack: () => void }> = ({ p
   const relatedPosts = allPosts.filter(p => p.category === post.category && p.id !== post.id).slice(0, 3);
   const latestPosts = allPosts.filter(p => p.id !== post.id).slice(0, 4);
 
+  const currentIndex = allPosts.findIndex(p => p.id === post.id);
+  const prevPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
+  const nextPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
+
   return (
     <div className="min-h-screen bg-stone-50 py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Main Content (Left) */}
           <div className="lg:col-span-2 bg-white p-6 sm:p-10 rounded-xl border border-stone-200 shadow-sm">
             {/* Hero Image */}
@@ -180,41 +185,37 @@ const ArticleDetail: React.FC<{ post: BlogPostData; onBack: () => void }> = ({ p
 
             {/* Content Body */}
             <div className="space-y-6 text-stone-700 text-[15px] leading-relaxed">
-              {post.content.map((para, i) => <p key={i}>{renderMD(para)}</p>)}
+              {post.content?.map((para, i) => <p key={i}>{renderMD(para)}</p>)}
             </div>
 
-            {/* Tags */}
-            <div className="mt-10 pt-6 border-t border-stone-100 flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
-                <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-stone-100 text-stone-600 text-xs font-bold border border-stone-200">
-                  <Tag className="w-3 h-3" />{tag}
-                </span>
-              ))}
-            </div>
-
-            {/* Previous Post */}
-            <div className="mt-10 pt-6 border-t border-stone-100">
-              <p className="text-xs text-stone-400 mb-1 font-bold">Previous Post</p>
-              <button onClick={onBack} className="text-[#0d47a1] text-sm font-semibold hover:underline">
-                Back to All Articles
-              </button>
-            </div>
-
-            {/* Newsletter */}
-            <div className="mt-10 p-6 sm:p-8 bg-stone-50 rounded-xl border border-stone-200">
-              <h3 className="text-lg font-black text-stone-900 mb-4">Join our newsletter for the latest updates and insights.</h3>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input type="email" placeholder="Enter your email for more updates" className="flex-1 px-4 py-3 rounded-lg border border-stone-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm bg-white" />
-                <button className="px-6 py-3 bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-stone-900 font-bold rounded-lg transition text-sm whitespace-nowrap shadow-sm">
-                  Subscribe Now
-                </button>
-              </div>
+            {/* Previous & Next Post */}
+            <div className="mt-10 pt-8 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+              {prevPost ? (
+                <Link to={`/blog/${prevPost.slug}`} className="group max-w-[45%] flex-1">
+                  <p className="text-xs text-stone-400 mb-1 font-bold">Previous Post</p>
+                  <p className="text-[#0d47a1] text-sm font-semibold group-hover:underline line-clamp-2">
+                    {prevPost.title}
+                  </p>
+                </Link>
+              ) : (
+                <div className="flex-1" />
+              )}
+              {nextPost ? (
+                <Link to={`/blog/${nextPost.slug}`} className="group max-w-[45%] flex-1 text-left sm:text-right">
+                  <p className="text-xs text-stone-400 mb-1 font-bold">Next Post</p>
+                  <p className="text-[#0d47a1] text-sm font-semibold group-hover:underline line-clamp-2">
+                    {nextPost.title}
+                  </p>
+                </Link>
+              ) : (
+                <div className="flex-1" />
+              )}
             </div>
           </div>
 
           {/* Sidebar (Right) */}
           <div className="lg:col-span-1 space-y-8">
-            
+
             {/* Latest Articles */}
             <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
               <div className="bg-yellow-400 px-4 py-3 border-b border-yellow-500">
@@ -418,11 +419,10 @@ export const BlogPage: React.FC = () => {
                         <button
                           key={p}
                           onClick={() => goTo(p as number)}
-                          className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-bold transition-all ${
-                            currentPage === p
-                              ? 'bg-yellow-400 text-stone-900 border-yellow-400 shadow-sm shadow-yellow-200'
-                              : 'bg-white text-stone-600 border-stone-200 hover:border-yellow-300 hover:bg-yellow-50'
-                          }`}
+                          className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-bold transition-all ${currentPage === p
+                            ? 'bg-yellow-400 text-stone-900 border-yellow-400 shadow-sm shadow-yellow-200'
+                            : 'bg-white text-stone-600 border-stone-200 hover:border-yellow-300 hover:bg-yellow-50'
+                            }`}
                         >
                           {p}
                         </button>
