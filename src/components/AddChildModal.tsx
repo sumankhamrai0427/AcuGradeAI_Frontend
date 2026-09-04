@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChildAccount } from '../types';
 import ApiServices from '../services/ApiServices';
-import { Plus, X, User, Loader2 } from 'lucide-react';
+import { Plus, User, Loader2, ChevronDown, Search } from 'lucide-react';
 
 interface MasterOption {
   id: number;
@@ -27,6 +27,80 @@ interface AddChildModalProps {
 
 const AVATARS = ['👦', '👧', '🧑‍🎓', '🚀', '🌟', '📚', '⚡', '🎯'];
 
+interface SearchableSelectProps {
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  disabled?: boolean;
+  hasError?: boolean;
+}
+
+const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onChange, placeholder, disabled, hasError }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredOptions = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+  const selectedOption = options.find(o => o.value === value);
+
+  return (
+    <div ref={wrapperRef} className="relative w-full">
+      <div 
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`w-full px-3 py-2.5 rounded-xl border text-sm flex justify-between items-center cursor-pointer ${disabled ? 'opacity-60 cursor-not-allowed bg-stone-50' : 'bg-white'} ${hasError ? 'border-red-500 bg-red-50' : 'border-stone-300'}`}
+      >
+        <span className={selectedOption ? 'text-stone-900' : 'text-stone-500'}>{selectedOption ? selectedOption.label : placeholder}</span>
+        <ChevronDown className={`w-4 h-4 text-stone-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-stone-200 rounded-xl shadow-xl max-h-60 overflow-hidden flex flex-col">
+          <div className="p-2 border-b border-stone-100">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-stone-400" />
+              <input 
+                type="text" 
+                value={search} 
+                onChange={e => setSearch(e.target.value)} 
+                placeholder="Search..." 
+                className="w-full pl-9 pr-3 py-2 text-xs border border-stone-200 rounded-lg focus:outline-hidden focus:border-yellow-400"
+                autoFocus
+                onClick={e => e.stopPropagation()}
+              />
+            </div>
+          </div>
+          <div className="overflow-y-auto custom-scrollbar flex-1 p-1">
+            {filteredOptions.length === 0 ? (
+              <div className="p-3 text-xs text-stone-500 text-center">No results found</div>
+            ) : (
+              filteredOptions.map(opt => (
+                <div 
+                  key={opt.value}
+                  onClick={() => { onChange(opt.value); setIsOpen(false); setSearch(''); }}
+                  className={`px-3 py-2 text-sm rounded-lg cursor-pointer transition-colors ${value === opt.value ? 'bg-yellow-50 text-yellow-900 font-medium' : 'hover:bg-stone-50 text-stone-700'}`}
+                >
+                  {opt.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const AddChildModal: React.FC<AddChildModalProps> = ({
   isOpen,
   onClose,
@@ -42,7 +116,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   const [boards, setBoards] = useState<MasterOption[]>([]);
   const [classes, setClasses] = useState<MasterOption[]>([]);
   const [isLoadingMasters, setIsLoadingMasters] = useState(false);
@@ -64,7 +138,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
         if (fetchedBoards.length > 0) {
           setTargetBoard((prev) => {
             const exists = fetchedBoards.some((b) => b.name === prev);
-            return exists && prev ? prev : fetchedBoards[0].name;
+            return exists && prev ? prev : '';
           });
         } else {
           setTargetBoard('');
@@ -74,7 +148,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
         if (fetchedClasses.length > 0) {
           setClassGrade((prev) => {
             const exists = fetchedClasses.some((c) => c.name === prev);
-            return exists && prev ? prev : fetchedClasses[0].name;
+            return exists && prev ? prev : '';
           });
         } else {
           setClassGrade('');
@@ -103,7 +177,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = "Full name is required";
     if (!targetBoard) newErrors.targetBoard = "Curriculum board is required";
@@ -150,14 +224,8 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
         <div className="flex items-center justify-between pb-4 border-b border-stone-100 mb-6">
           <div>
             <h3 className="text-lg font-bold text-stone-900">Create Child Sub-Account</h3>
-            <p className="text-xs text-stone-500">Each child gets their own login PIN, board profile, and diagnostic tracker</p>
+            <p className="text-xs text-stone-500">Each child gets their own login password, board profile, and diagnostic tracker</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg border border-stone-200 text-stone-400 hover:text-stone-600"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -183,25 +251,17 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
               <label className="block text-xs font-semibold text-stone-700 mb-1">
                 Target Curriculum Board <span className="text-red-500">*</span>
               </label>
-              <select
+              <SearchableSelect
                 value={targetBoard}
-                onChange={(e) => {
-                  setTargetBoard(e.target.value);
+                onChange={(value) => {
+                  setTargetBoard(value);
                   if (errors.targetBoard) setErrors({ ...errors, targetBoard: '' });
                 }}
+                placeholder="Please Select"
                 disabled={isLoadingMasters || boards.length === 0}
-                className={`w-full px-3 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden bg-white ${errors.targetBoard ? 'border-red-500 bg-red-50' : 'border-stone-300'}`}
-              >
-                {boards.length === 0 ? (
-                  <option value="">{isLoadingMasters ? 'Loading boards...' : 'No boards in database'}</option>
-                ) : (
-                  boards.map((b) => (
-                    <option key={b.id || b.name} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))
-                )}
-              </select>
+                options={boards.map(b => ({ value: b.name, label: b.name }))}
+                hasError={!!errors.targetBoard}
+              />
               {errors.targetBoard && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.targetBoard}</p>}
             </div>
 
@@ -209,25 +269,17 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
               <label className="block text-xs font-semibold text-stone-700 mb-1">
                 Class / Grade <span className="text-red-500">*</span>
               </label>
-              <select
+              <SearchableSelect
                 value={classGrade}
-                onChange={(e) => {
-                  setClassGrade(e.target.value);
+                onChange={(value) => {
+                  setClassGrade(value);
                   if (errors.classGrade) setErrors({ ...errors, classGrade: '' });
                 }}
+                placeholder="Please Select"
                 disabled={isLoadingMasters || classes.length === 0}
-                className={`w-full px-3 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden bg-white ${errors.classGrade ? 'border-red-500 bg-red-50' : 'border-stone-300'}`}
-              >
-                {classes.length === 0 ? (
-                  <option value="">{isLoadingMasters ? 'Loading classes...' : 'No classes in database'}</option>
-                ) : (
-                  classes.map((g) => (
-                    <option key={g.id || g.name} value={g.name}>
-                      {g.name}
-                    </option>
-                  ))
-                )}
-              </select>
+                options={classes.map(g => ({ value: g.name, label: g.name }))}
+                hasError={!!errors.classGrade}
+              />
               {errors.classGrade && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.classGrade}</p>}
             </div>
           </div>

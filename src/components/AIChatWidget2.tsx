@@ -100,12 +100,14 @@ export const AIChatWidget: React.FC = () => {
         </div>
       )}
 
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95 ${isOpen ? 'bg-stone-800 text-white hover:bg-stone-700' : 'bg-gradient-to-tr from-yellow-500 to-amber-500 text-white hover:shadow-yellow-500/20'}`}
-      >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
-      </button>
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95 bg-gradient-to-tr from-yellow-500 to-amber-500 text-white hover:shadow-yellow-500/20"
+        >
+          <MessageSquare className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 };

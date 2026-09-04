@@ -416,9 +416,20 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
       {/* 2. MY CHILDREN SECTION */}
       <div className="space-y-4">
-        <div>
-          <h2 className="font-bold text-xl text-stone-900">My Children</h2>
-          <p className="text-xs text-stone-500 font-medium">Track each child's learning journey.</p>
+        <div className="flex justify-between items-end">
+          <div>
+            <h2 className="font-bold text-xl text-stone-900">My Children</h2>
+            <p className="text-xs text-stone-500 font-medium">Track each child's learning journey.</p>
+          </div>
+          {parentAccount.children.length > 0 && (
+            <button 
+              onClick={onOpenAddChildModal}
+              className="flex items-center gap-1.5 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 rounded-xl text-xs font-black text-stone-900 hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm border border-yellow-500/50"
+            >
+              <Plus className="w-4 h-4" />
+              Add Child
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -812,6 +812,19 @@ export default function App() {
                         })}
 
                         <div className="my-1 border-t border-stone-100" />
+                        
+                        <button
+                          onClick={() => {
+                            setShowPersonaMenu(false);
+                            setShowAddChildModal(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Add Child</span>
+                        </button>
+
+                        <div className="my-1 border-t border-stone-100" />
 
                         <button
                           onClick={handleLogout}
@@ -861,7 +874,9 @@ export default function App() {
                             <span>Loading Test...</span>
                           </>
                         ) : (
-                          'Start Quick Test'
+                          <>
+                            Start Quick Test <ArrowRight className="w-3.5 h-3.5" />
+                          </>
                         )}
                       </button>
                     </div>
