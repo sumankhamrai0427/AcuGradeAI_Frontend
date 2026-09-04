@@ -219,6 +219,7 @@ class ApiServices {
   listConversations() { return this.get(GET_APIS.conversations); }
   createConversation(body: any) { return this.post(POST_APIS.createConversation, body); }
   sendMessage(conversationId: string, body: any) { return this.post(POST_APIS.sendMessage(conversationId), body); }
+  sendChatMessage(body: { messages: {role: string, content: string}[], student_id?: string | number }) { return this.post(POST_APIS.chat, body); }
   markMessageRead(messageId: string) { return this.put(PUT_APIS.markMessageRead(messageId)); }
   createDossier(body: any) { return this.post(POST_APIS.createDossier, body); }
   listDossiers() { return this.get(GET_APIS.dossiers); }

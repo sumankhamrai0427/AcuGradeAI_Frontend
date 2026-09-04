@@ -57,6 +57,9 @@ export const POST_APIS = {
   generateQuickTest: `${BASE_URL}/api/v1/exams/quick-test`,
   submitExam: (id: string) => `${BASE_URL}/api/v1/exams/${id}/submit`,
 
+  // Chat
+  chat: `${API_V1}/chat`,
+
   // Runbooks
   createRunbook: `${API_V1}/runbooks`,
 

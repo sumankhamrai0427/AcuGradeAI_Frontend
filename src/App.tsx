@@ -626,7 +626,7 @@ export default function App() {
           />
         </div>
         {/* Floating AI Chat Widget */}
-        <AIChatWidget />
+        <AIChatWidget activeChild={activeChild} />
       </div>
     );
   }
@@ -669,7 +669,7 @@ export default function App() {
           </div>
         </div>
         {/* Floating AI Chat Widget */}
-        <AIChatWidget />
+        <AIChatWidget activeChild={activeChild} />
       </div>
     );
   }
@@ -1115,7 +1115,7 @@ export default function App() {
       )}
 
       {/* Floating AI Chat Widget */}
-      <AIChatWidget />
+      <AIChatWidget activeChild={activeChild} />
     </div>
   );
 }
