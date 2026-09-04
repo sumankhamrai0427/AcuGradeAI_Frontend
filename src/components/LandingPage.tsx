@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { PublicHeader } from './common/PublicHeader';
+import { PublicFooter } from './common/PublicFooter';
 import {
   GraduationCap,
   Sparkles,
@@ -139,9 +141,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
 
   const openAuth = (mode: 'login' | 'register' = 'login') => {
-    setMobileMenuOpen(false);
     onOpenAuth(mode);
   };
+  
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.search.includes('auth=login')) {
+      openAuth('login');
+      navigate('/', { replace: true });
+    } else if (location.search.includes('auth=register')) {
+      openAuth('register');
+      navigate('/', { replace: true });
+    }
+  }, [location, navigate]);
 
   const runDemo = (subject: keyof typeof demoQuestions) => {
     setSelectedSubject(subject);
@@ -226,89 +240,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         }
       `}</style>
       {/* NAVBAR */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 min-h-[72px] flex items-center justify-between">
-          <a href="#hero" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-yellow-400 text-stone-900 flex items-center justify-center shadow-lg shadow-yellow-200">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="font-black text-lg tracking-tight">SahajPath</div>
-              <div className="text-[10px] text-stone-500 font-semibold">
-                Smarter Learning Platform
-              </div>
-            </div>
-          </a>
-
-          <nav className="hidden lg:flex items-center gap-7 text-sm font-semibold text-stone-600">
-            <a href="#hero" className="hover:text-yellow-600">Home</a>
-            <a href="#features" className="hover:text-yellow-600">Features</a>
-            <a href="#how-it-works" className="hover:text-yellow-600">How It Works</a>
-            <a href="#roles" className="hover:text-yellow-600">For Everyone</a>
-            <a href="#demo" className="hover:text-yellow-600 flex items-center gap-1.5">
-              Demo <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700">LIVE</span>
-            </a>
-          </nav>
-
-          <div className="hidden sm:flex items-center gap-2">
-            <button
-              onClick={() => openAuth('login')}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold text-stone-700 hover:bg-stone-100"
-            >
-              Login
-            </button>
-            <button
-              onClick={() => openAuth('register')}
-              className="px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-white text-sm font-extrabold shadow-lg shadow-yellow-200 flex items-center gap-2"
-            >
-              Get Started <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <button
-            onClick={() => setMobileMenuOpen((v) => !v)}
-            className="lg:hidden p-2 rounded-xl hover:bg-stone-100"
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X /> : <Menu />}
-          </button>
-        </div>
-
-        {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-stone-100 px-4 py-4 space-y-2">
-            {[
-              ['#hero', 'Home'],
-              ['#features', 'Features'],
-              ['#how-it-works', 'How It Works'],
-              ['#roles', 'For Everyone'],
-              ['#demo', 'Demo'],
-            ].map(([href, label]) => (
-              <a
-                key={href}
-                href={href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block py-2.5 text-sm font-semibold text-stone-700"
-              >
-                {label}
-              </a>
-            ))}
-            <div className="pt-3 border-t border-stone-100 flex gap-2">
-              <button
-                onClick={() => openAuth('login')}
-                className="flex-1 py-2.5 rounded-xl border border-stone-200 font-bold"
-              >
-                Login
-              </button>
-              <button
-                onClick={() => openAuth('register')}
-                className="flex-1 py-2.5 rounded-xl bg-yellow-400 text-stone-900 font-bold"
-              >
-                Get Started
-              </button>
-            </div>
-          </div>
-        )}
-      </header>
+      <PublicHeader onOpenAuth={openAuth} />
 
       {/* HERO */}
       <section
@@ -1151,69 +1083,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-stone-950 text-stone-500 border-t border-stone-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
-            <div className="lg:col-span-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-yellow-400 text-stone-900 flex items-center justify-center">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <span className="font-black text-white">SahajPath</span>
-              </div>
-              <p className="mt-3 text-xs leading-relaxed max-w-sm">
-                Study Buddy-powered adaptive learning that connects students, teachers and parents.
-              </p>
-              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-stone-800 text-[10px]">
-                <span className={`w-1.5 h-1.5 rounded-full ${isBackendOnline === false ? 'bg-rose-500' : 'bg-yellow-500'
-                  }`} />
-                Platform: {isBackendOnline === false ? 'Offline' : 'Online'}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-white text-xs font-black uppercase tracking-wider">Platform</div>
-              <div className="mt-3 space-y-2 text-xs">
-                <a href="#features" className="block hover:text-white">Features</a>
-                <a href="#how-it-works" className="block hover:text-white">How It Works</a>
-                <a href="#roles" className="block hover:text-white">For Everyone</a>
-                <a href="#demo" className="block hover:text-white">Demo</a>
-              </div>
-            </div>
-
-            <div>
-              <div className="text-white text-xs font-black uppercase tracking-wider">Legal</div>
-              <div className="mt-3 space-y-2 text-xs">
-                <Link to="/privacy" className="block hover:text-white transition-colors">Privacy Policy</Link>
-                <Link to="/terms" className="block hover:text-white transition-colors">Terms of Service</Link>
-                <Link to="/disclaimer" className="block hover:text-white transition-colors">Disclaimer</Link>
-              </div>
-            </div>
-            <div>
-              <div className="text-white text-xs font-black uppercase tracking-wider">Company</div>
-              <div className="mt-3 space-y-2 text-xs">
-                <Link to="/about" className="block hover:text-white transition-colors">About Us</Link>
-                <Link to="/blog" className="block hover:text-white transition-colors">Blog</Link>
-                <Link to="/contact" className="block hover:text-white transition-colors">Contact</Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-stone-800 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px]">
-            <span>© {new Date().getFullYear()} SahajPath. All rights reserved.</span>
-            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
-              {onQuickDemo && (
-                <button
-                  onClick={() => onQuickDemo('admin')}
-                  className="px-3 py-1.5 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white transition"
-                >
-                  Super Admin Panel
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter isBackendOnline={isBackendOnline ?? undefined} onQuickDemo={onQuickDemo} />
     </div>
   );
 };

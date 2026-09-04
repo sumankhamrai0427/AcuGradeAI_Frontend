@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from './App.tsx';
 import { LegalPage } from './components/LegalPage.tsx';
 import { InfoPage } from './components/InfoPage.tsx';
+import { BlogPage } from './components/BlogPage.tsx';
 import './index.css';
 import AdminLogin from './components/admin/AdminLogin.tsx';
 
@@ -17,7 +18,8 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/*" element={<App />} />
           <Route path="/about" element={<InfoPage type="about" />} />
-          <Route path="/blog" element={<InfoPage type="blog" />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogPage />} />
           <Route path="/contact" element={<InfoPage type="contact" />} />
           <Route path="/privacy" element={<LegalPage type="privacy" />} />
           <Route path="/terms" element={<LegalPage type="terms" />} />
