@@ -15,7 +15,8 @@ import {
   Board,
   ClassGrade,
   Subject,
-  ExamDifficulty
+  ExamDifficulty,
+  Exam,
 } from './types';
 import {
   GraduationCap,
@@ -153,6 +154,9 @@ export default function App() {
   const [showAddChildModal, setShowAddChildModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
+  const [showQuickTestChildModal, setShowQuickTestChildModal] = useState(false);
+  const [isQuickTestLoading, setIsQuickTestLoading] = useState(false);
+  const [preloadedExam, setPreloadedExam] = useState<Exam | null>(null);
   const personaMenuRef = useRef<HTMLDivElement>(null);
 
   // Close persona dropdown when clicking anywhere outside
@@ -470,6 +474,38 @@ export default function App() {
         : prev
     );
     loadGamification().catch(() => { });
+  };
+
+  // Launch Quick Test from Database for a specific student
+  const handleLaunchQuickTest = async (childId: string) => {
+    try {
+      setIsQuickTestLoading(true);
+      setShowQuickTestChildModal(false);
+      const res = await ApiServices.generateQuickTest(childId, 10);
+      const exam = res?.exam || res?.data?.exam || (res?.questions ? res : null);
+      if (exam) {
+        setPreloadedExam(exam);
+        setActiveChildId(childId);
+        setActiveTab('arena');
+      } else {
+        console.error('Unexpected quick test response structure:', res);
+        alert('Could not load diagnostic exam from database response.');
+      }
+    } catch (err: any) {
+      console.error('Failed to generate quick test:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to generate diagnostic quick test from database.');
+    } finally {
+      setIsQuickTestLoading(false);
+    }
+  };
+
+  const handleStartQuickTestClick = () => {
+    if (!parentAccount || !parentAccount.children || parentAccount.children.length === 0) return;
+    if (parentAccount.children.length === 1) {
+      handleLaunchQuickTest(parentAccount.children[0].id);
+    } else {
+      setShowQuickTestChildModal(true);
+    }
   };
 
   const getPageTitle = () => {
@@ -794,33 +830,39 @@ export default function App() {
             {/* Scrollable Main Content Frame (High Density Theme) */}
             <div className="flex-1 overflow-y-auto bg-stone-50 p-4 sm:p-6 lg:p-8">
               
-              {/* Child Registration Success "Bloom" Widget */}
-              {activeTab === 'dashboard' && (
+              {/* Child Registration Success Widget - persistently visible on dashboard whenever parent has registered student(s) */}
+              {activeTab === 'dashboard' && (parentAccount?.children?.length ?? 0) > 0 && (
                 <div className="flex justify-center mb-8 relative z-10 animate-in zoom-in duration-500">
-                  <div className="relative group cursor-pointer">
+                  <div className="relative group">
                     {/* Glowing Aura */}
                     <div className="absolute -inset-2 bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-[pulse_2s_ease-in-out_infinite]"></div>
                     
                     {/* The Pill / Circular Element */}
-                    <div className="relative px-6 py-3 bg-white/95 backdrop-blur-xl ring-1 ring-white/50 rounded-full flex items-center gap-5 shadow-2xl">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 to-amber-500 flex items-center justify-center text-white shadow-inner animate-bounce">
-                        <span className="text-2xl">🎉</span>
+                    <div className="relative px-6 py-3 bg-white/95 backdrop-blur-xl ring-1 ring-white/50 rounded-full flex items-center gap-4 sm:gap-5 shadow-2xl">
+                      <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-yellow-400 to-amber-500 flex items-center justify-center text-white shadow-inner shrink-0 animate-bounce">
+                        <span className="text-xl">🎉</span>
                       </div>
                       
-                      <div className="flex flex-col pr-5 border-r border-stone-200">
+                      <div className="flex flex-col pr-4 sm:pr-5 border-r border-stone-200">
                         <span className="text-sm font-extrabold text-stone-900">Child Added Successfully!</span>
                         <span className="text-xs font-semibold text-stone-500 mt-0.5">
-                          You now have <span className="text-yellow-600">{parentAccount?.children?.length || 1}</span> active profile(s)
+                          You now have <span className="text-yellow-600 font-bold">{parentAccount?.children?.length || 1}</span> active profile(s)
                         </span>
                       </div>
                       
                       <button 
-                        onClick={() => {
-                          setShowChildAddedSuccess(false);
-                        }}
-                        className="px-5 py-2 rounded-full bg-stone-900 text-yellow-400 text-xs font-bold hover:bg-stone-800 transition-all shadow-md flex items-center gap-2"
+                        disabled={isQuickTestLoading}
+                        onClick={handleStartQuickTestClick}
+                        className="px-5 py-2 rounded-full bg-stone-900 text-yellow-400 text-xs font-bold hover:bg-stone-800 transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-60"
                       >
-                        Start Quick Test
+                        {isQuickTestLoading ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Loading Test...</span>
+                          </>
+                        ) : (
+                          'Start Quick Test'
+                        )}
                       </button>
                     </div>
                   </div>
@@ -898,6 +940,8 @@ export default function App() {
                       onExamComplete={handleExamComplete}
                       onOpenUpgradeModal={() => setShowUpgradeModal(true)}
                       onResetDailyQuota={handleResetDailyQuota}
+                      initialExam={preloadedExam}
+                      onClearInitialExam={() => setPreloadedExam(null)}
                     />
                   )}
 
@@ -996,6 +1040,61 @@ export default function App() {
               onUpgradeTier={handleUpgradeTier}
               onClose={() => setShowUpgradeModal(false)}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Quick Test Child Selector Modal for Multi-Child Parents */}
+      {showQuickTestChildModal && parentAccount && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start mb-4 pb-3 border-b border-stone-100">
+              <div>
+                <h3 className="text-lg font-black text-stone-900">Select Student</h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Pick which student's diagnostic test to launch from database.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowQuickTestChildModal(false)}
+                className="p-1.5 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5 my-4">
+              {parentAccount.children.map((child) => (
+                <button
+                  key={child.id}
+                  disabled={isQuickTestLoading}
+                  onClick={() => handleLaunchQuickTest(child.id)}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-stone-200 hover:border-yellow-400 hover:bg-yellow-50/50 transition-all text-left group cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center text-2xl border border-stone-200 group-hover:scale-105 transition-transform">
+                      {child.avatar || '👦'}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-stone-900 group-hover:text-yellow-700">{child.name}</h4>
+                      <p className="text-xs font-semibold text-stone-500">
+                        {child.classGrade} • {child.targetBoard}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-yellow-600 group-hover:underline">Start Test</span>
+                    <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-yellow-600 group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {isQuickTestLoading && (
+              <div className="flex items-center justify-center gap-2 py-2 text-xs font-bold text-yellow-600">
+                <Loader2 className="w-4 h-4 animate-spin" /> Fetching diagnostic questions from database...
+              </div>
+            )}
           </div>
         </div>
       )}

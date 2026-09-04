@@ -53,6 +53,7 @@ export const POST_APIS = {
 
   // Exams
   generateExam: `${BASE_URL}/api/v1/exams/generate`,
+  generateQuickTest: `${BASE_URL}/api/v1/exams/quick-test`,
   submitExam: (id: string) => `${BASE_URL}/api/v1/exams/${id}/submit`,
 
   // Runbooks

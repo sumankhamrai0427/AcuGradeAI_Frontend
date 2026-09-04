@@ -195,6 +195,9 @@ class ApiServices {
 
   // ── Exams ─────────────────────────────────
   generateExam(body: any) { return this.post(POST_APIS.generateExam, body); }
+  generateQuickTest(studentId: string | number, limit: number = 10) {
+    return this.post(POST_APIS.generateQuickTest, { studentId, limit });
+  }
   submitExam(examId: string, body: any) { return this.post(POST_APIS.submitExam(examId), body); }
 
   // ── Runbooks ──────────────────────────────

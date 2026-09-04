@@ -38,6 +38,8 @@ interface ExamArenaProps {
   onResetDailyQuota: (childId: string) => void;
   presetSubject?: Subject;
   presetDifficulty?: ExamDifficulty;
+  initialExam?: Exam | null;
+  onClearInitialExam?: () => void;
 }
 
 const BOARDS: Board[] = ['CBSE', 'ICSE', 'ISC', 'UK-Cambridge', 'NCERT', 'NEET', 'IIT'];
@@ -58,6 +60,8 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
   onExamComplete,
   onOpenUpgradeModal,
   onResetDailyQuota,
+  initialExam,
+  onClearInitialExam,
 }) => {
   const isStudentPersona = activePersona === 'child';
   // Current active child
@@ -71,16 +75,32 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
   // Exam taking state
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeExam, setActiveExam] = useState<Exam | null>(null);
+  const [activeExam, setActiveExam] = useState<Exam | null>(initialExam || null);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
-  const [timeRemainingSeconds, setTimeRemainingSeconds] = useState(15 * 60); // 15 mins
+  const [timeRemainingSeconds, setTimeRemainingSeconds] = useState(
+    initialExam?.timeLimitMinutes ? initialExam.timeLimitMinutes * 60 : 15 * 60
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [showScratchpad, setShowScratchpad] = useState(false);
   const [scratchpadNote, setScratchpadNote] = useState('');
   const [generationStep, setGenerationStep] = useState('');
+
+  // Handle preloaded / quick test exam
+  useEffect(() => {
+    if (initialExam) {
+      setActiveExam(initialExam);
+      setCurrentQuestionIdx(0);
+      setAnswers({});
+      setFlaggedQuestions({});
+      setTimeRemainingSeconds((initialExam.timeLimitMinutes || 15) * 60);
+      if (onClearInitialExam) {
+        onClearInitialExam();
+      }
+    }
+  }, [initialExam]);
 
   // Sync defaults when active child changes
   useEffect(() => {
