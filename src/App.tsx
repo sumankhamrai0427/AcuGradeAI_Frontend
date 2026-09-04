@@ -158,6 +158,8 @@ export default function App() {
   const [isQuickTestLoading, setIsQuickTestLoading] = useState(false);
   const [preloadedExam, setPreloadedExam] = useState<Exam | null>(null);
   const personaMenuRef = useRef<HTMLDivElement>(null);
+  const [showNotificationMenu, setShowNotificationMenu] = useState(false);
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
 
   // Close persona dropdown when clicking anywhere outside
   useEffect(() => {
@@ -174,6 +176,22 @@ export default function App() {
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [showPersonaMenu]);
+
+  // Close notification dropdown when clicking anywhere outside
+  useEffect(() => {
+    if (!showNotificationMenu) return;
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (notificationMenuRef.current && !notificationMenuRef.current.contains(event.target as Node)) {
+        setShowNotificationMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showNotificationMenu]);
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
@@ -267,18 +285,18 @@ export default function App() {
         if (isAdminSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
+          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else if (isTeacherSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
+          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else if (isStudentSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
+          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else if (isParentSession) {
           const perms = await loadParentAndChildren();
-          if (perms.length > 0 && location.pathname === '/') navigate(perms[0].pageRoute);
+          if (perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else {
           clearTokens();
           setAuthRole(null);
@@ -741,10 +759,63 @@ export default function App() {
                   </span>
                 </div>
 
-                {/* Notification Bell */}
-                <button className="relative p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors">
-                  <Bell className="w-5 h-5" />
-                </button>
+                {/* Notification Bell & Dropdown — only active when children exist */}
+                {(parentAccount?.children?.length ?? 0) > 0 ? (
+                  <div className="relative" ref={notificationMenuRef}>
+                    <button 
+                      onClick={() => setShowNotificationMenu(!showNotificationMenu)}
+                      className="relative p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors"
+                    >
+                      <Bell className="w-5 h-5" />
+                      <span className="absolute top-1.5 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse border-2 border-white"></span>
+                    </button>
+
+                    {showNotificationMenu && (
+                      <div className="absolute right-0 mt-2 w-[340px] bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-stone-200/50 p-5 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                        <div className="flex items-start gap-4 mb-1">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 flex items-center justify-center text-white shadow-[0_8px_16px_-6px_rgba(245,158,11,0.5)] shrink-0">
+                            <span className="text-2xl">📊</span>
+                          </div>
+                          <div className="flex flex-col pt-0.5">
+                            <span className="text-base font-black text-stone-900 tracking-tight">Want a quick feedback on {activeChild?.name?.split(' ')[0] || 'your child'}?</span>
+                            <span className="text-xs font-medium text-stone-500 mt-1 leading-relaxed">
+                              Take a short test now — get an instant <span className="text-yellow-600 font-semibold">performance report</span> instantly.
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 my-4 px-1">
+                          {['📖 Curriculum-based', '⚡ Instant results', '📊 AI analysis'].map(tag => (
+                            <span key={tag} className="text-[10px] font-semibold text-stone-500 bg-stone-100 rounded-full px-2 py-0.5 whitespace-nowrap">{tag}</span>
+                          ))}
+                        </div>
+
+                        <button 
+                          disabled={isQuickTestLoading}
+                          onClick={handleStartQuickTestClick}
+                          className="group w-full px-5 py-3 rounded-2xl bg-stone-900 text-yellow-400 text-sm font-bold hover:bg-stone-800 transition-all hover:shadow-[0_8px_20px_-6px_rgba(28,25,23,0.5)] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 relative overflow-hidden"
+                        >
+                          <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+                          {isQuickTestLoading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Loading Test...</span>
+                            </>
+                          ) : (
+                            <>
+                              Start Quick Test <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* No children — plain inactive bell */
+                  <button className="p-2 rounded-full text-stone-400 cursor-default" disabled>
+                    <Bell className="w-5 h-5" />
+                  </button>
+                )}
 
                 <div className="relative" ref={personaMenuRef}>
                   <button
@@ -812,19 +883,6 @@ export default function App() {
                         })}
 
                         <div className="my-1 border-t border-stone-100" />
-                        
-                        <button
-                          onClick={() => {
-                            setShowPersonaMenu(false);
-                            setShowAddChildModal(true);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span>Add Child</span>
-                        </button>
-
-                        <div className="my-1 border-t border-stone-100" />
 
                         <button
                           onClick={handleLogout}
@@ -843,46 +901,6 @@ export default function App() {
             {/* Scrollable Main Content Frame (High Density Theme) */}
             <div className="flex-1 overflow-y-auto bg-stone-50 p-4 sm:p-6 lg:p-8">
               
-              {/* Child Registration Success Widget - persistently visible on dashboard whenever parent has registered student(s) */}
-              {activeTab === 'dashboard' && (parentAccount?.children?.length ?? 0) > 0 && (
-                <div className="flex justify-center mb-8 relative z-10 animate-in zoom-in duration-500">
-                  <div className="relative group">
-                    {/* Glowing Aura */}
-                    <div className="absolute -inset-2 bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-[pulse_2s_ease-in-out_infinite]"></div>
-                    
-                    {/* The Pill / Circular Element */}
-                    <div className="relative px-6 py-3 bg-white/95 backdrop-blur-xl ring-1 ring-white/50 rounded-full flex items-center gap-4 sm:gap-5 shadow-2xl">
-                      <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-yellow-400 to-amber-500 flex items-center justify-center text-white shadow-inner shrink-0 animate-bounce">
-                        <span className="text-xl">🎉</span>
-                      </div>
-                      
-                      <div className="flex flex-col pr-4 sm:pr-5 border-r border-stone-200">
-                        <span className="text-sm font-extrabold text-stone-900">Child Added Successfully!</span>
-                        <span className="text-xs font-semibold text-stone-500 mt-0.5">
-                          You now have <span className="text-yellow-600 font-bold">{parentAccount?.children?.length || 1}</span> active profile(s)
-                        </span>
-                      </div>
-                      
-                      <button 
-                        disabled={isQuickTestLoading}
-                        onClick={handleStartQuickTestClick}
-                        className="px-5 py-2 rounded-full bg-stone-900 text-yellow-400 text-xs font-bold hover:bg-stone-800 transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-60"
-                      >
-                        {isQuickTestLoading ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            <span>Loading Test...</span>
-                          </>
-                        ) : (
-                          <>
-                            Start Quick Test <ArrowRight className="w-3.5 h-3.5" />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {activeSubmissionReport ? (
                 <DiagnosticReport
