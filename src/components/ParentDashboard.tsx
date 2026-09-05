@@ -46,7 +46,6 @@ interface ParentDashboardProps {
   onChildSelect: (childId: string) => void;
   onLaunchExamForChild: (childId: string) => void;
   onOpenAddChildModal: () => void;
-  onOpenUpgradeModal: () => void;
   examHistory: ExamSubmission[];
   onViewSubmissionReport: (submission: ExamSubmission) => void;
   onUpdateChild: (updatedChild: ChildAccount) => void;
@@ -65,7 +64,6 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   onChildSelect,
   onLaunchExamForChild,
   onOpenAddChildModal,
-  onOpenUpgradeModal,
   examHistory,
   onViewSubmissionReport,
   onUpdateChild,

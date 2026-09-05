@@ -11,74 +11,13 @@ import {
   SharedDossier 
 } from '../types';
 
-export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
-  {
-    id: 'free',
-    name: 'Foundation Free',
-    priceMonthly: 0,
-    priceYearly: 0,
-    currency: 'USD',
-    description: 'Perfect for daily revision and steady concept checking across school subjects.',
-    features: [
-      '1 exam (10 marks) per day per child',
-      'All 8 Boards (CBSE, ICSE, ISC, Cambridge, NCERT, NEET, IIT)',
-      'Basic answer key & score breakdown',
-      'Up to 2 child sub-accounts',
-      'Community knowledge base access'
-    ],
-    dailyExamLimit: 1,
-    maxChildren: 2
-  },
-  {
-    id: 'scholar_pro',
-    name: 'Scholar Pro',
-    priceMonthly: 9,
-    priceYearly: 89,
-    currency: 'USD',
-    badge: 'Most Popular for School Students',
-    isPopular: true,
-    description: 'Comprehensive adaptive AI-RAG learning with evolutionary topic mastery tracking.',
-    features: [
-      'Unlimited 10-mark diagnostic exams daily',
-      'Full AI-RAG Misconception & Error Classification',
-      'Curated Official Syllabus Reference Links & Video Guides',
-      'Evolutionary Subject K-Graph Mastery Tracker',
-      'Up to 5 child sub-accounts with separate PINs',
-      'Detailed Parent Performance Analytical Reports',
-      'Downloadable & Printable PDF Diagnostic Dossiers'
-    ],
-    dailyExamLimit: 'unlimited',
-    maxChildren: 5
-  },
-  {
-    id: 'genius_competitive',
-    name: 'Genius Competitive (NEET / IIT / Cambridge)',
-    priceMonthly: 19,
-    priceYearly: 189,
-    currency: 'USD',
-    badge: 'For Olympiad, NEET & JEE Aspirants',
-    description: 'Deep analytical testing engine with high-order thinking (HOTS) and Olympiad difficulty.',
-    features: [
-      'Everything in Scholar Pro + Unlimited Children',
-      'High-Order Thinking (HOTS) & Olympiad Difficulty Drills',
-      'Dedicated NEET NTA & IIT JEE Advanced Question Archetypes',
-      'Custom Chapter Runbook & Blueprint Focus Mode',
-      'Negative marking & speed velocity analytics',
-      'Priority Server-Side Gemini 3.7 Flash Reasoning',
-      '1-on-1 Parent Consultation Summary Export'
-    ],
-    dailyExamLimit: 'unlimited',
-    maxChildren: 'unlimited'
-  }
-];
+export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [];
 
 export const INITIAL_PARENT: ParentAccount = {
   id: 'parent-001',
   name: 'Dr. Rajesh & Sunita Sharma',
   email: 'parent.sharma@example.com',
   role: 'parent',
-  subscriptionTier: 'free',
-  subscriptionExpiry: '2027-12-31',
   createdAt: '2026-06-10',
   children: [
     {

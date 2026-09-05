@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   ParentAccount,
   ChildAccount,
-  SubscriptionTier,
   ExamSubmission,
   AppPersona,
   LearningPathNode,
@@ -62,7 +61,6 @@ import { DiagnosticReport } from './components/DiagnosticReport';
 import { ParentDashboard } from './components/ParentDashboard';
 import { ChildrenPage } from './components/ChildrenPage';
 import { ReportsPage } from './components/ReportsPage';
-import { SubscriptionPlans } from './components/SubscriptionPlans';
 import { SuperAdminPanel } from './components/SuperAdminPanel';
 import { BlogSection } from './components/BlogSection';
 import { AboutSection } from './components/AboutSection';
@@ -153,7 +151,6 @@ export default function App() {
 
   // Modals & UI States
   const [showAddChildModal, setShowAddChildModal] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
   const [showQuickTestChildModal, setShowQuickTestChildModal] = useState(false);
   const [isQuickTestLoading, setIsQuickTestLoading] = useState(false);
@@ -222,8 +219,6 @@ export default function App() {
   const isParentSession = normalizedRole === 'PARENT';
   const activeChild = parentAccount?.children.find((c) => c.id === activeChildId) || parentAccount?.children[0];
   const isParentActive = activePersona === 'parent';
-  const isFreePlan = parentAccount?.subscriptionTier === 'free';
-  const dailyQuotaUsed = activeChild ? activeChild.dailyExamsTakenToday : 0;
   const totalFamilyXP = parentAccount?.children.reduce((acc, c) => acc + (c.xp || 0), 0) || 0;
   const totalChildrenCount = parentAccount?.children.length || 0;
 
@@ -239,8 +234,6 @@ export default function App() {
       name: profile.name,
       email: profile.email,
       role: 'parent',
-      subscriptionTier: profile.subscriptionTier,
-      subscriptionExpiry: profile.subscriptionExpiry,
       children: enrichedChildren,
       createdAt: profile.createdAt,
     });
@@ -422,22 +415,6 @@ export default function App() {
     setActiveTab('arena');
   };
 
-  // Subscription Upgrade
-  const handleUpgradeTier = async (tier: SubscriptionTier) => {
-    await ApiServices.upgradeSubscription({ tier });
-    setParentAccount((prev) => (prev ? { ...prev, subscriptionTier: tier } : prev));
-    setShowUpgradeModal(false);
-  };
-
-  // Daily quota reset (admin/parent action)
-  const handleResetDailyQuota = async (childId: string) => {
-    await ApiServices.resetQuota(childId);
-    setParentAccount((prev) =>
-      prev
-        ? { ...prev, children: prev.children.map((c) => (c.id === childId ? { ...c, dailyExamsTakenToday: 0 } : c)) }
-        : prev
-    );
-  };
 
   // Add child
   const handleAddChild = async (
@@ -638,11 +615,9 @@ export default function App() {
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <SuperAdminPanel
             parentAccount={{
-              id: '', name: 'Admin', email: '', role: 'parent', subscriptionTier: 'free',
+              id: '', name: 'Admin', email: '', role: 'parent',
               children: [], createdAt: '',
             }}
-            onUpdateParentTier={() => { }}
-            onResetChildQuota={handleResetDailyQuota}
           />
         </div>
         {/* Floating AI Chat Widget */}
@@ -967,7 +942,6 @@ export default function App() {
                       setActiveTab('arena');
                     }}
                     onOpenAddChildModal={() => setShowAddChildModal(true)}
-                    onOpenUpgradeModal={() => setShowUpgradeModal(true)}
                     examHistory={examHistory}
                     onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
                     onUpdateChild={handleUpdateChild}
@@ -999,8 +973,6 @@ export default function App() {
                       activePersona={activePersona}
                       onChildSelect={(cId) => setActiveChildId(cId)}
                       onExamComplete={handleExamComplete}
-                      onOpenUpgradeModal={() => setShowUpgradeModal(true)}
-                      onResetDailyQuota={handleResetDailyQuota}
                       initialExam={preloadedExam}
                       onClearInitialExam={() => setPreloadedExam(null)}
                     />
@@ -1011,8 +983,6 @@ export default function App() {
                       activePersona={activePersona}
                       onChildSelect={(cId) => setActiveChildId(cId)}
                       onExamComplete={handleExamComplete}
-                      onOpenUpgradeModal={() => setShowUpgradeModal(true)}
-                      onResetDailyQuota={handleResetDailyQuota}
                       initialExam={preloadedExam}
                       onClearInitialExam={() => setPreloadedExam(null)}
                     />
@@ -1038,7 +1008,7 @@ export default function App() {
 
                 {activeTab === 'ptc' && activeChild && (
                   <ParentTeacherCommunication
-                    parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
+                    parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', children: [] }}
                     activeChild={activeChild}
                     recentSubmissions={examHistory}
                     onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
@@ -1056,18 +1026,9 @@ export default function App() {
                   />
                 )}
 
-                {activeTab === 'pricing' && (
-                  <SubscriptionPlans
-                    parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
-                    onUpgradeTier={handleUpgradeTier}
-                  />
-                )}
-
                 {activeTab === 'admin' && (
                   <SuperAdminPanel
-                    parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', subscriptionTier: 'free', children: [] }}
-                    onUpdateParentTier={handleUpgradeTier}
-                    onResetChildQuota={handleResetDailyQuota}
+                    parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', children: [] }}
                   />
                 )}
 
@@ -1096,27 +1057,6 @@ export default function App() {
         parentEmail={currentParentAccount?.email}
       />
 
-      {/* Upgrade Subscription Modal */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-stone-200 my-8 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-stone-100">
-              <h2 className="text-base font-bold text-stone-900">Upgrade Subscription Plan</h2>
-              <button
-                onClick={() => setShowUpgradeModal(false)}
-                className="px-2.5 py-1 rounded-lg border border-stone-200 text-xs font-semibold text-stone-500 hover:text-stone-800"
-              >
-                ✕ Close
-              </button>
-            </div>
-            <SubscriptionPlans
-              parentAccount={currentParentAccount}
-              onUpgradeTier={handleUpgradeTier}
-              onClose={() => setShowUpgradeModal(false)}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Quick Test Child Selector Modal for Multi-Child Parents */}
       {showQuickTestChildModal && parentAccount && (

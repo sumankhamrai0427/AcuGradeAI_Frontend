@@ -24,7 +24,6 @@ interface HeaderProps {
   activeChildId: string | null;
   setActiveChildId: (id: string | null) => void;
   onOpenAddChildModal: () => void;
-  onOpenUpgradeModal: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,7 +33,6 @@ export const Header: React.FC<HeaderProps> = ({
   activeChildId,
   setActiveChildId,
   onOpenAddChildModal,
-  onOpenUpgradeModal,
 }) => {
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
   const personaMenuRef = useRef<HTMLDivElement>(null);
@@ -60,8 +58,6 @@ export const Header: React.FC<HeaderProps> = ({
   const activeChild = parentAccount.children.find((c) => c.id === activeChildId);
   const isParentActive = activeChildId === null;
 
-  const isFreePlan = parentAccount.subscriptionTier === 'free';
-  const dailyLimit = isFreePlan ? 1 : 'Unlimited';
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-xs">
@@ -177,21 +173,6 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Right Action & Persona Switcher */}
           <div className="flex items-center gap-3">
-            {/* Subscription Tier Pill */}
-            <div 
-              onClick={onOpenUpgradeModal}
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border shadow-2xs hover:shadow-xs"
-              style={{
-                backgroundColor: isFreePlan ? '#F8FAFC' : '#EEF2FF',
-                borderColor: isFreePlan ? '#E2E8F0' : '#C7D2FE',
-                color: isFreePlan ? '#475569' : '#4338CA'
-              }}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>
-                {parentAccount.subscriptionTier === 'free' ? 'Free Tier (1 exam/day)' : parentAccount.subscriptionTier === 'scholar_pro' ? 'Scholar Pro' : 'Genius Tier'}
-              </span>
-            </div>
 
             {/* Persona Switcher Dropdown */}
             <div className="relative" ref={personaMenuRef}>

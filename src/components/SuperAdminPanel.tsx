@@ -5,7 +5,6 @@ import {
   ClassGrade, 
   Subject, 
   ParentAccount, 
-  SubscriptionTier,
   ReferenceLink
 } from '../types';
 import { 
@@ -30,8 +29,6 @@ import ApiServices from '../services/ApiServices';
 
 interface SuperAdminPanelProps {
   parentAccount: ParentAccount;
-  onUpdateParentTier: (tier: SubscriptionTier) => void;
-  onResetChildQuota: (childId: string) => void;
 }
 
 const BOARDS: Board[] = ['CBSE', 'ICSE', 'ISC', 'UK-Cambridge', 'NCERT', 'NEET', 'IIT'];
@@ -46,10 +43,8 @@ const SUBJECTS: Subject[] = [
 
 export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({
   parentAccount,
-  onUpdateParentTier,
-  onResetChildQuota,
 }) => {
-  const [activeTab, setActiveTab] = useState<'runbooks' | 'subscriptions' | 'analytics'>('runbooks');
+  const [activeTab, setActiveTab] = useState<'runbooks' | 'analytics'>('runbooks');
   const [runbooks, setRunbooks] = useState<RunbookKGraphNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterBoard, setFilterBoard] = useState<string>('all');
@@ -210,15 +205,6 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({
             RAG K-Graph Runbooks ({runbooks.length})
           </button>
 
-          <button
-            onClick={() => setActiveTab('subscriptions')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'subscriptions' ? 'bg-white text-stone-950' : 'text-stone-400 hover:text-white hover:bg-stone-800'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            Parent Subscriptions & Quotas
-          </button>
 
           <button
             onClick={() => setActiveTab('analytics')}
@@ -362,88 +348,7 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({
         </div>
       )}
 
-      {/* TAB 2: PARENT SUBSCRIPTIONS & QUOTAS */}
-      {activeTab === 'subscriptions' && (
-        <div className="bg-white rounded-xl border border-stone-200 p-4 sm:p-6 shadow-xs">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
-            <div>
-              <h2 className="text-lg font-bold text-stone-900">Registered Parent Accounts & Tier Controls</h2>
-              <p className="text-xs text-stone-500">Manage plan overrides, sub-account capacities, and daily quota limits</p>
-            </div>
-          </div>
 
-          <div className="divide-y divide-stone-100">
-            <div className="py-5 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-base text-stone-900">{parentAccount.name}</h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-50 text-yellow-700 border border-yellow-300 uppercase">
-                    {parentAccount.subscriptionTier}
-                  </span>
-                </div>
-                <p className="text-xs text-stone-500 mt-0.5">{parentAccount.email} • Registered: {parentAccount.createdAt}</p>
-
-                <div className="flex items-center gap-4 mt-3 text-xs text-stone-600">
-                  <span>Children Count: <strong className="text-stone-800">{parentAccount.children.length}</strong></span>
-                  <span>•</span>
-                  <span>Daily Quota Policy: <strong className="text-stone-800">{parentAccount.subscriptionTier === 'free' ? '1 exam/day per child' : 'Unlimited'}</strong></span>
-                </div>
-              </div>
-
-              {/* Action Controls */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="text-xs font-semibold text-stone-700 mr-2">Override Tier:</div>
-                {(['free', 'scholar_pro', 'genius_competitive'] as SubscriptionTier[]).map((tier) => (
-                  <button
-                    key={tier}
-                    onClick={() => onUpdateParentTier(tier)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      parentAccount.subscriptionTier === tier
-                        ? 'bg-stone-900 text-white shadow-xs'
-                        : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-                    }`}
-                  >
-                    {tier === 'free' ? 'Free (1/day)' : tier === 'scholar_pro' ? 'Scholar Pro' : 'Genius Tier'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Child-level Quotas */}
-          <div className="mt-6 pt-6 border-t border-stone-100">
-            <h3 className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-4">
-              Sub-Accounts Daily Quotas & PIN Status
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {parentAccount.children.map((child) => (
-                <div key={child.id} className="p-4 rounded-2xl bg-stone-50 border border-stone-200 text-xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-stone-900 flex items-center gap-1.5">
-                      <span>{child.avatar}</span>
-                      <span>{child.name}</span>
-                    </span>
-                    <span className="font-mono text-stone-500 font-semibold">PIN: {child.pin}</span>
-                  </div>
-                  <p className="text-stone-500 mb-3">{child.classGrade} • {child.targetBoard}</p>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-stone-200">
-                    <span className="text-[11px] text-stone-600">
-                      Today: <strong className="text-stone-900">{child.dailyExamsTakenToday}</strong> taken
-                    </span>
-                    <button
-                      onClick={() => onResetChildQuota(child.id)}
-                      className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 hover:bg-yellow-50 hover:text-yellow-600 text-[11px] font-semibold text-stone-700 shadow-2xs"
-                    >
-                      Reset Daily Quota
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* TAB 3: PLATFORM TELEMETRY & ANALYTICS */}
       {activeTab === 'analytics' && (

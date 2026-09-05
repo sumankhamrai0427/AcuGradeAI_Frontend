@@ -229,15 +229,10 @@ class ApiServices {
   schedulePTM(body: any) { return this.post(POST_APIS.schedulePTM, body); }
   listPTMSchedules() { return this.get(GET_APIS.ptmSchedules); }
 
-  // ── Subscriptions ─────────────────────────
-  listPlans() { return this.get(GET_APIS.subscriptionPlans); }
-  upgradeSubscription(body: any) { return this.post(POST_APIS.upgradeSubscription, body); }
-
   // ── Admin ─────────────────────────────────
   adminLogin(body: any) { return apiClient.post(POST_APIS.adminLogin, body); }
   adminResetPassword(body: any) { return this.post(POST_APIS.adminResetPassword, body); }
   adminStatistics() { return this.get(GET_APIS.adminStatistics); }
-  resetQuota(studentId: string | number) { return this.post(POST_APIS.resetQuota(studentId)); }
 
   // ── Health ────────────────────────────────
   checkHealth() { return this.get(GET_APIS.health); }

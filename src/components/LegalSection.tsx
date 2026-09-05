@@ -40,14 +40,14 @@ export const LegalSection: React.FC = () => {
           </p>
         </section>
 
-        {/* Subscription & Fair Use */}
+        {/* Platform Access & Fair Use */}
         <section className="pt-6 border-t border-stone-100">
           <div className="flex items-center gap-2 mb-2">
             <FileText className="w-4 h-4 text-yellow-600" />
-            <h2 className="text-base font-bold text-stone-900">3. Subscription Tiers & Fair Use</h2>
+            <h2 className="text-base font-bold text-stone-900">3. Platform Access & Fair Use</h2>
           </div>
           <p>
-            The Free Tier provides 1 full 10-mark diagnostic exam per day per child sub-account. Scholar Pro and Genius tiers offer unlimited tests subject to standard fair use API constraints. Parents may cancel or modify recurring subscriptions at any time with immediate effect.
+            SahajPath provides open diagnostic assessments and adaptive learning paths for students subject to standard fair use guidelines. Parents and educators may utilize all interactive features and analytical tools freely for non-commercial educational enrichment.
           </p>
         </section>
       </div>

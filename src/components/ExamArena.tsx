@@ -33,9 +33,6 @@ interface ExamArenaProps {
   activeChildId: string | null;
   activePersona?: 'parent' | 'child';
   onChildSelect: (childId: string) => void;
-  onExamComplete: (submission: ExamSubmission) => void;
-  onOpenUpgradeModal: () => void;
-  onResetDailyQuota: (childId: string) => void;
   presetSubject?: Subject;
   presetDifficulty?: ExamDifficulty;
   initialExam?: Exam | null;
@@ -58,8 +55,6 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
   activePersona = 'parent',
   onChildSelect,
   onExamComplete,
-  onOpenUpgradeModal,
-  onResetDailyQuota,
   initialExam,
   onClearInitialExam,
 }) => {
@@ -128,15 +123,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
     return () => clearInterval(timer);
   }, [activeExam, timeRemainingSeconds, showConfirmSubmit, isSubmitting]);
 
-  const isFreeTier = parentAccount.subscriptionTier === 'free';
-  const hasReachedDailyLimit = isFreeTier && activeChild?.dailyExamsTakenToday >= 1;
-
   const handleStartExam = async () => {
-    if (hasReachedDailyLimit) {
-      onOpenUpgradeModal();
-      return;
-    }
-
     setIsGenerating(true);
     setGenerationStep('Retrieving Board Syllabus & RAG Runbook Nodes...');
 
@@ -534,34 +521,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-yellow-500/20 via-transparent to-transparent opacity-70 pointer-events-none" />
       </div>
 
-      {/* Free Plan Daily Quota Notice */}
-      {hasReachedDailyLimit && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-bold text-amber-900">Daily Exam Quota Reached for Free Tier</h4>
-              <p className="text-xs text-amber-700 mt-0.5">
-                {activeChild?.name} has completed 1/1 free diagnostic exam today. Upgrade to <strong className="font-semibold">Scholar Pro</strong> for unlimited daily tests or reset demo quota.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onResetDailyQuota(activeChild?.id)}
-              className="px-3 py-1.5 rounded-xl bg-white border border-amber-300 text-xs font-semibold text-amber-900 hover:bg-amber-100 transition-colors"
-            >
-              Reset Demo Quota (Testing)
-            </button>
-            <button
-              onClick={onOpenUpgradeModal}
-              className="px-4 py-1.5 rounded-xl bg-yellow-400 text-stone-900 text-xs font-semibold hover:bg-yellow-700 shadow-xs transition-colors"
-            >
-              Upgrade to Unlimited
-            </button>
-          </div>
-        </div>
-      )}
+
 
       {/* Exam Configuration Form */}
       <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 sm:p-6">

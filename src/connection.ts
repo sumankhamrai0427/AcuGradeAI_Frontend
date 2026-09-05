@@ -32,8 +32,6 @@ export const GET_APIS = {
   publicDossier: (token: string) => `${API_V1}/dossiers/public/${encodeURIComponent(token)}`,
   ptmSchedules: `${API_V1}/ptm/schedules`,
 
-  // Subscriptions
-  subscriptionPlans: `${API_V1}/subscriptions/plans`,
 
   // Admin & Health
   adminStatistics: `${API_V1}/admin/statistics`,
@@ -72,13 +70,10 @@ export const POST_APIS = {
   createDossier: `${API_V1}/dossiers`,
   schedulePTM: `${API_V1}/ptm/schedule`,
 
-  // Subscriptions
-  upgradeSubscription: `${API_V1}/subscriptions/upgrade`,
 
   // Admin
   adminLogin: `${API_V1}/admin/login`,
   adminResetPassword: `${API_V1}/admin/reset-password`,
-  resetQuota: (id: string | number) => `${API_V1}/admin/children/${id}/reset-quota`,
 };
 
 export const PUT_APIS = {

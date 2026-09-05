@@ -30,9 +30,6 @@ interface KidsExamArenaProps {
   activeChildId: string | null;
   activePersona?: 'parent' | 'child';
   onChildSelect: (childId: string) => void;
-  onExamComplete: (submission: ExamSubmission) => void;
-  onOpenUpgradeModal: () => void;
-  onResetDailyQuota: (childId: string) => void;
   presetSubject?: Subject;
   presetDifficulty?: ExamDifficulty;
   initialExam?: Exam | null;
@@ -48,8 +45,6 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
   activePersona = 'parent',
   onChildSelect,
   onExamComplete,
-  onOpenUpgradeModal,
-  onResetDailyQuota,
   initialExam,
   onClearInitialExam,
 }) => {
@@ -118,8 +113,6 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
     return () => clearInterval(timer);
   }, [activeExam, timeRemainingSeconds, showConfirmSubmit, isSubmitting]);
 
-  const isFreeTier = parentAccount.subscriptionTier === 'free';
-  const hasReachedDailyLimit = isFreeTier && activeChild?.dailyExamsTakenToday >= 1;
 
   const handleStartExam = async () => {
     if (!activeChild) return;
@@ -548,25 +541,7 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
         <div className="absolute top-8 right-12 text-2xl opacity-20 animate-pulse pointer-events-none">🚀</div>
       </div>
 
-      {hasReachedDailyLimit && (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-          <div className="flex items-start gap-3">
-            <div className="text-2xl">😴</div>
-            <div>
-              <h4 className="text-sm font-bold text-rose-900">Time for a break!</h4>
-              <p className="text-xs text-rose-700">
-                {activeChild?.name} has played enough today. Tell Mom or Dad to unlock more games!
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onOpenUpgradeModal}
-            className="px-4 py-2 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 shadow-xs transition-transform"
-          >
-            Get More Tests!
-          </button>
-        </div>
-      )}
+
 
       <div className="bg-white rounded-3xl border border-stone-200 shadow-sm p-6 sm:p-8 text-center space-y-4">
         <div>

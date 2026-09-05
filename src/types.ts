@@ -278,7 +278,7 @@ export interface ParentAccount {
   name: string;
   email: string;
   role: 'parent';
-  subscriptionTier: SubscriptionTier;
+  subscriptionTier?: string;
   subscriptionExpiry?: string;
   children: ChildAccount[];
   createdAt: string;
