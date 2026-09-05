@@ -407,8 +407,8 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
           </div>
 
           {/* Right Palette (Col 4) */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-4 sticky top-24">
+          <div className="lg:col-span-1 self-start sticky top-4">
+            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-4">
               <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3 flex items-center justify-between">
                 <span>Question Palette</span>
                 <span className="text-[11px] text-yellow-600 font-semibold">{answeredCount}/10</span>

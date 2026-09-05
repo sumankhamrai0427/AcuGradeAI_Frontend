@@ -124,7 +124,7 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
   const handleStartExam = async () => {
     if (!activeChild) return;
     setIsGenerating(true);
-    setGenerationStep('Gathering Fun Adventure Questions from Database... 🎈');
+    setGenerationStep('Loading Your Fun Game... 🎮');
 
     try {
       const res: any = await ApiServices.generateQuickTest(activeChild.id, 5);
@@ -435,7 +435,7 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
           </div>
 
           {/* Right Palette (Col 4) */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 self-start sticky top-4">
             <div className="bg-white rounded-2xl border-2 border-sky-200 shadow-md p-3.5 sm:p-4">
               <h3 className="text-xs font-black text-sky-900 uppercase tracking-wider mb-2.5 flex items-center justify-between">
                 <span>Map 🗺️</span>
@@ -587,7 +587,7 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
             {isGenerating ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>{generationStep || 'Building Magic...'}</span>
+                <span>{generationStep || 'Loading Your Fun Game... 🎮'}</span>
               </>
             ) : (
               <>
