@@ -20,7 +20,9 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenAuth }) => {
             <GraduationCap className="w-5 h-5" />
           </div>
           <div>
-            <div className="font-black text-lg tracking-tight text-stone-900">SahajPath</div>
+            <div className="font-black text-lg tracking-tight text-stone-900">
+              Sahaj<span className="text-yellow-500">Path</span>
+            </div>
             <div className="text-[10px] text-stone-500 font-semibold hidden sm:block">Smarter Learning Platform</div>
           </div>
         </Link>

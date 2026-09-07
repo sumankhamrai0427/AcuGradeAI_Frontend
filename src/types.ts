@@ -1,4 +1,4 @@
-export type Board = 'CBSE' | 'ICSE' | 'ISC' | 'UK-Cambridge' | 'NCERT' | 'NEET' | 'IIT';
+export type Board = 'CBSE' | 'ICSE' | 'ISC' | 'WBBSE' | 'WBCHSE' | 'UK-Cambridge' | 'NCERT' | 'NEET' | 'IIT' | 'WB';
 
 export type ClassGrade = 
   | 'Class 1'
@@ -13,6 +13,37 @@ export type ClassGrade =
   | 'Class 10' 
   | 'Class 11' 
   | 'Class 12';
+
+export const BOARD_CLASSES_MAP: Record<string, ClassGrade[]> = {
+  CBSE: [
+    'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6',
+    'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'
+  ],
+  ICSE: [
+    'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6',
+    'Class 7', 'Class 8', 'Class 9', 'Class 10'
+  ],
+  ISC: ['Class 11', 'Class 12'],
+  WBBSE: [
+    'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6',
+    'Class 7', 'Class 8', 'Class 9', 'Class 10'
+  ],
+  WBCHSE: ['Class 11', 'Class 12'],
+  WB: [
+    'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6',
+    'Class 7', 'Class 8', 'Class 9', 'Class 10'
+  ],
+  'UK-Cambridge': [
+    'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6',
+    'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'
+  ],
+  NCERT: [
+    'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6',
+    'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'
+  ],
+  NEET: ['Class 11', 'Class 12'],
+  IIT: ['Class 11', 'Class 12'],
+};
 
 export type Subject = 
   | 'Mathematics' 
@@ -133,6 +164,7 @@ export interface ChildAccount {
   id: string;
   parentId: string;
   name: string;
+  username?: string;
   avatar: string;
   classGrade: ClassGrade;
   targetBoard: Board;
@@ -146,6 +178,7 @@ export interface ChildAccount {
   topicMastery: Record<string, number>; // topic -> percentage 0..100
   streakDays: number;
   createdAt: string;
+  recentExams?: ExamSubmission[];
   // Gamification fields
   xp?: number;
   level?: number;
@@ -276,6 +309,7 @@ export type SubscriptionTier = 'free' | 'scholar_pro' | 'genius_competitive';
 export interface ParentAccount {
   id: string;
   name: string;
+  username?: string;
   email: string;
   role: 'parent';
   subscriptionTier?: string;

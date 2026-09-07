@@ -28,7 +28,8 @@ import {
   ChevronRight,
   Zap,
   Lock,
-  BarChart3
+  BarChart3,
+  X
 } from 'lucide-react';
 import {
   AreaChart,
@@ -72,26 +73,68 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   const [selectedChildForEdit, setSelectedChildForEdit] = useState<ChildAccount | null>(null);
   const [editFormData, setEditFormData] = useState<Partial<ChildAccount>>({});
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('day');
+  const [activeModalMetric, setActiveModalMetric] = useState<'children' | 'progress' | 'readiness' | 'streak' | null>(null);
 
   // Active child resolution
   const activeChild = useMemo(() => {
     return parentAccount.children.find((c) => c.id === activeChildId) || parentAccount.children[0];
   }, [parentAccount.children, activeChildId]);
 
-  // Summary Metrics (100% Dynamic from child data & exam history)
+  // Summary Metrics: Accurate Average calculation across all registered children
+  const getChildMetrics = (child: ChildAccount) => {
+    const childExams = (child.recentExams && child.recentExams.length > 0)
+      ? child.recentExams
+      : examHistory.filter(e => String(e.studentId) === String(child.id));
+    
+    const isKids = ['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(c => (child.classGrade || '').includes(c));
+    const defaultTotal = isKids ? 5 : 15;
+
+    const childTotalObtained = childExams.reduce((acc, e) => acc + (e.marksObtained || 0), 0);
+    const childTotalPossible = childExams.reduce((acc, e) => acc + (e.totalMarks || defaultTotal), 0);
+    
+    const scorePct = childTotalPossible > 0
+      ? (childTotalObtained / childTotalPossible) * 100
+      : (child.averageScore > 10 ? child.averageScore : (child.averageScore * 10));
+
+    return {
+      scorePct: Math.round(scorePct),
+      readinessScore: Math.round(scorePct),
+      streak: child.streakDays || 0,
+      totalExams: childExams.length || child.totalExamsTaken || 0,
+      latestExam: childExams[0],
+      childExams
+    };
+  };
+
+  const childrenMetrics = useMemo(() => {
+    return parentAccount.children.map(child => ({
+      child,
+      ...getChildMetrics(child)
+    }));
+  }, [parentAccount.children, examHistory]);
+
   const totalChildren = parentAccount.children.length;
   const totalFamilyExams = examHistory.length;
+  const hasData = totalChildren > 0;
 
-  const totalMarksObtained = examHistory.reduce((acc, e) => acc + (e.marksObtained || 0), 0);
-  const totalMaxMarks = examHistory.reduce((acc, e) => acc + (e.totalMarks || 10), 0);
-  const familyAccuracyPct = totalMaxMarks > 0 ? (totalMarksObtained / totalMaxMarks) * 100 : 0;
+  // Exact average of progress across all registered children
+  const avgFamilyScoreVal = hasData
+    ? (childrenMetrics.reduce((sum, cm) => sum + cm.scorePct, 0) / totalChildren)
+    : 0;
+  const avgFamilyScore = hasData ? `${avgFamilyScoreVal.toFixed(1)}%` : 'N/A';
 
-  const hasData = totalChildren > 0 && totalFamilyExams > 0;
+  // Exact average of readiness across all registered children
+  const overallReadinessVal = hasData
+    ? Math.round(childrenMetrics.reduce((sum, cm) => sum + cm.readinessScore, 0) / totalChildren)
+    : 0;
+  const overallReadinessPct = hasData ? `${overallReadinessVal}%` : 'N/A';
 
-  const avgFamilyScore = hasData ? familyAccuracyPct.toFixed(1) + '%' : 'N/A';
-  const overallReadinessPct = hasData ? Math.min(100, Math.round(familyAccuracyPct)) + '%' : 'N/A';
-  const maxFamilyStreak = parentAccount.children.reduce((max, c) => Math.max(max, c.streakDays || 0), 0);
-  const learningStreakText = hasData ? (maxFamilyStreak > 0 ? `${maxFamilyStreak} Day${maxFamilyStreak > 1 ? 's' : ''}` : '0 Days') : 'N/A';
+  // Max Learning Streak across children
+  const maxFamilyStreak = hasData
+    ? childrenMetrics.reduce((max, cm) => Math.max(max, cm.streak), 0)
+    : 0;
+  const learningStreakText = hasData ? `${maxFamilyStreak} Day${maxFamilyStreak === 1 ? '' : 's'}` : 'N/A';
+  const familyAccuracyPct = avgFamilyScoreVal;
 
   // Real-Time Weekly Delta calculation
   const now = useMemo(() => new Date().getTime(), []);
@@ -111,9 +154,9 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
   const { deltaText, deltaIsPositive } = useMemo(() => {
     if (thisWeekExams.length > 0 && prevWeekExams.length > 0) {
-      const thisAvg = thisWeekExams.reduce((acc, e) => acc + e.marksObtained, 0) / thisWeekExams.length;
-      const prevAvg = prevWeekExams.reduce((acc, e) => acc + e.marksObtained, 0) / prevWeekExams.length;
-      const diff = Math.round((thisAvg - prevAvg) * 10);
+      const thisAvg = thisWeekExams.reduce((acc, e) => acc + (e.accuracyPercentage || ((e.marksObtained || 0) / (e.totalMarks || 15) * 100)), 0) / thisWeekExams.length;
+      const prevAvg = prevWeekExams.reduce((acc, e) => acc + (e.accuracyPercentage || ((e.marksObtained || 0) / (e.totalMarks || 15) * 100)), 0) / prevWeekExams.length;
+      const diff = Math.round(thisAvg - prevAvg);
       return {
         deltaText: `${diff >= 0 ? '↑ +' : '↓ '}${diff}% vs last week`,
         deltaIsPositive: diff >= 0
@@ -193,6 +236,18 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
     const WEEK_MS = 7 * 86400000;
     const MONTH_MS = 30 * 86400000;
 
+    const calcAveragePct = (matching: ExamSubmission[]) => {
+      if (matching.length === 0) return null;
+      const totalPct = matching.reduce((acc, e) => {
+        if (e.accuracyPercentage != null && e.accuracyPercentage > 0) {
+          return acc + Number(e.accuracyPercentage);
+        }
+        const total = e.totalMarks || (['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(c => (e.classGrade || '').includes(c)) ? 5 : 15);
+        return acc + ((e.marksObtained || 0) / total) * 100;
+      }, 0);
+      return Math.round(totalPct / matching.length);
+    };
+
     if (timeframe === 'day') {
       // Standard Academic Week Calendar: Monday to Sunday (Mon on left -> Sun on right)
       const nowObj = new Date(now);
@@ -213,10 +268,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
           const t = new Date(e.submittedAt).getTime();
           return t >= d.start && t < d.end;
         });
-        const pct = matching.length > 0
-          ? Math.round((matching.reduce((acc, e) => acc + (e.marksObtained || 0), 0) / matching.length) * 10)
-          : null;
-        return { label: d.label, pct, count: matching.length };
+        return { label: d.label, pct: calcAveragePct(matching), count: matching.length };
       });
     } else if (timeframe === 'week') {
       const currentWeekIndex = Math.max(0, Math.floor((now - genesisTimestamp) / WEEK_MS));
@@ -235,10 +287,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
           const t = new Date(e.submittedAt).getTime();
           return t >= w.start && t < w.end;
         });
-        const pct = matching.length > 0
-          ? Math.round((matching.reduce((acc, e) => acc + (e.marksObtained || 0), 0) / matching.length) * 10)
-          : null;
-        return { label: w.label, pct, count: matching.length };
+        return { label: w.label, pct: calcAveragePct(matching), count: matching.length };
       });
     } else {
       const currentMonthIndex = Math.max(0, Math.floor((now - genesisTimestamp) / MONTH_MS));
@@ -257,13 +306,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
           const t = new Date(e.submittedAt).getTime();
           return t >= m.start && t < m.end;
         });
-        const pct = matching.length > 0
-          ? Math.round((matching.reduce((acc, e) => acc + (e.marksObtained || 0), 0) / matching.length) * 10)
-          : null;
-        return { label: m.label, pct, count: matching.length };
+        return { label: m.label, pct: calcAveragePct(matching), count: matching.length };
       });
     }
-  }, [examHistory, timeframe, now, genesisTimestamp]);
+  }, [timeframe, examHistory, now, genesisTimestamp]);
 
   // Dynamic AI Observation Generator from Child topicMastery & Exam Analysis
   const activeTopicMastery = activeChild?.topicMastery || {};
@@ -366,14 +412,20 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
           <p className="text-2xl font-black text-stone-900 relative z-10">{totalChildren} <span className="text-sm font-semibold text-yellow-700">Active</span></p>
         </div>
 
-        {/* Card 2: Overall Progress (Emerald/Teal) */}
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-2xl border border-emerald-100 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+        {/* Card 2: Overall Progress (Emerald/Teal - Clickable) */}
+        <div
+          onClick={() => setActiveModalMetric('progress')}
+          className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-2xl border border-emerald-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md hover:border-emerald-400 hover:scale-[1.01] transition-all cursor-pointer"
+        >
           <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <div className="flex items-center gap-2 mb-2 relative z-10">
-            <div className="w-7 h-7 rounded-xl bg-white shadow-sm flex items-center justify-center">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+          <div className="flex items-center justify-between mb-2 relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-white shadow-xs flex items-center justify-center">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+              </div>
+              <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Progress</span>
             </div>
-            <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Progress</span>
+            <ChevronRight className="w-3.5 h-3.5 text-emerald-600/60 group-hover:translate-x-0.5 transition-transform" />
           </div>
           <div className="relative z-10">
             <p className="text-2xl font-black text-stone-900">{avgFamilyScore}</p>
@@ -381,14 +433,20 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
           </div>
         </div>
 
-        {/* Card 3: Exam Readiness (Blue/Indigo) */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+        {/* Card 3: Exam Readiness (Blue/Indigo - Clickable) */}
+        <div
+          onClick={() => setActiveModalMetric('readiness')}
+          className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md hover:border-blue-400 hover:scale-[1.01] transition-all cursor-pointer"
+        >
           <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <div className="flex items-center gap-2 mb-2 relative z-10">
-            <div className="w-7 h-7 rounded-xl bg-white shadow-sm flex items-center justify-center">
-              <Award className="w-3.5 h-3.5 text-blue-600" />
+          <div className="flex items-center justify-between mb-2 relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-white shadow-xs flex items-center justify-center">
+                <Award className="w-3.5 h-3.5 text-blue-600" />
+              </div>
+              <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">Readiness</span>
             </div>
-            <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">Readiness</span>
+            <ChevronRight className="w-3.5 h-3.5 text-blue-600/60 group-hover:translate-x-0.5 transition-transform" />
           </div>
           <div className="relative z-10">
             <p className="text-2xl font-black text-stone-900">{overallReadinessPct}</p>
@@ -548,7 +606,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
       </div>
 
       {/* 3. LEARNING PROGRESS */}
-      <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs mt-8 relative overflow-hidden group">
+      <div id="learning-progress-section" className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs mt-8 relative overflow-hidden group">
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/40 to-transparent pointer-events-none"></div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 relative z-10">
           <div>
@@ -640,7 +698,9 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                     </span>
                   </div>
                   <div className="flex flex-col items-end">
-                    <span className="text-sm font-bold text-stone-900">{sub.marksObtained}/10</span>
+                    <span className="text-sm font-bold text-stone-900">
+                      {sub.marksObtained}/{sub.totalMarks || (['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(c => (sub.classGrade || '').includes(c)) ? 5 : 15)}
+                    </span>
                     <span className="text-[10px] text-stone-400 font-medium">{new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                   </div>
                 </div>
@@ -774,6 +834,139 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* 4. STUDENT-WISE PROGRESS / READINESS MODAL */}
+      {activeModalMetric && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${
+                  activeModalMetric === 'progress' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {activeModalMetric === 'progress' ? <TrendingUp className="w-5 h-5" /> : <Award className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-stone-900">
+                    {activeModalMetric === 'progress' ? 'Student-Wise Overall Progress' : 'Student-Wise Exam Readiness'}
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    {activeModalMetric === 'progress'
+                      ? `Average progress across all children is ${avgFamilyScore}.`
+                      : `Average exam readiness across all children is ${overallReadinessPct}.`}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActiveModalMetric(null)}
+                className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body: Student List (Clicking student item directly navigates) */}
+            <div className="overflow-y-auto custom-scrollbar my-4 space-y-3 flex-1 pr-1">
+              {childrenMetrics.length === 0 ? (
+                <div className="p-8 text-center text-stone-500 text-xs font-medium">
+                  No children profiles found.
+                </div>
+              ) : (
+                childrenMetrics.map(({ child, scorePct, readinessScore, latestExam }) => {
+                  const isSelected = activeChildId === child.id;
+                  return (
+                    <div
+                      key={child.id}
+                      onClick={() => {
+                        onChildSelect(child.id);
+                        setActiveModalMetric(null);
+                        if (activeModalMetric === 'progress') {
+                          const el = document.getElementById('learning-progress-section');
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth' });
+                          } else {
+                            navigate('/children');
+                          }
+                        } else {
+                          navigate('/reports');
+                        }
+                      }}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer group hover:scale-[1.01] hover:shadow-md ${
+                        isSelected
+                          ? 'border-yellow-400 bg-yellow-50/40'
+                          : 'border-stone-200 bg-stone-50/70 hover:border-yellow-300 hover:bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3 mb-2.5">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-11 h-11 rounded-2xl bg-white border border-stone-200 flex items-center justify-center text-2xl shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                            {child.avatar || '👦'}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-sm text-stone-900 group-hover:text-yellow-700 transition-colors truncate">
+                                {child.name}
+                              </h4>
+                              {isSelected && (
+                                <span className="text-[9px] font-bold bg-yellow-400 text-stone-900 px-1.5 py-0.5 rounded-md">
+                                  ACTIVE
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-stone-500 font-medium">
+                              {child.classGrade} • {child.targetBoard}
+                            </p>
+                            <p className="text-[10px] text-stone-400 font-medium mt-0.5">
+                              Login Username: <strong className="text-stone-700">@{child.username || child.name.toLowerCase().replace(/\s+/g, '')}</strong>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Metric Value */}
+                        <div className="text-right shrink-0">
+                          {activeModalMetric === 'progress' ? (
+                            <div>
+                              <span className="text-lg font-black text-emerald-700">{scorePct}%</span>
+                              <p className="text-[9px] text-stone-400 font-semibold">Individual Score</p>
+                            </div>
+                          ) : (
+                            <div>
+                              <span className="text-lg font-black text-blue-700">{readinessScore}%</span>
+                              <p className="text-[9px] text-stone-400 font-semibold">Exam Ready</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Visual Bar */}
+                      <div className="space-y-1 mt-2">
+                        <div className="w-full h-2 bg-stone-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              activeModalMetric === 'progress' ? 'bg-emerald-500' : 'bg-blue-500'
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(5, scorePct))}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[10px] text-stone-500 font-medium">
+                          <span>Diagnostic Accuracy</span>
+                          <span>Latest Result: <strong>{latestExam ? `${latestExam.marksObtained}/${latestExam.totalMarks || (['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(c => (child.classGrade || '').includes(c)) ? 5 : 15)}` : (scorePct > 0 ? `${scorePct}%` : '—')}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+

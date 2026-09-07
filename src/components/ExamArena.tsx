@@ -49,6 +49,42 @@ const SUBJECTS: Subject[] = [
   'Science', 'Social Studies', 'English', 'Computer Science', 'Logical Reasoning'
 ];
 
+export const getExamBlueprint = (grade: string = 'Class 10') => {
+  const g = (grade || '').toLowerCase().trim();
+  if (['class 11', 'class 12', 'neet', 'iit'].some(c => g.includes(c))) {
+    return {
+      questionCount: 10,
+      totalMarks: 20,
+      durationMinutes: 25,
+      breakdown: 'Structured HOTS & Competitive Multi-Mark Problems',
+      badgeText: '10 Questions • 20 Marks • Competitive Drill',
+      titleLabel: '20-Mark Competitive Exam',
+      buttonText: 'Start 20-Mark Diagnostic Exam',
+    };
+  }
+  if (['class 9', 'class 10'].some(c => g.includes(c))) {
+    return {
+      questionCount: 10,
+      totalMarks: 15,
+      durationMinutes: 20,
+      breakdown: '5 Questions (1-Mark MCQ) + 5 Questions (2-Mark SAQ)',
+      badgeText: '10 Questions • 15 Marks • Board Readiness',
+      titleLabel: '15-Mark Board Readiness Exam',
+      buttonText: 'Start 15-Mark Diagnostic Exam',
+    };
+  }
+  // Class 5 to 8 (e.g. Class 8 = 15 Marks)
+  return {
+    questionCount: 10,
+    totalMarks: 15,
+    durationMinutes: 15,
+    breakdown: '5 Questions (1-Mark MCQ) + 5 Questions (2-Mark SAQ)',
+    badgeText: '10 Questions • 15 Marks • Adaptive Diagnostic',
+    titleLabel: '15-Mark Diagnostic Exam',
+    buttonText: 'Start 15-Mark Diagnostic Exam',
+  };
+};
+
 export const ExamArena: React.FC<ExamArenaProps> = ({
   parentAccount,
   activeChildId,
@@ -67,6 +103,8 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
   const [selectedGrade, setSelectedGrade] = useState<ClassGrade>(activeChild?.classGrade || 'Class 10');
   const [selectedSubject, setSelectedSubject] = useState<Subject>('Mathematics');
   const [selectedDifficulty, setSelectedDifficulty] = useState<ExamDifficulty>('medium');
+
+  const blueprint = getExamBlueprint(selectedGrade);
 
   // Exam taking state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -128,7 +166,8 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
     setGenerationStep('Retrieving Board Syllabus & RAG Runbook Nodes...');
 
     try {
-      setTimeout(() => setGenerationStep('Grounding 10 calibrated questions for 10 marks...'), 600);
+      const isKids = ['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(k => (selectedGrade || '').toLowerCase().includes(k.toLowerCase()));
+      setTimeout(() => setGenerationStep(isKids ? 'Grounding 5 calibrated questions for 5 marks...' : 'Grounding 10 calibrated questions (5 MCQ + 5 SAQ) for 15 marks...'), 600);
 
       // Weak topics are no longer sent from the client — the backend derives
       // them itself from the student's stored mastery history
@@ -289,8 +328,8 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
               {/* Response Inputs based on Type */}
               <div className="space-y-3 pt-2">
-                {/* MCQ / Logical with Options */}
-                {(currentQ.type === 'mcq' || currentQ.type === 'logical') && currentQ.options && (
+                {/* MCQ / Logical / SAQ with Options */}
+                {(currentQ.type === 'mcq' || currentQ.type === 'logical' || currentQ.type === 'saq') && currentQ.options && currentQ.options.length > 0 && (
                   <div className="space-y-2.5">
                     {currentQ.options.map((opt, oIdx) => {
                       const letter = opt.trim().charAt(0).toUpperCase();
@@ -313,6 +352,23 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                         </label>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* SAQ without Options (Short Answer) */}
+                {currentQ.type === 'saq' && (!currentQ.options || currentQ.options.length === 0) && (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-stone-600">
+                      Write your short answer / step solution (2 Marks):
+                    </label>
+                    <textarea
+                      id="saq-answer-input"
+                      rows={3}
+                      value={answers[currentQ.id] || ''}
+                      onChange={(e) => handleSelectAnswer(currentQ.id, e.target.value)}
+                      placeholder="Write your explanation or answer here..."
+                      className="w-full px-4 py-3 rounded-xl border border-stone-300 text-stone-900 text-sm sm:text-base focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
+                    />
                   </div>
                 )}
 
@@ -398,7 +454,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-4">
               <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider mb-3 flex items-center justify-between">
                 <span>Question Palette</span>
-                <span className="text-[11px] text-yellow-600 font-semibold">{answeredCount}/10</span>
+                <span className="text-[11px] text-yellow-600 font-semibold">{answeredCount}/{totalQuestions}</span>
               </h3>
 
               {/* 10-Question Grid */}
@@ -455,7 +511,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
               <div className="w-12 h-12 rounded-xl bg-yellow-50 border border-yellow-200 flex items-center justify-center text-yellow-600 mb-4">
                 <Award className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-stone-900 mb-2">Submit Assessment ({activeExam.totalMarks || 15} Marks)?</h3>
+              <h3 className="text-lg font-bold text-stone-900 mb-2">Submit Assessment ({activeExam.totalMarks || blueprint.totalMarks} Marks)?</h3>
               <p className="text-xs sm:text-sm text-stone-600 mb-4">
                 You have answered <span className="font-semibold text-stone-900">{answeredCount} out of {totalQuestions} questions</span>.
                 {totalQuestions - answeredCount > 0 && (
@@ -479,7 +535,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                   onClick={handleSubmitExam}
                   className="px-5 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs sm:text-sm font-semibold shadow-xs disabled:opacity-60"
                 >
-                  {isSubmitting ? 'Evaluating AI RAG...' : 'Yes, Submit & View Analytics'}
+                  {isSubmitting ? 'Evaluating Answers ...' : 'Yes, Submit & View Analytics'}
                 </button>
               </div>
             </div>
@@ -492,54 +548,55 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
   // Configuration & Exam Setup Screen
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      {/* Hero Welcome Banner */}
-      <div className="bg-gradient-to-r from-yellow-900 via-stone-900 to-yellow-950 text-white rounded-2xl p-5 sm:p-8 shadow-lg mb-6 relative overflow-hidden">
+      {/* Hero Welcome Banner (Clean, Light Landing-Page Style) */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-amber-50/90 via-yellow-50/70 to-orange-50/50 rounded-3xl p-6 sm:p-8 border border-yellow-200/80 shadow-xs mb-6">
+        {/* Soft Ambient Glow Accents (matching landing page hero) */}
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-yellow-200/50 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-amber-200/40 blur-3xl pointer-events-none" />
+
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-200 border border-yellow-400/30 mb-4">
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
-            10 Questions • 10 Marks • Adaptive RAG Diagnostic
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-yellow-200 text-yellow-800 text-xs font-bold shadow-xs mb-3.5">
+            <Zap className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+            <span>{blueprint.badgeText}</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-3">
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight mb-2.5">
             Exam Preparedness & Knowledge Assessment
           </h1>
-          <p className="text-stone-300 text-xs sm:text-sm leading-relaxed mb-6">
+
+          <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-5 font-normal">
             Calibrated for Classes 5 to 12 across CBSE, ICSE, ISC, Cambridge, NCERT, NEET, and IIT.
             Grounding your test in authentic syllabus runbooks with instant misconception analysis.
           </p>
 
           {/* Active Candidate Badge */}
-          <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/15 text-xs sm:text-sm">
-            <span className="text-xl">{activeChild?.avatar || '👦'}</span>
+          <div className="inline-flex items-center gap-3 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-yellow-200/80 shadow-xs">
+            <span className="text-xl p-1 bg-yellow-100/70 rounded-xl border border-yellow-200/60">{activeChild?.avatar || '👦'}</span>
             <div>
-              <span className="text-stone-300 text-[11px] block">Active Candidate Persona:</span>
-              <span className="font-semibold text-white">{activeChild?.name} ({activeChild?.classGrade} • {activeChild?.targetBoard})</span>
+              <span className="text-stone-500 text-[10px] block font-semibold uppercase tracking-wider">Active Candidate Persona</span>
+              <span className="font-bold text-stone-900 text-xs sm:text-sm">{activeChild?.name} <span className="text-yellow-700 font-semibold">({activeChild?.classGrade} • {activeChild?.targetBoard})</span></span>
             </div>
           </div>
         </div>
-
-        {/* Decorative Background Accents */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-yellow-500/20 via-transparent to-transparent opacity-70 pointer-events-none" />
       </div>
 
-
-
       {/* Exam Configuration Form */}
-      <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-5 sm:p-6">
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-stone-100">
+      <div className="bg-white rounded-3xl border border-stone-200 shadow-sm p-5 sm:p-7">
+        <div className="flex items-center justify-between mb-5 pb-4 border-b border-stone-100">
           <div>
-            <h2 className="text-lg font-bold text-stone-900">Configure 10-Mark Diagnostic Exam</h2>
+            <h2 className="text-lg font-bold text-stone-900">Configure {blueprint.titleLabel}</h2>
             <p className="text-xs text-stone-500">Select board, grade, subject, and target challenge level</p>
           </div>
           <div className="text-right">
-            <span className="text-xs font-semibold text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-200">
-              10 Questions • 10 Marks
+            <span className="text-xs font-bold text-amber-700 bg-amber-50 px-3.5 py-1.5 rounded-full border border-amber-200 shadow-2xs">
+              {blueprint.questionCount} Questions • {blueprint.totalMarks} Marks
             </span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {isStudentPersona ? (
-            /* Student View: Auto-locked Enrolled Syllabus Banner (Zero friction!) */
+            /* Student View: Auto-locked Enrolled Syllabus Banner */
             <div className="md:col-span-2 bg-gradient-to-r from-yellow-50/90 via-amber-50/70 to-yellow-50/90 rounded-2xl p-4 sm:p-5 border border-yellow-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
               <div className="flex items-center gap-3.5">
                 <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-xs border border-yellow-200 shrink-0">
@@ -563,7 +620,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                 <span className="text-[11px] font-semibold text-yellow-700 bg-yellow-50 px-2.5 py-0.5 rounded-full border border-yellow-300">
                   ✓ Ready for Practice
                 </span>
-                <span className="text-[10px] text-stone-400">Adaptive 10-Mark Challenge</span>
+                <span className="text-[10px] text-stone-400">Adaptive {blueprint.totalMarks}-Mark Challenge</span>
               </div>
             </div>
           ) : (
@@ -679,32 +736,31 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
         {/* RAG Knowledge Blueprint Preview */}
         <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 mb-8">
           <p className="text-xs text-stone-600 leading-relaxed">
-            Generating 10 questions for <strong className="text-stone-900">{selectedGrade} {selectedBoard} {selectedSubject} ({selectedDifficulty.toUpperCase()})</strong>.
-            Questions will synthesize Multiple Choice, Numericals, Objective Definitions, and Assertion-Reasoning cases.
+            Generating <strong className="text-stone-900">{blueprint.questionCount} questions ({blueprint.totalMarks} Marks)</strong> for <strong className="text-stone-900">{selectedGrade} {selectedBoard} {selectedSubject} ({selectedDifficulty.toUpperCase()})</strong> — {blueprint.breakdown}.
           </p>
         </div>
 
         {/* Action Button */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
           <div className="text-xs text-stone-500">
-            Estimated duration: <strong className="text-stone-800">15 minutes</strong> • 10 Marks
+            Estimated duration: <strong className="text-stone-800">{blueprint.durationMinutes} minutes</strong> • {blueprint.totalMarks} Marks
           </div>
 
           <button
             id="start-exam-generate-btn"
             disabled={isGenerating}
             onClick={handleStartExam}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 font-bold text-sm shadow-md shadow-yellow-200 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-stone-900 font-bold text-sm shadow-md shadow-yellow-200 flex items-center justify-center gap-2 transition-all disabled:opacity-60 cursor-pointer"
           >
             {isGenerating ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-stone-900 border-t-transparent rounded-full animate-spin" />
                 <span>{generationStep || 'Building RAG Diagnostic...'}</span>
               </>
             ) : (
               <>
-                <Play className="w-4 h-4 fill-white" />
-                <span>Start 10-Mark Diagnostic Exam</span>
+                <Play className="w-4 h-4 fill-stone-900" />
+                <span>{blueprint.buttonText}</span>
               </>
             )}
           </button>

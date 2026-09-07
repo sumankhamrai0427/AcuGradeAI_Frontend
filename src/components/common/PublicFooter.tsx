@@ -16,7 +16,7 @@ export const PublicFooter: React.FC<PublicFooterProps> = ({ isBackendOnline, onQ
             <div className="w-9 h-9 rounded-xl bg-yellow-400 text-stone-900 flex items-center justify-center">
               <GraduationCap className="w-5 h-5" />
             </div>
-            <span className="font-black text-white">SahajPath</span>
+            <span className="font-black text-white">Sahaj<span className="text-yellow-500">Path</span></span>
           </div>
           <p className="mt-3 text-xs leading-relaxed max-w-sm">
             Study Buddy-powered adaptive learning that connects students, teachers and parents.

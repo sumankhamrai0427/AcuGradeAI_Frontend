@@ -1,28 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ArrowLeft,
   ArrowRight,
-  BookOpen,
   CheckCircle2,
   Eye,
   EyeOff,
   GraduationCap,
-  Info,
   Loader2,
   Lock,
   Mail,
-  ShieldCheck,
   Sparkles,
   User,
-  Users,
   X,
+  AlertCircle,
 } from 'lucide-react';
 import ApiServices, {
   storeTokens,
   decodeTokenPayload,
 } from '../services/ApiServices';
 import { useGoogleLogin } from '@react-oauth/google';
-import { RegistrationRole } from '../types/api';
 
 interface LoginPageProps {
   onAuthenticated: (role: string) => void;
@@ -30,25 +25,6 @@ interface LoginPageProps {
   onClose?: () => void;
   initialMode?: 'login' | 'register';
 }
-
-const DEFAULT_ROLES: RegistrationRole[] = [
-  {
-    id: 2,
-    roleName: 'Parent',
-    displayName: 'Parent (Family & Guardian)',
-    description: 'Manage children, view reports and follow learning progress.',
-    icon: '👨‍👩‍👧',
-    isActive: 1,
-  },
-  {
-    id: 3,
-    roleName: 'Student',
-    displayName: 'Student',
-    description: 'Learn and take assessments.',
-    icon: '🧑‍🎓',
-    isActive: 1,
-  },
-];
 
 export const LoginPage: React.FC<LoginPageProps> = ({
   onAuthenticated,
@@ -58,6 +34,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
 
+  // Form Fields
+  const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -70,6 +48,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  // Google Registration Username Modal State
+  const [googleModal, setGoogleModal] = useState<{
+    isOpen: boolean;
+    token: string;
+    email: string;
+    name: string;
+    username: string;
+    error?: string;
+    isSubmitting?: boolean;
+  } | null>(null);
+
+  // Google Login Handler (Only used during Registration)
   const googleLoginHandler = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -82,6 +72,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         });
 
         const result = response.data?.data || response.data;
+
+        // If backend reports new user requires a username
+        if (result?.requiresUsername) {
+          setGoogleModal({
+            isOpen: true,
+            token: tokenResponse.access_token,
+            email: result.email || '',
+            name: result.name || '',
+            username: (result.email || '').split('@')[0].replace(/[^a-zA-Z0-9_-]/g, ''),
+          });
+          return;
+        }
+
         const accessToken =
           result.accessToken ||
           result.tokens?.accessToken ||
@@ -97,10 +100,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           storeTokens(accessToken);
         }
 
-        const payload = accessToken
-          ? decodeTokenPayload(accessToken)
-          : null;
-
+        const payload = accessToken ? decodeTokenPayload(accessToken) : null;
         const userRole =
           payload?.role ||
           result.user?.role ||
@@ -134,6 +134,60 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     googleLoginHandler();
   };
 
+  const handleCompleteGoogleRegistration = async () => {
+    if (!googleModal) return;
+
+    const trimmedUsername = googleModal.username.trim();
+    const validationError = validateUsername(trimmedUsername);
+    if (validationError) {
+      setGoogleModal({ ...googleModal, error: validationError });
+      return;
+    }
+
+    setGoogleModal({ ...googleModal, isSubmitting: true, error: undefined });
+
+    try {
+      const response = await ApiServices.googleLogin({
+        token: googleModal.token,
+        username: trimmedUsername,
+        role: 'PARENT',
+      });
+
+      const result = response.data?.data || response.data;
+      const accessToken =
+        result.accessToken ||
+        result.tokens?.accessToken ||
+        result.tokens?.access_token;
+      const refreshToken =
+        result.refreshToken ||
+        result.tokens?.refreshToken ||
+        result.tokens?.refresh_token;
+
+      if (accessToken && refreshToken) {
+        storeTokens({ accessToken, refreshToken });
+      } else if (accessToken) {
+        storeTokens(accessToken);
+      }
+
+      const payload = accessToken ? decodeTokenPayload(accessToken) : null;
+      const userRole =
+        payload?.role ||
+        result.user?.role ||
+        result.user?.roleName ||
+        'Parent';
+
+      setGoogleModal(null);
+      onAuthenticated(userRole);
+    } catch (err: any) {
+      console.error('Google Registration Error:', err);
+      setGoogleModal({
+        ...googleModal,
+        isSubmitting: false,
+        error: err?.message || 'Failed to complete registration with this username.',
+      });
+    }
+  };
+
   const clearFieldError = (field: string) => {
     if (fieldErrors[field]) {
       setFieldErrors((prev) => {
@@ -149,14 +203,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
   const handleBack = onBackToLanding || onClose;
 
+  const validateUsername = (u: string): string | null => {
+    const trimmed = u.trim();
+    if (!trimmed) return 'Username is required.';
+    if (trimmed.includes('.')) return "Username cannot contain dots ('.').";
+    if (trimmed.includes(' ')) return 'Username cannot contain spaces.';
+    if (trimmed.length < 3 || trimmed.length > 30) return 'Username must be between 3 and 30 characters.';
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{1,28}[a-zA-Z0-9]$/.test(trimmed)) {
+      return 'Username must start & end with alphanumeric characters and can contain _ or -.';
+    }
+    return null;
+  };
+
   const passwordStrength = (() => {
     let score = 0;
-
     if (password.length >= 8) score++;
     if (/[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
-
     return score;
   })();
 
@@ -165,6 +229,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     setErrorMessage(null);
     setFieldErrors({});
     setName('');
+    setUsername('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
@@ -178,15 +243,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     let hasError = false;
     const newFieldErrors: Record<string, string> = {};
 
-    if (!email.trim()) {
-      newFieldErrors.email = 'Please enter your email address.';
+    // Validate Username
+    const usernameError = validateUsername(username);
+    if (usernameError) {
+      newFieldErrors.username = usernameError;
       hasError = true;
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        newFieldErrors.email = 'Please enter a valid email address.';
-        hasError = true;
-      }
     }
 
     if (!password) {
@@ -200,11 +261,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         hasError = true;
       }
 
+      if (!email.trim()) {
+        newFieldErrors.email = 'Please enter your email address.';
+        hasError = true;
+      } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+          newFieldErrors.email = 'Please enter a valid email address.';
+          hasError = true;
+        }
+      }
+
       if (password) {
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
         if (!passwordRegex.test(password)) {
           newFieldErrors.password =
-            'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.';
+            'Password must be at least 8 characters long with uppercase, lowercase, number, and special character.';
           hasError = true;
         } else if (password !== confirmPassword) {
           newFieldErrors.confirmPassword = 'Passwords do not match.';
@@ -221,28 +293,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     setIsSubmitting(true);
 
     try {
-      /*
-       * IMPORTANT:
-       * Keep your existing API signatures here.
-       * If your api.ts uses a different register signature, change ONLY
-       * the register call below.
-       */
       const response =
         mode === 'login'
-          ? await ApiServices.login({ email: email.trim(), password })
+          ? await ApiServices.login({ username: username.trim(), password })
           : await ApiServices.register({
-            name: name.trim(),
-            email: email.trim(),
-            password,
-            role: 'Parent'
-          });
+              name: name.trim(),
+              username: username.trim(),
+              email: email.trim(),
+              password,
+              role: 'Parent',
+            });
 
-      // Handle both unwrapped (register) and wrapped (login) responses
       const result = response.data?.data || response.data || response;
 
       const accessToken =
         result.accessToken || result.tokens?.accessToken;
-
       const refreshToken =
         result.refreshToken || result.tokens?.refreshToken;
 
@@ -252,10 +317,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         console.warn('Login successful but no tokens found in response:', result);
       }
 
-      const payload = accessToken
-        ? decodeTokenPayload(accessToken)
-        : null;
-
+      const payload = accessToken ? decodeTokenPayload(accessToken) : null;
       const userRole =
         payload?.role ||
         result.user?.role ||
@@ -269,7 +331,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       } else {
         setErrorMessage(
           mode === 'login'
-            ? 'Unable to sign in. Please check your details and try again.'
+            ? 'Invalid username or password. Please try again.'
             : 'Unable to create your account. Please try again.'
         );
       }
@@ -289,7 +351,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               <GraduationCap size={20} />
             </div>
             <div>
-              <div className="text-xl font-black tracking-tight text-stone-900">SahajPath</div>
+              <div className="text-xl font-black tracking-tight text-stone-900">AcuGrade AI</div>
             </div>
           </div>
 
@@ -308,8 +370,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </h2>
           <p className="text-stone-500 font-medium text-sm sm:text-base leading-relaxed">
             {mode === 'login'
-              ? 'Sign in to access your learning dashboard.'
-              : 'Join to track progress and manage learning.'}
+              ? 'Sign in with your username & password to access your dashboard.'
+              : 'Register as a Parent to track assessments and empower your kids.'}
           </p>
         </div>
 
@@ -318,14 +380,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           <button
             type="button"
             onClick={() => handleModeChange('login')}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${mode === 'login' ? 'bg-white text-yellow-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
+              mode === 'login' ? 'bg-white text-yellow-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+            }`}
           >
             Login
           </button>
           <button
             type="button"
             onClick={() => handleModeChange('register')}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${mode === 'register' ? 'bg-white text-yellow-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
+              mode === 'register' ? 'bg-white text-yellow-700 shadow-sm' : 'text-stone-500 hover:text-stone-700'
+            }`}
           >
             Sign Up
           </button>
@@ -334,43 +400,64 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3" noValidate>
 
-          {/* Google Button */}
-          <button
-            type="button"
-            onClick={handleGoogleClick}
-            disabled={isSubmitting || isGoogleSubmitting}
-            className="w-full h-11 flex items-center justify-center gap-3 bg-white border-2 border-stone-200 hover:border-yellow-300 hover:bg-stone-50 text-stone-700 text-sm font-bold rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isGoogleSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin text-yellow-600" />
-            ) : (
-              <svg viewBox="0 0 24 24" className="w-4 h-4">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-              </svg>
-            )}
-            {isGoogleSubmitting ? 'Signing in with Google...' : 'Continue with Google'}
-          </button>
+          {/* Google Button ONLY in Sign Up mode */}
+          {mode === 'register' && (
+            <>
+              <button
+                type="button"
+                onClick={handleGoogleClick}
+                disabled={isSubmitting || isGoogleSubmitting}
+                className="w-full h-11 flex items-center justify-center gap-3 bg-white border-2 border-stone-200 hover:border-yellow-300 hover:bg-stone-50 text-stone-700 text-sm font-bold rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isGoogleSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-yellow-600" />
+                ) : (
+                  <svg viewBox="0 0 24 24" className="w-4 h-4">
+                    <path
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      fill="#EA4335"
+                    />
+                  </svg>
+                )}
+                {isGoogleSubmitting ? 'Connecting with Google...' : 'Continue with Google'}
+              </button>
 
-          {/* Google Sign In Divider */}
-          <div className="relative flex items-center justify-center pb-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-stone-200"></div>
-            </div>
-            <div className="relative bg-stone-50 px-4 text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-              Or continue with email
-            </div>
-          </div>
+              <div className="relative flex items-center justify-center pb-1">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-stone-200"></div>
+                </div>
+                <div className="relative bg-white px-4 text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                  Or register with details
+                </div>
+              </div>
+            </>
+          )}
 
+          {/* Full Name (Sign Up Only) */}
           {mode === 'register' && (
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5 ml-1">
+              <label className="block text-xs font-bold text-stone-700 mb-1 ml-1">
                 Full Name <span className="text-red-500">*</span>
               </label>
               <div className="relative group">
-                <User size={18} className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${fieldErrors.name ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'}`} />
+                <User
+                  size={18}
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+                    fieldErrors.name ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                  }`}
+                />
                 <input
                   type="text"
                   value={name}
@@ -378,45 +465,108 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     setName(e.target.value);
                     clearFieldError('name');
                   }}
-                  placeholder="Enter your full name"
-                  className={`w-full h-11 pl-11 pr-4 bg-white border-2 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all placeholder:text-stone-400 ${fieldErrors.name ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20' : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-600/10'}`}
+                  placeholder="e.g. Rahul Sharma"
+                  className={`w-full h-11 pl-11 pr-4 bg-white border-2 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all placeholder:text-stone-400 ${
+                    fieldErrors.name
+                      ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
+                      : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-600/10'
+                  }`}
                 />
               </div>
-              {fieldErrors.name && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{fieldErrors.name}</p>}
+              {fieldErrors.name && (
+                <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{fieldErrors.name}</p>
+              )}
             </div>
           )}
 
+          {/* Username Field (Both Login & Register) */}
           <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1.5 ml-1">
-              Email Address <span className="text-red-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1 ml-1">
+              <label className="block text-xs font-bold text-stone-700">
+                Username <span className="text-red-500">*</span>
+              </label>
+              {mode === 'register' && (
+                <span className="text-[10px] text-stone-400 font-medium">No dots, 3-30 chars</span>
+              )}
+            </div>
             <div className="relative group">
-              <Mail size={18} className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${fieldErrors.email ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'}`} />
+              <User
+                size={18}
+                className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+                  fieldErrors.username ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                }`}
+              />
               <input
-                type="email"
-                value={email}
+                type="text"
+                value={username}
                 onChange={(e) => {
-                  setEmail(e.target.value);
-                  clearFieldError('email');
+                  setUsername(e.target.value);
+                  clearFieldError('username');
                 }}
-                placeholder="name@example.com"
-                className={`w-full h-11 pl-11 pr-4 bg-white border-2 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all placeholder:text-stone-400 ${fieldErrors.email ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20' : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-600/10'}`}
+                placeholder={mode === 'login' ? 'Enter your username' : 'e.g. Rahul_2026 or Sunita_Dev'}
+                className={`w-full h-11 pl-11 pr-4 bg-white border-2 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all placeholder:text-stone-400 ${
+                  fieldErrors.username
+                    ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
+                    : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-600/10'
+                }`}
               />
             </div>
-            {fieldErrors.email && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{fieldErrors.email}</p>}
+            {fieldErrors.username && (
+              <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{fieldErrors.username}</p>
+            )}
           </div>
 
+          {/* Email Address (Sign Up Only) */}
+          {mode === 'register' && (
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1 ml-1">
+                Parent Email Address <span className="text-red-500">*</span>
+              </label>
+              <div className="relative group">
+                <Mail
+                  size={18}
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+                    fieldErrors.email ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                  }`}
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearFieldError('email');
+                  }}
+                  placeholder="parent@example.com"
+                  className={`w-full h-11 pl-11 pr-4 bg-white border-2 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all placeholder:text-stone-400 ${
+                    fieldErrors.email
+                      ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
+                      : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-600/10'
+                  }`}
+                />
+              </div>
+              {fieldErrors.email && (
+                <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{fieldErrors.email}</p>
+              )}
+            </div>
+          )}
+
+          {/* Password Field */}
           <div>
-            <div className="flex items-center justify-between mb-1.5 ml-1 mr-1">
+            <div className="flex items-center justify-between mb-1 ml-1 mr-1">
               <label className="text-xs font-bold text-stone-700">
                 {mode === 'login' ? 'Password' : 'Create Password'} <span className="text-red-500">*</span>
               </label>
               {mode === 'login' && (
-                <button type="button" className="text-xs font-bold text-yellow-600 hover:text-yellow-700">Forgot?</button>
+                <span className="text-[11px] font-bold text-yellow-600">Secure</span>
               )}
             </div>
             <div className="relative group">
-              <Lock size={18} className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${fieldErrors.password ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'}`} />
+              <Lock
+                size={18}
+                className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+                  fieldErrors.password ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                }`}
+              />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -425,7 +575,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   clearFieldError('password');
                 }}
                 placeholder="••••••••"
-                className={`w-full h-11 pl-11 pr-12 bg-white border-2 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all placeholder:text-stone-400 ${fieldErrors.password ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20' : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-600/10'}`}
+                className={`w-full h-11 pl-11 pr-12 bg-white border-2 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all placeholder:text-stone-400 ${
+                  fieldErrors.password
+                    ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
+                    : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-600/10'
+                }`}
               />
               <button
                 type="button"
@@ -435,27 +589,41 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            {fieldErrors.password && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1 leading-tight">{fieldErrors.password}</p>}
+            {fieldErrors.password && (
+              <p className="text-red-500 text-[10px] font-bold mt-1 ml-1 leading-tight">{fieldErrors.password}</p>
+            )}
 
             {mode === 'register' && password.length > 0 && (
-              <div className="mt-3 flex gap-1.5">
+              <div className="mt-2 flex gap-1.5">
                 {[1, 2, 3, 4].map((step) => (
                   <div
                     key={step}
-                    className={`h-1.5 flex-1 rounded-full transition-colors ${step <= passwordStrength ? (passwordStrength < 3 ? 'bg-amber-400' : 'bg-yellow-500') : 'bg-stone-200'}`}
+                    className={`h-1.5 flex-1 rounded-full transition-colors ${
+                      step <= passwordStrength
+                        ? passwordStrength < 3
+                          ? 'bg-amber-400'
+                          : 'bg-yellow-500'
+                        : 'bg-stone-200'
+                    }`}
                   />
                 ))}
               </div>
             )}
           </div>
 
+          {/* Confirm Password (Sign Up Only) */}
           {mode === 'register' && (
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5 ml-1">
+              <label className="block text-xs font-bold text-stone-700 mb-1 ml-1">
                 Confirm Password <span className="text-red-500">*</span>
               </label>
               <div className="relative group">
-                <Lock size={18} className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${fieldErrors.confirmPassword ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'}`} />
+                <Lock
+                  size={18}
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+                    fieldErrors.confirmPassword ? 'text-red-400' : 'text-stone-400 group-focus-within:text-yellow-600'
+                  }`}
+                />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
@@ -464,7 +632,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     clearFieldError('confirmPassword');
                   }}
                   placeholder="••••••••"
-                  className={`w-full h-11 pl-11 pr-12 bg-white border-2 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all placeholder:text-stone-400 ${fieldErrors.confirmPassword ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20' : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-600/10'}`}
+                  className={`w-full h-11 pl-11 pr-12 bg-white border-2 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all placeholder:text-stone-400 ${
+                    fieldErrors.confirmPassword
+                      ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
+                      : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-600/10'
+                  }`}
                 />
                 <button
                   type="button"
@@ -474,35 +646,118 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {fieldErrors.confirmPassword && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{fieldErrors.confirmPassword}</p>}
+              {fieldErrors.confirmPassword && (
+                <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
           )}
 
+          {/* Error Banner */}
           {errorMessage && (
-            <div className="p-3 mt-4 rounded-xl bg-red-50 border border-red-100 text-sm font-semibold text-red-600 flex items-start gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0" />
-              {errorMessage}
+            <div className="p-3 mt-3 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-600 flex items-start gap-2">
+              <AlertCircle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
+              <span>{errorMessage}</span>
             </div>
           )}
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full h-11 mt-2 flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-700 active:scale-[0.98] text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-yellow-400/25 disabled:opacity-70 disabled:pointer-events-none"
+            className="w-full h-11 mt-3 flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 active:scale-[0.98] text-stone-900 text-sm font-bold rounded-xl transition-all shadow-lg shadow-yellow-400/25 disabled:opacity-70 disabled:pointer-events-none"
           >
             {isSubmitting ? (
-              <Loader2 size={18} className="animate-spin" />
+              <Loader2 size={18} className="animate-spin text-stone-900" />
             ) : (
               <>
-                {mode === 'login' ? 'Log in' : 'Create Account'}
+                {mode === 'login' ? 'Log In' : 'Create Parent Account'}
                 <ArrowRight size={18} />
               </>
             )}
           </button>
-
         </form>
-
       </div>
+
+      {/* Google Username Prompt Modal */}
+      {googleModal?.isOpen && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-100 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-yellow-400 text-stone-900 flex items-center justify-center font-bold">
+                  <User size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-stone-900">Choose your Username</h3>
+                  <p className="text-[11px] text-stone-500">Google Account: {googleModal.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setGoogleModal(null)}
+                className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-full"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-stone-600 mb-4">
+              To log in easily from any device using username & password, please choose a unique username for your AcuGrade account:
+            </p>
+
+            <div className="space-y-3 mb-5">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">
+                  Desired Username <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <input
+                    type="text"
+                    value={googleModal.username}
+                    onChange={(e) =>
+                      setGoogleModal({ ...googleModal, username: e.target.value, error: undefined })
+                    }
+                    placeholder="e.g. Rahul_2026"
+                    className="w-full h-10 pl-10 pr-3 bg-white border-2 border-stone-200 focus:border-yellow-400 rounded-xl text-sm font-medium outline-hidden"
+                  />
+                </div>
+                <p className="text-[10px] text-stone-400 mt-1">3-30 characters, no dots (.), no spaces.</p>
+              </div>
+
+              {googleModal.error && (
+                <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs font-medium text-red-600">
+                  {googleModal.error}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setGoogleModal(null)}
+                className="flex-1 h-10 rounded-xl border border-stone-200 text-xs font-bold text-stone-600 hover:bg-stone-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCompleteGoogleRegistration}
+                disabled={googleModal.isSubmitting}
+                className="flex-1 h-10 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-yellow-400/20"
+              >
+                {googleModal.isSubmitting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <>
+                    <span>Confirm & Join</span>
+                    <ArrowRight size={14} />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

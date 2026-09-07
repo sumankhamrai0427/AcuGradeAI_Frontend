@@ -218,7 +218,7 @@ export default function App() {
   const isStudentSession = normalizedRole === 'STUDENT';
   const isParentSession = normalizedRole === 'PARENT';
   const activeChild = parentAccount?.children.find((c) => c.id === activeChildId) || parentAccount?.children[0];
-  const isParentActive = activePersona === 'parent';
+  const isParentActive = !isStudentSession && activePersona === 'parent';
   const totalFamilyXP = parentAccount?.children.reduce((acc, c) => acc + (c.xp || 0), 0) || 0;
   const totalChildrenCount = parentAccount?.children.length || 0;
 
@@ -243,6 +243,33 @@ export default function App() {
     return pageAccess;
   }, []);
 
+  const loadStudentData = useCallback(async () => {
+    const dashboardData = await ApiServices.getStudentDashboard();
+    const { profile, recentExams, learningPath, pageAccess } = dashboardData;
+
+    const studentChild: ChildAccount = {
+      ...profile,
+      recentExams: recentExams || []
+    };
+
+    setParentAccount({
+      id: `student-parent-${profile.id}`,
+      name: profile.name,
+      email: profile.email || '',
+      role: 'parent',
+      children: [studentChild],
+      createdAt: profile.createdAt || new Date().toISOString(),
+    });
+    setExamHistory(recentExams || []);
+    setPageAccess(pageAccess || []);
+    setActiveChildId(profile.id);
+    setActivePersona('child');
+    if (learningPath) {
+      setLearningNodes(learningPath);
+    }
+    return pageAccess || [];
+  }, []);
+
   const loadGamification = useCallback(async () => {
     const [badgeList, leaderboardList] = await Promise.all([
       ApiServices.listBadges(),
@@ -258,9 +285,14 @@ export default function App() {
   }, [activeChildId]);
 
   const loadLearningPath = useCallback(async (childId: string) => {
-    const nodes = await ApiServices.getChildLearningPath(childId);
-    setLearningNodes(nodes);
-  }, []);
+    if (isStudentSession) {
+      const nodes = await ApiServices.getStudentLearningPath();
+      setLearningNodes(nodes);
+    } else {
+      const nodes = await ApiServices.getChildLearningPath(childId);
+      setLearningNodes(nodes);
+    }
+  }, [isStudentSession]);
 
 
 
@@ -280,18 +312,21 @@ export default function App() {
         if (isAdminSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0 && isRoot) navigate(perms[0].pageRoute, { replace: true });
+          const isPermitted = perms.some((p: PageAccess) => p.pageRoute === location.pathname);
+          if ((isRoot || !isPermitted) && perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else if (isTeacherSession) {
           const perms = await ApiServices.getMenuPermissions();
           setPageAccess(perms);
-          if (perms.length > 0 && isRoot) navigate(perms[0].pageRoute, { replace: true });
+          const isPermitted = perms.some((p: PageAccess) => p.pageRoute === location.pathname);
+          if ((isRoot || !isPermitted) && perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else if (isStudentSession) {
-          const perms = await ApiServices.getMenuPermissions();
-          setPageAccess(perms);
-          if (perms.length > 0 && isRoot) navigate(perms[0].pageRoute, { replace: true });
+          const perms = await loadStudentData();
+          const isPermitted = perms.some((p: PageAccess) => p.pageRoute === location.pathname);
+          if ((isRoot || !isPermitted) && perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else if (isParentSession) {
           const perms = await loadParentAndChildren();
-          if (perms.length > 0 && isRoot) navigate(perms[0].pageRoute, { replace: true });
+          const isPermitted = perms.some((p: PageAccess) => p.pageRoute === location.pathname);
+          if ((isRoot || !isPermitted) && perms.length > 0) navigate(perms[0].pageRoute, { replace: true });
         } else {
           clearTokens();
           setAuthRole(null);
@@ -309,7 +344,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [authRole, isAdminSession, isTeacherSession, isStudentSession, isParentSession, loadParentAndChildren]);
+  }, [authRole, isAdminSession, isTeacherSession, isStudentSession, isParentSession, loadParentAndChildren, loadStudentData]);
 
   // On-demand gamification loading (Only calls API when user navigates to Leaderboard/Gamification)
   useEffect(() => {
@@ -330,7 +365,18 @@ export default function App() {
   // ------------------------------------------------------------
   const handleAuthenticated = (role: string) => {
     setBootstrapError(null);
-    setAuthRole(role.toUpperCase());
+    const upperRole = role.toUpperCase();
+    setAuthRole(upperRole);
+    setAuthModalMode(null);
+    if (upperRole === 'PARENT') {
+      navigate('/dashboard', { replace: true });
+    } else if (upperRole === 'STUDENT') {
+      navigate('/arena', { replace: true });
+    } else if (upperRole === 'TEACHER') {
+      navigate('/ptc', { replace: true });
+    } else if (upperRole === 'ADMIN') {
+      navigate('/admin/dashboard', { replace: true });
+    }
   };
 
   const handleLogout = async () => {
@@ -347,10 +393,12 @@ export default function App() {
     setActiveChildId(null);
     setExamHistory([]);
     setShowPersonaMenu(false);
+    navigate('/', { replace: true });
   };
 
   // Persona Handlers
   const handleSwitchToParent = () => {
+    if (isStudentSession) return;
     setActivePersona('parent');
     setActiveTab('dashboard');
     setShowPersonaMenu(false);
@@ -390,7 +438,11 @@ export default function App() {
     setActiveSubmissionReport(submission);
 
     try {
-      await loadParentAndChildren();
+      if (isStudentSession) {
+        await loadStudentData();
+      } else {
+        await loadParentAndChildren();
+      }
       await loadGamification();
       if (activeChildId) await loadLearningPath(activeChildId);
     } catch {
@@ -420,24 +472,23 @@ export default function App() {
   const handleAddChild = async (
     childData: {
       name: string;
+      username: string;
       avatar?: string;
       classGrade: string;
       targetBoard: string;
       schoolName?: string;
-      email?: string;
       password?: string;
       pin?: string;
     }
   ) => {
     const created = await ApiServices.addChild({
       name: childData.name,
+      username: childData.username,
       avatar: childData.avatar || '👦',
       classGrade: childData.classGrade,
       targetBoard: childData.targetBoard,
       schoolName: childData.schoolName,
-      email: childData.email,
       password: childData.password || childData.pin,
-      pin: childData.password || childData.pin,
     });
     setParentAccount((prev) => (prev ? { ...prev, children: [...prev.children, { ...created, topicMastery: {} }] } : prev));
     setActiveChildId(created.id);
@@ -748,63 +799,43 @@ export default function App() {
                   </button>
                   {showNotificationMenu && (
                     <div className="absolute right-0 mt-2 w-[340px] bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-stone-200/50 p-3 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right flex flex-col gap-2 max-h-[420px] overflow-y-auto custom-scrollbar">
+                      <div className="px-3 py-1.5 border-b border-stone-100 flex items-center justify-between">
+                        <span className="text-xs font-bold text-stone-900">Student Profiles & Activity</span>
+                        <span className="text-[10px] text-stone-400 font-semibold">{parentAccount?.children?.length || 0} Registered</span>
+                      </div>
                       {(parentAccount?.children || []).map((child) => {
-                        const isKids = ['Class 1', 'Class 2', 'Class 3', 'Class 4'].includes(child.classGrade || '');
-
                         return (
-                          <div key={child.id} className={`p-4 rounded-2xl border ${isKids ? 'bg-sky-50/50 border-sky-100' : 'bg-stone-50 border-stone-100'}`}>
-                            <div className="flex items-start gap-4 mb-1">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0 ${isKids ? 'bg-gradient-to-tr from-sky-400 to-indigo-500' : 'bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500'}`}>
-                                <span className="text-xl">{isKids ? '🎈' : '📊'}</span>
+                          <div key={child.id} className="p-3.5 rounded-2xl border bg-stone-50/80 border-stone-200/60 flex flex-col gap-2.5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-amber-100/70 border border-amber-200 flex items-center justify-center text-xl shrink-0">
+                                {child.avatar || '👦'}
                               </div>
-                              <div className="flex flex-col pt-0.5">
-                                <span className="text-sm font-black text-stone-900 tracking-tight leading-tight">
-                                  {isKids
-                                    ? `Ready for a fun adventure with ${child.name?.split(' ')[0] || 'your child'}?`
-                                    : `Want a quick feedback on ${child.name?.split(' ')[0] || 'your child'}?`}
-                                </span>
-                                <span className="text-[10px] font-medium text-stone-500 mt-1 leading-tight">
-                                  {isKids
-                                    ? <>Play a short game now — earn shiny <span className="text-sky-600 font-semibold">stars</span> instantly.</>
-                                    : <>Take a short test now — get an instant <span className="text-yellow-600 font-semibold">report</span>.</>}
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-bold text-stone-900 truncate">{child.name}</span>
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-stone-200 text-stone-700">{child.classGrade}</span>
+                                </div>
+                                <span className="text-[10px] text-stone-500 font-medium truncate">
+                                  Username: <strong className="text-stone-800">@{child.username || child.name?.toLowerCase().replace(/\s+/g, '')}</strong>
                                 </span>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-1.5 my-3 px-1">
-                              {isKids
-                                ? ['🎈 Fun Games', '⭐ Stars', '🏆 Badges'].map(tag => (
-                                  <span key={tag} className="text-[9px] font-semibold text-stone-500 bg-white rounded-full px-1.5 py-0.5 border border-stone-200/50 whitespace-nowrap">{tag}</span>
-                                ))
-                                : ['📖 Curriculum', '⚡ Results', '📊 AI analysis'].map(tag => (
-                                  <span key={tag} className="text-[9px] font-semibold text-stone-500 bg-white rounded-full px-1.5 py-0.5 border border-stone-200/50 whitespace-nowrap">{tag}</span>
-                                ))}
+                            <div className="flex items-center justify-between text-[10px] text-stone-500 bg-white px-2.5 py-1.5 rounded-lg border border-stone-100">
+                              <span>Exams taken: <strong className="text-stone-800">{child.totalExamsTaken || 0}</strong></span>
+                              <span>Avg Score: <strong className="text-stone-800">{child.averageScore ? `${(child.averageScore * 10).toFixed(0)}%` : 'N/A'}</strong></span>
                             </div>
 
                             <button
-                              disabled={isQuickTestLoading}
                               onClick={() => {
                                 setShowNotificationMenu(false);
-                                if (isKids) {
-                                  setActiveChildId(child.id);
-                                  setActiveTab('arena');
-                                } else {
-                                  handleLaunchQuickTest(child.id);
-                                }
+                                setActiveChildId(child.id);
+                                setActiveTab('reports');
                               }}
-                              className={`group w-full px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 relative overflow-hidden ${isKids ? 'bg-sky-500 hover:bg-sky-600 text-white shadow-[0_4px_10px_-3px_rgba(14,165,233,0.5)]' : 'bg-stone-900 text-yellow-400 hover:bg-stone-800 shadow-[0_4px_10px_-3px_rgba(28,25,23,0.5)]'}`}
+                              className="w-full py-2 px-3 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                             >
-                              <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                              {isQuickTestLoading ? (
-                                <>
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                  <span>Loading...</span>
-                                </>
-                              ) : (
-                                <>
-                                  {isKids ? 'Start Playing!' : 'Start Quick Test'} <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                                </>
-                              )}
+                              <span>View Mastery & Reports</span>
+                              <ArrowRight className="w-3 h-3" />
                             </button>
                           </div>
                         );
@@ -835,65 +866,88 @@ export default function App() {
                     id="persona-dropdown-menu"
                     className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
                   >
-                    <button
-                      onClick={handleSwitchToParent}
-                      className={`w-full px-4 py-2.5 border-b border-stone-100 rounded-t-2xl flex items-center justify-between text-left transition-colors hover:bg-stone-50 ${isParentActive ? 'bg-yellow-50/60' : 'bg-stone-50/60'}`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold text-xs shrink-0">
-                          {(parentAccount?.name || "P").charAt(0).toUpperCase()}
+                    {isStudentSession ? (
+                      <div className="p-3">
+                        <div className="flex items-center gap-3 p-2 bg-yellow-50/80 rounded-xl border border-yellow-200/60 mb-2">
+                          <span className="text-2xl">{activeChild?.avatar || '👦'}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-stone-900 truncate">{activeChild?.name}</p>
+                            <p className="text-[10px] text-stone-500 truncate">{activeChild?.classGrade} • {activeChild?.targetBoard}</p>
+                            <p className="text-[10px] text-amber-700 font-semibold truncate">@{activeChild?.username || activeChild?.name.toLowerCase().replace(/\s+/g, '')}</p>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-stone-900 truncate">{parentAccount?.name} (Parent)</p>
-                          <p className="text-[10px] text-stone-500 truncate">{parentAccount?.email || 'Parent Account'}</p>
-                        </div>
+                        <div className="my-1 border-t border-stone-100" />
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-stone-600 hover:bg-stone-100 hover:text-stone-900 font-medium transition-colors cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4 text-stone-400" />
+                          <span>Log out</span>
+                        </button>
                       </div>
-                      {isParentActive && <CheckCircle className="w-4 h-4 text-yellow-600 shrink-0" />}
-                    </button>
-
-                    <div className="p-1 space-y-0.5">
-                      <div className="my-1 px-3 py-1">
-                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Children Profiles</p>
-                      </div>
-
-                      {(parentAccount?.children || []).length === 0 ? (
-                        <div className="px-3 py-2 flex flex-col items-center justify-center text-center">
-                          <span className="text-stone-300 mb-1">👦👧</span>
-                          <p className="text-[10px] text-stone-500 font-medium">No children added yet</p>
-                        </div>
-                      ) : (parentAccount?.children || []).map((child) => {
-                        const isSelected = activePersona === 'child' && activeChildId === child.id;
-                        return (
-                          <button
-                            key={child.id}
-                            onClick={() => handleSwitchToChild(child.id)}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isSelected ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
-                              }`}
-                          >
-                            <div className="flex items-center gap-2.5">
-                              <span className="text-base">{child.avatar}</span>
-                              <div>
-                                <div className="font-medium text-stone-900">{child.name}</div>
-                                <div className="text-[10px] text-stone-500">
-                                  {child.classGrade} • {child.targetBoard} • Avg {child.averageScore}/10
-                                </div>
-                              </div>
+                    ) : (
+                      <>
+                        <button
+                          onClick={handleSwitchToParent}
+                          className={`w-full px-4 py-2.5 border-b border-stone-100 rounded-t-2xl flex items-center justify-between text-left transition-colors hover:bg-stone-50 ${isParentActive ? 'bg-yellow-50/60' : 'bg-stone-50/60'}`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold text-xs shrink-0">
+                              {(parentAccount?.name || "P").charAt(0).toUpperCase()}
                             </div>
-                            {isSelected && <CheckCircle className="w-4 h-4 text-yellow-600 shrink-0" />}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-stone-900 truncate">{parentAccount?.name} (Parent)</p>
+                              <p className="text-[10px] text-stone-500 truncate">{parentAccount?.email || 'Parent Account'}</p>
+                            </div>
+                          </div>
+                          {isParentActive && <CheckCircle className="w-4 h-4 text-yellow-600 shrink-0" />}
+                        </button>
+
+                        <div className="p-1 space-y-0.5">
+                          <div className="my-1 px-3 py-1">
+                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Children Profiles</p>
+                          </div>
+
+                          {(parentAccount?.children || []).length === 0 ? (
+                            <div className="px-3 py-2 flex flex-col items-center justify-center text-center">
+                              <span className="text-stone-300 mb-1">👦👧</span>
+                              <p className="text-[10px] text-stone-500 font-medium">No children added yet</p>
+                            </div>
+                          ) : (parentAccount?.children || []).map((child) => {
+                            const isSelected = activePersona === 'child' && activeChildId === child.id;
+                            return (
+                              <button
+                                key={child.id}
+                                onClick={() => handleSwitchToChild(child.id)}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isSelected ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
+                                  }`}
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <span className="text-base">{child.avatar}</span>
+                                  <div>
+                                    <div className="font-medium text-stone-900">{child.name}</div>
+                                    <div className="text-[10px] text-stone-500">
+                                      {child.classGrade} • {child.targetBoard} • Avg {child.averageScore}/10
+                                    </div>
+                                  </div>
+                                </div>
+                                {isSelected && <CheckCircle className="w-4 h-4 text-yellow-600 shrink-0" />}
+                              </button>
+                            );
+                          })}
+
+                          <div className="my-1 border-t border-stone-100" />
+
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-stone-500 hover:bg-stone-100 hover:text-stone-800 font-medium transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Log out</span>
                           </button>
-                        );
-                      })}
-
-                      <div className="my-1 border-t border-stone-100" />
-
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs text-stone-500 hover:bg-stone-100 hover:text-stone-800 font-medium transition-colors"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>Log out</span>
-                      </button>
-                    </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -927,10 +981,7 @@ export default function App() {
               />
             ) : (
               <>
-                {activeTab === 'home' && (
-                  <LandingPage onOpenAuth={() => { }} />
-                )}
-                {activeTab === 'dashboard' && parentAccount && (
+                {(activeTab === 'dashboard' || activeTab === 'home') && parentAccount && (
                   <ParentDashboard
                     parentAccount={parentAccount}
                     activeChildId={activeChildId}
@@ -966,7 +1017,33 @@ export default function App() {
                 )}
 
                 {activeTab === 'arena' && (
-                  ['Class 1', 'Class 2', 'Class 3', 'Class 4'].includes(activeChild?.classGrade || '') ? (
+                  isParentActive ? (
+                    <div className="max-w-xl mx-auto bg-white p-8 rounded-3xl border border-stone-200 text-center shadow-xs space-y-4 my-10 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="w-16 h-16 rounded-2xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center mx-auto text-3xl shadow-xs">
+                        🧑‍🎓
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black text-stone-900 tracking-tight">Student Exam Arena</h2>
+                        <p className="text-xs text-stone-500 mt-1 leading-relaxed max-w-md mx-auto">
+                          Exams and diagnostic challenges are taken directly by students using their own unique username & password.
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/70 text-left text-xs space-y-1.5 max-w-md mx-auto">
+                        <p className="font-bold text-stone-800">How students practice:</p>
+                        <ul className="list-disc pl-4 text-stone-600 space-y-1 text-[11px]">
+                          <li>Student logs in with their unique username & password</li>
+                          <li>Generates unlimited RAG-aligned curriculum exams</li>
+                          <li>Earns XP, badges, and powers their adaptive learning path</li>
+                        </ul>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab('dashboard')}
+                        className="px-6 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                      >
+                        Return to Parent Dashboard
+                      </button>
+                    </div>
+                  ) : ['Class 1', 'Class 2', 'Class 3', 'Class 4'].includes(activeChild?.classGrade || '') ? (
                     <KidsExamArena
                       parentAccount={currentParentAccount}
                       activeChildId={activeChildId}
@@ -1056,62 +1133,6 @@ export default function App() {
         onAddChild={handleAddChild}
         parentEmail={currentParentAccount?.email}
       />
-
-
-      {/* Quick Test Child Selector Modal for Multi-Child Parents */}
-      {showQuickTestChildModal && parentAccount && (
-        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-start mb-4 pb-3 border-b border-stone-100">
-              <div>
-                <h3 className="text-lg font-black text-stone-900">Select Student</h3>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  Pick which student's diagnostic test to launch from database.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowQuickTestChildModal(false)}
-                className="p-1.5 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-2.5 my-4">
-              {parentAccount.children.map((child) => (
-                <button
-                  key={child.id}
-                  disabled={isQuickTestLoading}
-                  onClick={() => handleLaunchQuickTest(child.id)}
-                  className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-stone-200 hover:border-yellow-400 hover:bg-yellow-50/50 transition-all text-left group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center text-2xl border border-stone-200 group-hover:scale-105 transition-transform">
-                      {child.avatar || '👦'}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-stone-900 group-hover:text-yellow-700">{child.name}</h4>
-                      <p className="text-xs font-semibold text-stone-500">
-                        {child.classGrade} • {child.targetBoard}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-yellow-600 group-hover:underline">Start Test</span>
-                    <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-yellow-600 group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {isQuickTestLoading && (
-              <div className="flex items-center justify-center gap-2 py-2 text-xs font-bold text-yellow-600">
-                <Loader2 className="w-4 h-4 animate-spin" /> Fetching diagnostic questions from database...
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Floating AI Chat Widget */}
       <AIChatWidget activeChild={activeChild} />

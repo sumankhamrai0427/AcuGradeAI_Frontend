@@ -168,6 +168,7 @@ class ApiServices {
   login(body: any) { return apiClient.post(POST_APIS.login, body); }
   googleLogin(body: any) { return apiClient.post(POST_APIS.googleLogin, body); }
   register(body: any) { return this.post(POST_APIS.register, body); }
+  checkUsername(username: string) { return this.get(GET_APIS.checkUsername(username)); }
   getRoles() { return this.get(GET_APIS.roles); }
   verifySession() { return this.get(GET_APIS.verifySession); }
   async getMenuPermissions() { 
@@ -181,7 +182,7 @@ class ApiServices {
   logout(body: any) { return this.post(POST_APIS.logout, body); }
 
   // ── Master Data ───────────────────────────
-  getChildRegistrationOptions() { return this.get(GET_APIS.childRegistrationOptions); }
+  getBoardClassDropdown() { return this.get(GET_APIS.boardClassDropdown); }
 
   // ── Parent ────────────────────────────────
   getParentDashboard() { return this.get(GET_APIS.parentDashboard); }
@@ -192,6 +193,11 @@ class ApiServices {
   deleteChild(childId: string | number) { return this.del(DELETE_APIS.deleteChild(childId)); }
   getChildOverview(childId: string | number) { return this.get(GET_APIS.childOverview(childId)); }
   getChildLearningPath(childId: string | number) { return this.get(GET_APIS.childLearningPath(childId)); }
+
+  // ── Student ───────────────────────────────
+  getStudentDashboard() { return this.get(GET_APIS.studentDashboard); }
+  getStudentMe() { return this.get(GET_APIS.studentMe); }
+  getStudentLearningPath() { return this.get(GET_APIS.studentLearningPath); }
 
   // ── Exams ─────────────────────────────────
   generateExam(body: any) { return this.post(POST_APIS.generateExam, body); }

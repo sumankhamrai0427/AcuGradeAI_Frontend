@@ -6,9 +6,10 @@ export const GET_APIS = {
   roles: `${API_V1}/auth/roles`,
   verifySession: `${API_V1}/auth/verify`,
   menuPermissions: `${API_V1}/auth/menu-permissions`,
+  checkUsername: (username: string) => `${API_V1}/auth/check-username?username=${encodeURIComponent(username)}`,
 
   // Master Data
-  childRegistrationOptions: `${API_V1}/master/child-registration-options`,
+  boardClassDropdown: `${API_V1}/master/board_class_dropdown`,
 
   // Parent
   parentDashboard: `${API_V1}/parents/dashboard`,
@@ -16,6 +17,11 @@ export const GET_APIS = {
   parentChildren: `${API_V1}/parents/me/children`,
   childOverview: (id: string | number) => `${API_V1}/parents/me/children/${id}/overview`,
   childLearningPath: (id: string | number) => `${API_V1}/parents/me/children/${id}/learning-path`,
+
+  // Student
+  studentDashboard: `${API_V1}/students/dashboard`,
+  studentMe: `${API_V1}/students/me`,
+  studentLearningPath: `${API_V1}/students/me/learning-path`,
 
   // Runbooks
   runbooks: `${API_V1}/runbooks`,

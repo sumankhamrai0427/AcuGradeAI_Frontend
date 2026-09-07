@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChildAccount } from '../types';
+import { ChildAccount, BOARD_CLASSES_MAP } from '../types';
 import ApiServices from '../services/ApiServices';
 import { Plus, User, Loader2, ChevronDown, Search } from 'lucide-react';
 
@@ -14,11 +14,11 @@ interface AddChildModalProps {
   onClose: () => void;
   onAddChild: (childData: {
     name: string;
+    username: string;
     avatar?: string;
     classGrade: string;
     targetBoard: string;
     schoolName?: string;
-    email?: string;
     password?: string;
     pin?: string;
   }) => void | Promise<void>;
@@ -108,11 +108,11 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
   parentEmail,
 }) => {
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [avatar, setAvatar] = useState('👦');
   const [classGrade, setClassGrade] = useState<string>('');
   const [targetBoard, setTargetBoard] = useState<string>('');
   const [schoolName, setSchoolName] = useState('');
-  const [email, setEmail] = useState(parentEmail || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -120,6 +120,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
 
   const [boards, setBoards] = useState<MasterOption[]>([]);
   const [classes, setClasses] = useState<MasterOption[]>([]);
+  const [boardClassesMap, setBoardClassesMap] = useState<Record<string, string[]>>(BOARD_CLASSES_MAP as any);
   const [isLoadingMasters, setIsLoadingMasters] = useState(false);
 
   // Fetch Master Data directly from Database on Modal Open
@@ -129,13 +130,17 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
     let isMounted = true;
     setIsLoadingMasters(true);
 
-    ApiServices.getChildRegistrationOptions()
+    ApiServices.getBoardClassDropdown()
       .then((res: any) => {
         if (!isMounted) return;
         const fetchedBoards: MasterOption[] = res?.boards || res?.data?.boards || [];
-        const fetchedClasses: MasterOption[] = res?.classes || res?.data?.classes || [];
+        const fetchedClasses: MasterOption[] = res?.classes || res?.classGrades || res?.data?.classes || res?.data?.classGrades || [];
+        const fetchedMap = res?.boardClassesMap || res?.data?.boardClassesMap || BOARD_CLASSES_MAP;
 
         setBoards(fetchedBoards);
+        if (fetchedMap) {
+          setBoardClassesMap(fetchedMap);
+        }
         if (fetchedBoards.length > 0) {
           setTargetBoard((prev) => {
             const exists = fetchedBoards.some((b) => b.name === prev);
@@ -167,13 +172,6 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
       });
   }, [isOpen]);
 
-  // Update email if parentEmail prop changes when modal opens
-  useEffect(() => {
-    if (isOpen && parentEmail && !email) {
-      setEmail(parentEmail);
-    }
-  }, [isOpen, parentEmail]);
-
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -181,13 +179,22 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
 
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = "Full name is required";
+    
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) {
+      newErrors.username = "Username is required";
+    } else if (trimmedUsername.includes('.')) {
+      newErrors.username = "Username cannot contain dots ('.')";
+    } else if (trimmedUsername.includes(' ')) {
+      newErrors.username = "Username cannot contain spaces";
+    } else if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+      newErrors.username = "Username must be between 3 and 30 characters";
+    } else if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{1,28}[a-zA-Z0-9]$/.test(trimmedUsername)) {
+      newErrors.username = "Username can only contain letters, numbers, underscores and hyphens";
+    }
+
     if (!targetBoard) newErrors.targetBoard = "Curriculum board is required";
     if (!classGrade) newErrors.classGrade = "Class/grade is required";
-    if (!email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Invalid email format";
-    }
     if (!password) newErrors.password = "Password is required";
     if (!confirmPassword) newErrors.confirmPassword = "Confirm password is required";
     else if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
@@ -198,32 +205,51 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
     }
 
     setErrors({});
-
     setIsSubmitting(true);
     try {
       await onAddChild({
         name: name.trim(),
+        username: trimmedUsername,
         avatar,
         classGrade,
         targetBoard,
         schoolName: schoolName.trim() || undefined,
-        email: email.trim() || undefined,
         password: password.trim(),
         pin: password.trim()
       });
 
       // Reset & close only on success
       setName('');
+      setUsername('');
       setSchoolName('');
-      setEmail(parentEmail || '');
       setPassword('');
       setConfirmPassword('');
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to add child:', err);
-      setErrors({ general: 'Something went wrong. Please try again.' });
+      const msg = err?.message || 'Something went wrong. Please try again.';
+      setErrors({ general: msg });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Filter classes based on selected board
+  const allowedClassNames = targetBoard 
+    ? (boardClassesMap?.[targetBoard] || (BOARD_CLASSES_MAP as any)[targetBoard] || null)
+    : null;
+
+  const availableClasses = allowedClassNames 
+    ? classes.filter(c => allowedClassNames.includes(c.name))
+    : classes;
+
+  const handleBoardChange = (newBoard: string) => {
+    setTargetBoard(newBoard);
+    if (errors.targetBoard) setErrors({ ...errors, targetBoard: '' });
+
+    const allowed = (boardClassesMap && boardClassesMap[newBoard]) || (BOARD_CLASSES_MAP as any)[newBoard];
+    if (allowed && classGrade && !allowed.includes(classGrade)) {
+      setClassGrade('');
     }
   };
 
@@ -233,9 +259,15 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
         <div className="flex items-center justify-between pb-4 border-b border-stone-100 mb-6">
           <div>
             <h3 className="text-lg font-bold text-stone-900">Create Child Sub-Account</h3>
-            <p className="text-xs text-stone-500">Each child gets their own login password, board profile, and diagnostic tracker</p>
+            <p className="text-xs text-stone-500">Each child gets their unique username and password to log in and take exams independently</p>
           </div>
         </div>
+
+        {errors.general && (
+          <div className="p-3 mb-4 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-600">
+            {errors.general}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
@@ -249,10 +281,31 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
                 setName(e.target.value);
                 if (errors.name) setErrors({ ...errors, name: '' });
               }}
-              placeholder="e.g. Aarav Sharma or Sara Jenkins"
+              placeholder="e.g. Aarav Sharma"
               className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-hidden focus:ring-2 ${errors.name ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-stone-300 focus:ring-yellow-500'}`}
             />
             {errors.name && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.name}</p>}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1">
+              Unique Username (for Student Login) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                if (errors.username) setErrors({ ...errors, username: '' });
+              }}
+              placeholder="e.g. Aarav_2026"
+              className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-hidden focus:ring-2 ${errors.username ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-stone-300 focus:ring-yellow-500'}`}
+            />
+            {errors.username ? (
+              <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.username}</p>
+            ) : (
+              <p className="text-[10px] text-stone-400 mt-1 font-medium">No dots (.), no spaces. Child will use this username to log in.</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -262,10 +315,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
               </label>
               <SearchableSelect
                 value={targetBoard}
-                onChange={(value) => {
-                  setTargetBoard(value);
-                  if (errors.targetBoard) setErrors({ ...errors, targetBoard: '' });
-                }}
+                onChange={handleBoardChange}
                 placeholder="Please Select"
                 disabled={isLoadingMasters || boards.length === 0}
                 options={boards.map(b => ({ value: b.name, label: b.name }))}
@@ -284,9 +334,9 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
                   setClassGrade(value);
                   if (errors.classGrade) setErrors({ ...errors, classGrade: '' });
                 }}
-                placeholder="Please Select"
-                disabled={isLoadingMasters || classes.length === 0}
-                options={classes.map(g => ({ value: g.name, label: g.name }))}
+                placeholder={!targetBoard ? "Select Board First" : "Please Select"}
+                disabled={isLoadingMasters || !targetBoard || availableClasses.length === 0}
+                options={availableClasses.map(g => ({ value: g.name, label: g.name }))}
                 hasError={!!errors.classGrade}
               />
               {errors.classGrade && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.classGrade}</p>}
@@ -299,30 +349,9 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
               type="text"
               value={schoolName}
               onChange={(e) => setSchoolName(e.target.value)}
-              placeholder="e.g. Delhi Public School or St. Xavier's"
+              placeholder="e.g. Delhi Public School"
               className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1">
-              Account Email <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (errors.email) setErrors({ ...errors, email: '' });
-              }}
-              placeholder="e.g. parent@example.com"
-              className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-hidden focus:ring-2 ${errors.email ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-stone-300 focus:ring-yellow-500'}`}
-            />
-            {errors.email ? (
-              <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.email}</p>
-            ) : (
-              <p className="text-[10px] text-stone-400 mt-1 font-medium">Default is parent's email. You can change this if needed.</p>
-            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

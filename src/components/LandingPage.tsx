@@ -143,7 +143,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const openAuth = (mode: 'login' | 'register' = 'login') => {
     onOpenAuth(mode);
   };
-  
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -508,10 +508,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 Short on <span className="text-yellow-500">Time?</span> ⏳
               </h2>
 
-              <p className="mt-4 text-stone-600 text-lg max-w-md">
+              <p className="mt-10 text-stone-600 text-lg max-w-md">
                 Exams approaching fast? Study Buddy quickly finds your weak spots so you can focus on what really matters and learn faster.
               </p>
 
+              <button
+                onClick={() => openAuth('register')}
+                className="mt-25 px-5 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white font-extrabold text-sm transition-colors"
+              >
+                Start Learning
+              </button>
 
             </div>
 
@@ -542,7 +548,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               ['03', 'Learn', 'Follow lessons, resources and practice.', '📚'],
               ['04', 'Improve', 'Retest, earn rewards and move up.', '🚀'],
             ].map(([number, title, text, emoji], i) => (
-              <div key={number} className="relative p-6 rounded-3xl bg-stone-50 border border-stone-200 reveal-on-scroll" style={{ transitionDelay: `${i * 100}ms` }}>
+              <div key={number} className={`relative p-6 rounded-3xl ${title === 'Assess' || title === 'Learn' ? 'bg-[#FFF7CC]' : 'bg-stone-50'} border border-stone-200`}>
                 <div className="flex items-center justify-between">
                   <span className="w-10 h-10 rounded-xl bg-yellow-400 text-stone-900 flex items-center justify-center text-xs font-black">
                     {number}
@@ -553,21 +559,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <p className="mt-2 text-sm text-stone-600 leading-relaxed">{text}</p>
               </div>
             ))}
-          </div>
-
-          <div className="mt-10 p-5 rounded-3xl bg-gradient-to-r from-yellow-500 to-amber-500 text-white flex flex-col md:flex-row items-center justify-between gap-5 reveal-on-scroll">
-            <div>
-              <div className="text-sm font-bold text-yellow-100">The learning loop</div>
-              <div className="mt-1 text-xl font-black">
-                Assess → Analyze → Learn → Practice → Retest → Improve
-              </div>
-            </div>
-            <button
-              onClick={() => openAuth('register')}
-              className="px-5 py-3 rounded-xl bg-white text-yellow-700 font-extrabold text-sm"
-            >
-              Start Learning
-            </button>
           </div>
         </div>
       </section>
@@ -589,7 +580,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           <div className="mt-12 grid lg:grid-cols-3 gap-5">
-            {(Object.keys(roleContent) as Role[]).map((role, i) => {
+            {(['parent', 'student', 'teacher'] as Role[]).map((role, i) => {
               const content = roleContent[role];
               const Icon = content.icon;
               const active = activeRole === role;
@@ -623,14 +614,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     ))}
                   </ul>
 
-                  <div className="mt-6 text-sm font-extrabold text-yellow-500 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (role === 'parent') {
+                        openAuth('register');
+                      } else if (role === 'student') {
+                        openAuth('login');
+                      } else {
+                        document.getElementById('personalization')?.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'start',
+                        });
+                      }
+                    }}
+                    className="mt-6 text-sm font-extrabold text-yellow-500 flex items-center gap-1"
+                  >
                     {role === 'student'
                       ? 'Start Learning'
                       : role === 'teacher'
                         ? 'See How It Works'
                         : 'Parent Login'}
                     <ArrowRight className="w-4 h-4" />
-                  </div>
+                  </button>
                 </div>
               );
             })}
@@ -639,7 +645,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* PERSONALIZATION EXAMPLE */}
-      <section className="py-20 bg-white">
+      <section id="personalization" className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto reveal-on-scroll">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-bold">
@@ -709,7 +715,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div>
                 <h3 className="text-2xl font-black text-stone-900">Advanced students get harder content.</h3>
                 <p className="mt-3 text-stone-600 font-medium text-lg leading-relaxed max-w-3xl">
-                  If a student consistently performs strongly, the platform dynamically adapts, moving them to <span className="font-bold text-amber-700 bg-amber-100/50 px-2 rounded-md">HOTS (Higher Order Thinking Skills)</span> questions, challenge quizzes, and advanced mock exams.
+                  If a student consistently performs strongly, the platform dynamically adapts, moving them to <span className="font-bold text-amber-700 bg-amber-100/50 rounded-md">HOTS (Higher Order Thinking Skills)</span> questions, challenge quizzes, and advanced mock exams.
                 </p>
               </div>
             </div>
@@ -933,7 +939,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Connected Learning
             </div>
             <h2 className="mt-6 text-4xl sm:text-5xl font-black tracking-tight text-stone-900 leading-tight capitalize">
-              Parents & <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-amber-500">SahajPath</span>: Guiding Your Child Together
+              Parents & <span className="text-stone-900">Sahaj</span><span className="text-yellow-500">Path</span>: Guiding Your Child Together
             </h2>
             <p className="mt-4 text-lg text-stone-600 font-medium">
               The Study Buddy handles the teaching, while the parent stays fully informed.
@@ -1071,7 +1077,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Ready to make<br />learning smarter?
           </h2>
           <p className="mt-6 text-stone-300 max-w-xl mx-auto text-lg font-medium">
-            Start with an assessment and let SahajPath guide the next step.
+            Start with an assessment and let Sahaj<span className="text-yellow-500">Path</span> guide the next step.
           </p>
           <button
             onClick={() => openAuth('register')}
@@ -1087,4 +1093,3 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     </div>
   );
 };
-
