@@ -512,7 +512,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Content */}
             <div className="flex-1 text-center lg:text-left reveal-on-scroll">
 
-              <h2 className="text-4xl sm:text-5xl font-black text-stone-900 leading-tight">
+              {/* <h2 className="text-4xl sm:text-5xl font-black text-stone-900 leading-tight"> */}
+              <h2 className="text-4xl sm:text-5xl font-black text-stone-900 leading-normal tracking-tight flex-shrink-0">
                 Short on <span className="text-yellow-500">Time?</span> ⏳
               </h2>
 
@@ -522,7 +523,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
               <button
                 onClick={() => openAuth('register')}
-                className="mt-8 px-8 py-3.5 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white font-black text-base shadow-md shadow-yellow-500/20 hover:shadow-lg hover:shadow-yellow-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
+                className="mt-30 px-8 py-3.5 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white font-black text-base shadow-md shadow-yellow-500/20 hover:shadow-lg hover:shadow-yellow-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
               >
                 Start Learning
               </button>
@@ -664,7 +665,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </section>
-
       {/* PERSONALIZATION EXAMPLE */}
       <section id="personalization" className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -707,14 +707,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <div className="transition-transform hover:-translate-y-3 duration-300 relative">
                       <div className="absolute inset-0 bg-white/40 blur-xl rounded-full group-hover:bg-yellow-400/20 transition-colors"></div>
 
-                      <div className={`relative w-full p-6 sm:p-8 lg:p-6 rounded-[2rem] bg-white/90 backdrop-blur-xl border border-white shadow-xl shadow-stone-200/50 flex flex-col items-center text-center z-10 overflow-hidden`}>
+                      <div className={`relative w-full h-[190px] p-6 sm:p-8 lg:p-6 rounded-[2rem] bg-white/90 backdrop-blur-xl border border-white shadow-xl shadow-stone-200/50 flex flex-col items-center justify-center text-center z-10 overflow-hidden`}>
                         <div className={`absolute top-0 right-0 w-24 h-24 ${colorClass} blur-3xl opacity-50 rounded-full -mr-10 -mt-10`}></div>
 
                         <div className={`w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-3xl ${colorClass} shadow-sm border border-white/50 mb-4 relative z-10`}>
                           {icon}
                         </div>
-                        <h3 className={`font-black text-lg ${textClass} mb-1.5 relative z-10`}>{title}</h3>
-                        <p className="text-sm font-semibold text-stone-500 relative z-10">{text}</p>
+                        <h3 className={`h-7 flex items-center justify-center font-black text-lg ${textClass} mb-1.5 relative z-10`}>{title}</h3>
+                        <p className="min-h-5 text-sm font-semibold text-stone-500 relative z-10">{text}</p>
                       </div>
                     </div>
                   </div>
@@ -745,7 +745,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </section>
-
       {/* GAMIFICATION */}
       <section className="py-20 bg-gradient-to-br from-amber-50 via-white to-amber-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -781,59 +780,57 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 ))}
               </div>
             </div>
-
-            {/* 2nd CARD (Balanced Spacing & Clean Hover Animations) */}
-            <div className="group/card relative rounded-[2rem] border border-amber-200 shadow-xl hover:shadow-2xl p-6 sm:p-7 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden reveal-on-scroll flex flex-col justify-between transition-all duration-300 hover:-translate-y-1">
+            {/* 2nd CARD */}
+            <div className="group/card relative rounded-[2rem] border border-amber-200 shadow-xl hover:shadow-2xl p-6 sm:p-7 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden reveal-on-scroll flex flex-col justify-between h-full transition-all duration-300 hover:-translate-y-1">
               <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-yellow-300 rounded-full blur-3xl opacity-30 group-hover/card:opacity-50 transition-opacity"></div>
 
-              <div>
-                {/* Header */}
-                <div className="relative z-10 flex items-center justify-between">
-                  <div>
-                    <div className="text-xs text-amber-700 font-bold uppercase tracking-wider">This Week</div>
-                    <div className="text-2xl font-black text-stone-900 mt-1 group-hover/card:text-amber-700 transition-colors">Rahul's Rewards</div>
-                  </div>
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg shadow-yellow-500/30 transition-transform duration-300 group-hover/card:scale-110 group-hover/card:rotate-6">
-                    <Award className="w-6 h-6 text-white" />
+              {/* Header Section */}
+              <div className="relative z-10 flex items-center justify-between shrink-0">
+                <div>
+                  <div className="text-xs text-amber-700 font-bold uppercase tracking-wider">This Week</div>
+                  <div className="text-2xl font-black text-stone-900 mt-1 group-hover/card:text-amber-700 transition-colors">
+                    Rahul's Rewards
                   </div>
                 </div>
-
-                {/* XP & Badges List with Hover */}
-                <div className="mt-5 space-y-2.5 relative z-10">
-                  {[
-                    ['Correct answers', '+120 XP', 'text-amber-600', 'bg-white/80 hover:bg-white'],
-                    ['7-day streak', '+70 XP', 'text-amber-600', 'bg-white/80 hover:bg-white'],
-                    ['Geometry badge', 'Unlocked!', 'text-amber-600', 'bg-amber-100/60 hover:bg-amber-100'],
-                    ['Leaderboard', '#3', 'text-amber-600', 'bg-white/80 hover:bg-white'],
-                  ].map(([label, value, color, bg]) => (
-                    <div
-                      key={label}
-                      className={`flex items-center justify-between p-3.5 rounded-2xl ${bg} border border-white shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-md cursor-pointer`}
-                    >
-                      <span className="text-sm font-bold text-stone-700">{label}</span>
-                      <span className={`text-sm font-black ${color}`}>{value}</span>
-                    </div>
-                  ))}
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg shadow-yellow-500/30 transition-transform duration-300 group-hover/card:scale-110 group-hover/card:rotate-6">
+                  <Award className="w-6 h-6 text-white" />
                 </div>
               </div>
 
-              {/* Brain Break Banner with Hover */}
-              <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-yellow-100 to-amber-100 border border-yellow-200/60 relative z-10 transition-all duration-300 hover:scale-[1.01] hover:border-amber-300 shadow-sm">
-                <div className="flex items-center gap-2 font-black text-sm text-stone-900">
-                  <Gamepad2 className="w-4 h-4 text-amber-600 animate-pulse" />
-                  Brain Break
+              {/* mt-6 se Rahul's Rewards ke baad thoda extra space diya hai, aur gap-2.5 se baki boxes ke beech ka gap kam kar diya hai */}
+              <div className="relative z-10 flex-1 flex flex-col justify-between gap-2.5 mt-6">
+                {[
+                  ['Correct answers', '+120 XP', 'text-amber-600', 'bg-white/80 hover:bg-white'],
+                  ['7-day streak', '+70 XP', 'text-amber-600', 'bg-white/80 hover:bg-white'],
+                  ['Geometry badge', 'Unlocked!', 'text-amber-600', 'bg-amber-100/60 hover:bg-amber-100'],
+                  ['Leaderboard', '#3', 'text-amber-600', 'bg-white/80 hover:bg-white'],
+                ].map(([label, value, color, bg]) => (
+                  <div
+                    key={label}
+                    className={`flex items-center justify-between px-4 py-4 rounded-2xl ${bg} border border-white shadow-sm transition-all duration-300 hover:scale-[1.01] hover:shadow-md cursor-pointer`}
+                  >
+                    <span className="text-sm font-bold text-stone-700">{label}</span>
+                    <span className={`text-sm font-black ${color}`}>{value}</span>
+                  </div>
+                ))}
+
+                {/* 5th Box: Brain Break */}
+                <div className="px-4 py-3 rounded-2xl bg-gradient-to-r from-yellow-100 to-amber-100 border border-yellow-200/60 transition-all duration-300 hover:scale-[1.01] hover:border-amber-300 shadow-sm">
+                  <div className="flex items-center gap-2 font-black text-sm text-stone-900">
+                    <Gamepad2 className="w-4 h-4 text-amber-600 animate-pulse shrink-0" />
+                    <span>Brain Break</span>
+                  </div>
+                  <p className="text-xs font-semibold text-stone-600 mt-0.5 leading-tight">
+                    Solve 3 quick puzzles and unlock a fun fact.
+                  </p>
                 </div>
-                <p className="text-xs font-semibold text-stone-600 mt-1 leading-relaxed">
-                  Solve 3 quick puzzles and unlock a fun fact.
-                </p>
               </div>
             </div>
+
 
           </div>
         </div>
       </section>
-
-
       {/* INTERACTIVE DEMO */}
       <section id="demo" className="py-20 bg-white border-y border-stone-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -916,10 +913,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <div className="text-[10px] text-stone-400">Step-by-step feedback</div>
                   </div>
                 </div>
-                <div className={`px-3 py-1.5 rounded-xl text-sm font-black ${currentAttempt.score >= 9
-                  ? 'bg-yellow-50 text-yellow-700'
-                  : 'bg-yellow-50 text-amber-700'
-                  }`}>
+                <div
+                  className={`px-3 py-1.5 rounded-xl text-sm font-black ${currentAttempt.score >= 9
+                    ? 'bg-yellow-50 text-yellow-700'
+                    : 'bg-yellow-50 text-amber-700'
+                    }`}
+                >
                   {currentAttempt.score}/10
                 </div>
               </div>
@@ -946,14 +945,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         )}
                         {step}
                       </span>
-                      <span className={`text-xs font-black ${pass ? 'text-yellow-600' : 'text-rose-600'}`}>
+                      <span
+                        className={`text-xs font-black ${pass ? 'text-yellow-600' : 'text-rose-600'
+                          }`}
+                      >
                         {marks}
                       </span>
                     </div>
                   ))}
 
                   <div className="mt-4 p-4 rounded-2xl bg-yellow-50 border border-yellow-200">
-                    <div className="text-xs font-black text-yellow-700">What should the student do next?</div>
+                    <div className="text-xs font-black text-yellow-700">
+                      What should the student do next?
+                    </div>
                     <p className="mt-1 text-xs text-stone-600 leading-relaxed">
                       {currentAttempt.feedback}
                     </p>
@@ -964,6 +968,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </section>
+
+
 
       {/* PARENT TEACHER CONNECTION */}
       <section className="relative py-24 bg-gradient-to-br from-indigo-50 via-white to-purple-50 overflow-hidden">

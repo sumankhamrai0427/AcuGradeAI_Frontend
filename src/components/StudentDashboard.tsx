@@ -1,0 +1,659 @@
+import React, { useState, useMemo } from 'react';
+import {
+  ChildAccount,
+  ExamSubmission,
+  LearningPathNode,
+  Badge,
+} from '../types';
+import {
+  Zap,
+  Flame,
+  Target,
+  Award,
+  Play,
+  ArrowRight,
+  TrendingUp,
+  Brain,
+  Sparkles,
+  Gamepad2,
+  Clock,
+  Compass,
+  CheckCircle2,
+  AlertCircle,
+  FileText,
+  ChevronRight,
+  BarChart3,
+  BookOpen,
+  PieChart as PieChartIcon,
+} from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+
+interface StudentDashboardProps {
+  activeChild: ChildAccount;
+  examHistory: ExamSubmission[];
+  learningNodes?: LearningPathNode[];
+  allBadges?: Badge[];
+  onNavigateToArena: () => void;
+  onNavigateToLearningPath: () => void;
+  onNavigateToGamification: () => void;
+  onNavigateToFunZone: () => void;
+  onViewSubmissionReport: (submission: ExamSubmission) => void;
+}
+
+const DYNAMIC_PALETTE = [
+  '#f59e0b', // Amber
+  '#3b82f6', // Blue
+  '#10b981', // Emerald
+  '#8b5cf6', // Purple
+  '#ec4899', // Pink
+  '#06b6d4', // Cyan
+  '#f97316', // Orange
+  '#6366f1', // Indigo
+  '#14b8a6', // Teal
+  '#eab308', // Yellow
+];
+
+export const StudentDashboard: React.FC<StudentDashboardProps> = ({
+  activeChild,
+  examHistory,
+  learningNodes = [],
+  allBadges = [],
+  onNavigateToArena,
+  onNavigateToLearningPath,
+  onNavigateToGamification,
+  onNavigateToFunZone,
+  onViewSubmissionReport,
+}) => {
+  const [timeframe, setTimeframe] = useState<'week' | 'month'>('week');
+
+  // Check if student is in Junior Grade (Class 1 - Class 4)
+  const isKid = ['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some((c) =>
+    (activeChild.classGrade || '').includes(c)
+  );
+  const defaultTotalMarks = isKid ? 5 : 15;
+
+  // Filter exams strictly for this student from live database submissions
+  const studentExams = useMemo(() => {
+    return examHistory
+      .filter((e) => String(e.studentId) === String(activeChild.id))
+      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+  }, [examHistory, activeChild.id]);
+
+  // Total XP & Level calculation
+  const xp = activeChild.xp || 0;
+  const currentLevel = Math.floor(xp / 100) + 1;
+  const nextLevelXP = currentLevel * 100;
+  const currentLevelBaseXP = (currentLevel - 1) * 100;
+  const xpProgress = Math.min(100, Math.max(0, ((xp - currentLevelBaseXP) / (nextLevelXP - currentLevelBaseXP)) * 100));
+
+  // Accuracy calculation
+  const totalMarksObtained = studentExams.reduce((sum, e) => sum + (e.marksObtained || 0), 0);
+  const totalMarksPossible = studentExams.reduce((sum, e) => sum + (e.totalMarks || defaultTotalMarks), 0);
+  const accuracyPct = totalMarksPossible > 0
+    ? Math.round((totalMarksObtained / totalMarksPossible) * 100)
+    : Math.round(activeChild.averageScore > 10 ? activeChild.averageScore : activeChild.averageScore * 10 || 75);
+
+  const streakDays = activeChild.streakDays || 0;
+
+  // Unlocked badges count
+  const unlockedBadgesCount = (activeChild.badges || []).length;
+
+  // Identify next recommended topic from learning path or mastery
+  const nextRecommendedTopic = useMemo(() => {
+    const inProgress = learningNodes.find((n) => n.status === 'in_progress');
+    if (inProgress) return inProgress;
+    const lockedOrAvail = learningNodes.find((n) => n.status === 'available');
+    if (lockedOrAvail) return lockedOrAvail;
+    if (learningNodes.length > 0) return learningNodes[0];
+    return null;
+  }, [learningNodes]);
+
+  // Strongest topics and topics needing attention (safe cast to number)
+  const topicMasteryEntries = Object.entries(activeChild.topicMastery || {});
+  const strongTopics = topicMasteryEntries
+    .map(([topic, score]) => [topic, Number(score)] as [string, number])
+    .filter(([_, score]) => score >= 75)
+    .slice(0, 3);
+  const weakTopics = topicMasteryEntries
+    .map(([topic, score]) => [topic, Number(score)] as [string, number])
+    .filter(([_, score]) => score < 70)
+    .slice(0, 3);
+
+  // Dynamic Subject-wise Marks & Score distribution calculated directly from database records
+  const subjectMarksChartData = useMemo(() => {
+    const subjectMap = new Map<string, { totalObtained: number; totalPossible: number; examsCount: number }>();
+
+    studentExams.forEach((sub) => {
+      const subjectName = (sub.subject || 'General Practice').trim();
+      const current = subjectMap.get(subjectName) || { totalObtained: 0, totalPossible: 0, examsCount: 0 };
+      current.totalObtained += (sub.marksObtained || 0);
+      current.totalPossible += (sub.totalMarks || defaultTotalMarks);
+      current.examsCount += 1;
+      subjectMap.set(subjectName, current);
+    });
+
+    return Array.from(subjectMap.entries()).map(([subject, data], index) => {
+      const accuracy = data.totalPossible > 0
+        ? Math.round((data.totalObtained / data.totalPossible) * 100)
+        : 0;
+
+      return {
+        name: subject,
+        value: data.totalObtained, // Pie slice sized by marks obtained
+        marksObtained: data.totalObtained,
+        totalPossible: data.totalPossible,
+        accuracyPct: accuracy,
+        examsCount: data.examsCount,
+        color: DYNAMIC_PALETTE[index % DYNAMIC_PALETTE.length],
+      };
+    });
+  }, [studentExams, defaultTotalMarks]);
+
+  const totalSubjectMarks = useMemo(() => {
+    return subjectMarksChartData.reduce((acc, curr) => acc + curr.marksObtained, 0);
+  }, [subjectMarksChartData]);
+
+  // Performance progress chart data
+  const chartData = useMemo(() => {
+    const now = Date.now();
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    if (timeframe === 'week') {
+      const today = new Date();
+      // Calculate Monday of the current week (0 is Sunday, 1 is Monday ... 6 is Saturday)
+      const dayOfWeek = today.getDay();
+      const diffToMonday = (dayOfWeek + 6) % 7; // days since Monday (0 for Mon, 6 for Sun)
+
+      const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToMonday);
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+      return [0, 1, 2, 3, 4, 5, 6].map((offset) => {
+        const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + offset);
+        const dayLabel = days[offset];
+        const dayStart = d.getTime();
+        const dayEnd = dayStart + DAY_MS;
+
+        const matching = studentExams.filter((e) => {
+          const t = new Date(e.submittedAt).getTime();
+          return t >= dayStart && t < dayEnd;
+        });
+
+        const score = matching.length > 0
+          ? Math.round(matching.reduce((acc, curr) => acc + ((curr.marksObtained / (curr.totalMarks || defaultTotalMarks)) * 100), 0) / matching.length)
+          : null;
+
+        return { label: dayLabel, score };
+      });
+    } else {
+      // 4 weeks window
+      return [4, 3, 2, 1].map((w) => {
+        const wEnd = now - (w - 1) * 7 * DAY_MS;
+        const wStart = now - w * 7 * DAY_MS;
+        const matching = studentExams.filter((e) => {
+          const t = new Date(e.submittedAt).getTime();
+          return t >= wStart && t < wEnd;
+        });
+        const score = matching.length > 0
+          ? Math.round(matching.reduce((acc, curr) => acc + ((curr.marksObtained / (curr.totalMarks || defaultTotalMarks)) * 100), 0) / matching.length)
+          : null;
+        return { label: `W${5 - w}`, score };
+      });
+    }
+  }, [studentExams, timeframe, defaultTotalMarks]);
+
+  return (
+    <div className="space-y-6 pb-12">
+      {/* ── 4 TOP METRIC CARDS (FULL WIDTH ROW) ─────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: XP & Level */}
+        <div
+          onClick={onNavigateToGamification}
+          className="group rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-white border border-amber-200/80 p-5 shadow-xs transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-amber-700">Level {currentLevel}</span>
+            <div className="h-9 w-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 group-hover:scale-110 transition-transform">
+              <Zap className="h-5 w-5 fill-current" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900">{xp} <span className="text-sm font-bold text-stone-500">XP</span></div>
+            <div className="mt-2 w-full bg-amber-100 rounded-full h-1.5 overflow-hidden">
+              <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${xpProgress}%` }} />
+            </div>
+            <p className="text-[10px] font-bold text-stone-500 mt-1.5 flex justify-between">
+              <span>Scholar Tier</span>
+              <span>{Math.round(xpProgress)}% to Lvl {currentLevel + 1}</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Card 2: Streak */}
+        <div className="group rounded-3xl bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-white border border-rose-200/80 p-5 shadow-xs transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-rose-700">Streak</span>
+            <div className="h-9 w-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform">
+              <Flame className="h-5 w-5 fill-current" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900">{streakDays} <span className="text-sm font-bold text-stone-500">Days</span></div>
+            <p className="text-xs font-semibold text-rose-700 mt-1 flex items-center gap-1">
+              {streakDays >= 3 ? '🔥 Super active learner!' : '🚀 Practice daily to build streak!'}
+            </p>
+          </div>
+        </div>
+
+        {/* Card 3: Overall Readiness / Accuracy */}
+        <div className="group rounded-3xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-white border border-emerald-200/80 p-5 shadow-xs transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-emerald-700">Accuracy</span>
+            <div className="h-9 w-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 group-hover:scale-110 transition-transform">
+              <Target className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900">{accuracyPct}%</div>
+            <p className="text-xs font-semibold text-stone-500 mt-1">
+              Based on {studentExams.length} challenges
+            </p>
+          </div>
+        </div>
+
+        {/* Card 4: Badges */}
+        <div
+          onClick={onNavigateToGamification}
+          className="group rounded-3xl bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-white border border-sky-200/80 p-5 shadow-xs transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer flex flex-col justify-between"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-sky-700">Badges</span>
+            <div className="h-9 w-9 rounded-xl bg-sky-100 flex items-center justify-center text-sky-700 group-hover:scale-110 transition-transform">
+              <Award className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900">{unlockedBadgesCount} <span className="text-sm font-bold text-stone-500">Unlocked</span></div>
+            <p className="text-xs font-semibold text-sky-700 mt-1 flex items-center gap-1">
+              View Trophy Cabinet <ChevronRight className="w-3.5 h-3.5" />
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── MIDDLE GRID: 2 ACTION CARDS (LEFT 2 COLS) + SUBJECT PIE CHART (RIGHT 1 COL) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        {/* Left 2 Cols: Quick Launch & Adaptive Learning Path Quest */}
+        <div className="lg:col-span-2 space-y-6 flex flex-col justify-between">
+          {/* Active Diagnostic Launch Card */}
+          <div className="rounded-3xl border border-stone-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 font-black text-sm">
+                  ⚡
+                </div>
+                <div>
+                  <h3 className="font-black text-stone-900 text-base">
+                    {isKid ? 'Fun Adventure Practice' : 'Quick Diagnostic Practice'}
+                  </h3>
+                  <p className="text-xs text-stone-500 font-medium">
+                    {isKid
+                      ? '5 Questions • 5 Marks • ~10 Minutes'
+                      : '10 Questions • 15 Marks • ~15 Minutes'}
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Ready
+              </span>
+            </div>
+
+            <div className="rounded-2xl bg-stone-50 border border-stone-200/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-stone-500 uppercase tracking-wider">Configured Target:</div>
+                <div className="font-black text-stone-900 text-sm">
+                  {activeChild.classGrade} &bull; {activeChild.curriculumBoard} (All Core Subjects)
+                </div>
+                <p className="text-xs text-stone-600 font-medium">
+                  AI dynamically calibrates questions according to your previous strengths & weak areas.
+                </p>
+              </div>
+              <button
+                onClick={onNavigateToArena}
+                className="shrink-0 px-5 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs font-black transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+              >
+                {isKid ? 'Start Adventure Quest' : 'Launch Challenge'} <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Adaptive Learning Path Quest */}
+          <div className="rounded-3xl border border-stone-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-sky-100 flex items-center justify-center text-sky-700 font-black text-sm">
+                  🧭
+                </div>
+                <div>
+                  <h3 className="font-black text-stone-900 text-base">Next in Adaptive Learning Path</h3>
+                  <p className="text-xs text-stone-500 font-medium">Curriculum mastery sequence for your class</p>
+                </div>
+              </div>
+              <button
+                onClick={onNavigateToLearningPath}
+                className="text-xs font-bold text-sky-600 hover:text-sky-800 flex items-center gap-1 cursor-pointer"
+              >
+                View Full Path <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {nextRecommendedTopic ? (
+              <div className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/60 via-white to-amber-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-black uppercase">
+                    <span>{nextRecommendedTopic.subject}</span> &bull; <span>Node {nextRecommendedTopic.nodeId}</span>
+                  </div>
+                  <h4 className="font-black text-stone-900 text-sm sm:text-base">{nextRecommendedTopic.topicName}</h4>
+                  <p className="text-xs text-stone-600 font-medium line-clamp-1">{nextRecommendedTopic.description}</p>
+                </div>
+                <button
+                  onClick={onNavigateToLearningPath}
+                  className="shrink-0 px-4 py-2 rounded-xl bg-stone-900 text-white hover:bg-stone-800 text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  Continue Quest <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-stone-50 p-6 text-center text-xs text-stone-500">
+                <p>No active learning nodes yet. Take your first diagnostic exam to generate your personalized learning path!</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right 1 Col: Dynamic Subject Marks Distribution PieChart */}
+        <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <div>
+                <h3 className="font-black text-stone-900 text-base flex items-center gap-2">
+                  <PieChartIcon className="w-4 h-4 text-amber-500" />
+                  Subject Performance
+                </h3>
+                <p className="text-xs text-stone-500 font-medium mt-0.5">Marks &amp; score distribution</p>
+              </div>
+              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full shrink-0">
+                {subjectMarksChartData.length} Subjects
+              </span>
+            </div>
+
+            {subjectMarksChartData.length > 0 ? (
+              <div className="mt-3">
+                {/* Donut Chart */}
+                <div className="h-44 w-full relative flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-stone-900 text-white text-xs rounded-xl px-3 py-2 shadow-xl border border-stone-800 space-y-1">
+                                <p className="font-black text-yellow-400">{data.name}</p>
+                                <p className="text-stone-300">
+                                  Marks: <span className="font-bold text-white">{data.marksObtained}/{data.totalPossible}</span> ({data.accuracyPct}%)
+                                </p>
+                                <p className="text-[10px] text-stone-400 font-medium">
+                                  {data.examsCount} {data.examsCount === 1 ? 'Exam' : 'Exams'} Taken
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Pie
+                        data={subjectMarksChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={46}
+                        outerRadius={66}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {subjectMarksChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Center Text inside Donut */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-lg font-black text-stone-900">{totalSubjectMarks}</span>
+                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Total Marks</span>
+                  </div>
+                </div>
+
+                {/* Subject Legend & Accuracy Pill List */}
+                <div className="mt-3 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                  {subjectMarksChartData.map((item) => (
+                    <div
+                      key={item.name}
+                      className="flex items-center justify-between p-2 rounded-xl bg-stone-50/80 hover:bg-stone-100/80 transition-colors text-xs"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="font-bold text-stone-800 truncate">{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-bold text-stone-600 text-[11px]">{item.marksObtained} pts</span>
+                        <span className="font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md text-[10px]">
+                          {item.accuracyPct}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="py-16 text-center text-xs text-stone-400">
+                <PieChartIcon className="w-8 h-8 mx-auto text-stone-300 mb-2" />
+                <p>No subject data yet.</p>
+                <p className="text-[11px] text-stone-400 mt-1">Take a challenge to see your subject marks breakdown!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── SECOND VIEW: PROGRESS TREND & TOPIC DIAGNOSTICS ──────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Learning Progress Trend */}
+        <div className="lg:col-span-2 rounded-3xl border border-stone-200 bg-white p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 className="font-black text-stone-900 text-base">Learning Progress Over Time</h3>
+              <p className="text-xs text-stone-500 font-medium">Diagnostic accuracy trend</p>
+            </div>
+            <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl">
+              <button
+                onClick={() => setTimeframe('week')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${timeframe === 'week' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500 hover:text-stone-900'}`}
+              >
+                Week
+              </button>
+              <button
+                onClick={() => setTimeframe('month')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${timeframe === 'month' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500 hover:text-stone-900'}`}
+              >
+                Month
+              </button>
+            </div>
+          </div>
+
+          <div className="h-64 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="studentProgressGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={11} domain={[0, 100]} tickLine={false} axisLine={false} />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const val = payload[0].value;
+                      return (
+                        <div className="bg-stone-900 text-white text-xs rounded-xl px-3 py-2 shadow-lg">
+                          <p className="font-bold">{label}</p>
+                          <p className="text-yellow-400 font-extrabold">{val !== null ? `${val}% Accuracy` : 'No challenges taken'}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  stroke="#f59e0b"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#studentProgressGrad)"
+                  connectNulls
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Right 1 Col: Topic Mastery Diagnostics */}
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-xs space-y-4">
+            <h3 className="font-black text-stone-900 text-base flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              Topic Diagnostics
+            </h3>
+
+            {/* Strongest */}
+            <div className="space-y-2">
+              <div className="text-[11px] font-black text-emerald-700 uppercase tracking-wider flex items-center gap-1">
+                <span>⭐</span> Strong Topics ({strongTopics.length})
+              </div>
+              {strongTopics.length > 0 ? (
+                <div className="space-y-1.5">
+                  {strongTopics.map(([topic, score]) => (
+                    <div key={topic} className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 text-xs">
+                      <span className="font-bold text-stone-800 truncate max-w-[160px]">{topic}</span>
+                      <span className="font-black text-emerald-700 shrink-0">{score}%</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-stone-400 italic">Take more tests to reveal your strongest topics.</p>
+              )}
+            </div>
+
+            {/* Needs Attention */}
+            <div className="space-y-2 pt-2 border-t border-stone-100">
+              <div className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
+                <span>📌</span> Needs Revision ({weakTopics.length})
+              </div>
+              {weakTopics.length > 0 ? (
+                <div className="space-y-1.5">
+                  {weakTopics.map(([topic, score]) => (
+                    <div key={topic} className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50/60 border border-amber-100 text-xs">
+                      <span className="font-bold text-stone-800 truncate max-w-[160px]">{topic}</span>
+                      <span className="font-black text-amber-700 shrink-0">{score}%</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-stone-400 italic">No major weak topics identified! Keep it up!</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── RECENT CHALLENGES SECTION ────────────────────────────────────────── */}
+      <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h3 className="font-black text-stone-900 text-base">Recent Diagnostic Challenges</h3>
+            <p className="text-xs text-stone-500 font-medium">History of your latest tests and scores</p>
+          </div>
+          <span className="text-xs font-bold text-stone-500 bg-stone-100 px-3 py-1 rounded-full">
+            {studentExams.length} Total Submissions
+          </span>
+        </div>
+
+        {studentExams.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {studentExams.slice(0, 4).map((sub) => {
+              const subTotalMarks = sub.totalMarks || defaultTotalMarks;
+              const scorePct = Math.round((sub.marksObtained / subTotalMarks) * 100);
+              const dateStr = new Date(sub.submittedAt).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+              });
+
+              return (
+                <div
+                  key={sub.id}
+                  onClick={() => onViewSubmissionReport(sub)}
+                  className="group flex flex-col justify-between p-4 rounded-2xl bg-stone-50 hover:bg-amber-50/50 border border-stone-200/70 hover:border-amber-200 transition-all cursor-pointer shadow-2xs space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-bold text-stone-900 group-hover:text-amber-900 transition-colors line-clamp-1">
+                        {sub.subject || 'Diagnostic Exam'}
+                      </div>
+                      <div className="text-[10px] text-stone-400 font-medium">
+                        {dateStr} &bull; {sub.examType || (isKid ? '5-Mark Adventure Quest' : '15-Mark Challenge')}
+                      </div>
+                    </div>
+                    <span className={`text-xs font-black px-2 py-0.5 rounded-lg ${scorePct >= 75 ? 'bg-emerald-100 text-emerald-800' : scorePct >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'}`}>
+                      {scorePct}%
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-stone-200/50 text-xs">
+                    <span className="font-bold text-stone-600">
+                      Score: <strong className="text-stone-900">{sub.marksObtained}/{subTotalMarks}</strong>
+                    </span>
+                    <span className="text-[11px] font-bold text-amber-600 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                      View Report <ChevronRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-10 text-center text-xs text-stone-400">
+            <FileText className="w-8 h-8 mx-auto text-stone-300 mb-2" />
+            No challenges taken yet. Take your first test to see detailed scores and reports!
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

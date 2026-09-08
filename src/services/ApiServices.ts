@@ -239,6 +239,15 @@ class ApiServices {
   adminLogin(body: any) { return apiClient.post(POST_APIS.adminLogin, body); }
   adminResetPassword(body: any) { return this.post(POST_APIS.adminResetPassword, body); }
   adminStatistics() { return this.get(GET_APIS.adminStatistics); }
+  adminDashboard() { return this.get(GET_APIS.adminDashboard); }
+  listAdminUsers(filters?: any) {
+    const params = filters ? new URLSearchParams(filters).toString() : '';
+    return this.get(GET_APIS.adminUsers(params));
+  }
+  adminAuditLogs(filters?: any) {
+    const params = filters ? new URLSearchParams(filters).toString() : '';
+    return this.get(GET_APIS.adminAuditLogs(params));
+  }
 
   // ── Blogs ─────────────────────────────────
   listBlogs(filters?: any) {

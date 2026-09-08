@@ -59,6 +59,7 @@ import { ExamArena } from './components/ExamArena';
 import { KidsExamArena } from './components/KidsExamArena';
 import { DiagnosticReport } from './components/DiagnosticReport';
 import { ParentDashboard } from './components/ParentDashboard';
+import { StudentDashboard } from './components/StudentDashboard';
 import { ChildrenPage } from './components/ChildrenPage';
 import { ReportsPage } from './components/ReportsPage';
 import { SuperAdminPanel } from './components/SuperAdminPanel';
@@ -371,7 +372,7 @@ export default function App() {
     if (upperRole === 'PARENT') {
       navigate('/dashboard', { replace: true });
     } else if (upperRole === 'STUDENT') {
-      navigate('/arena', { replace: true });
+      navigate('/dashboard', { replace: true });
     } else if (upperRole === 'TEACHER') {
       navigate('/ptc', { replace: true });
     } else if (upperRole === 'ADMIN') {
@@ -981,22 +982,48 @@ export default function App() {
               />
             ) : (
               <>
-                {(activeTab === 'dashboard' || activeTab === 'home') && parentAccount && (
-                  <ParentDashboard
-                    parentAccount={parentAccount}
-                    activeChildId={activeChildId}
-                    onChildSelect={(cId) => {
-                      setActiveChildId(cId);
-                    }}
-                    onLaunchExamForChild={(cId) => {
-                      setActiveChildId(cId);
-                      setActiveTab('arena');
-                    }}
-                    onOpenAddChildModal={() => setShowAddChildModal(true)}
-                    examHistory={examHistory}
-                    onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
-                    onUpdateChild={handleUpdateChild}
-                  />
+                {(activeTab === 'dashboard' || activeTab === 'home') && (
+                  isParentActive && parentAccount ? (
+                    <ParentDashboard
+                      parentAccount={parentAccount}
+                      activeChildId={activeChildId}
+                      onChildSelect={(cId) => {
+                        setActiveChildId(cId);
+                      }}
+                      onLaunchExamForChild={(cId) => {
+                        setActiveChildId(cId);
+                        setActiveTab('arena');
+                      }}
+                      onOpenAddChildModal={() => setShowAddChildModal(true)}
+                      examHistory={examHistory}
+                      onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
+                      onUpdateChild={handleUpdateChild}
+                    />
+                  ) : activeChild ? (
+                    <StudentDashboard
+                      activeChild={activeChild}
+                      examHistory={examHistory}
+                      learningNodes={learningNodes}
+                      allBadges={badges}
+                      onNavigateToArena={() => {
+                        setActiveSubmissionReport(null);
+                        setActiveTab('arena');
+                      }}
+                      onNavigateToLearningPath={() => {
+                        setActiveSubmissionReport(null);
+                        setActiveTab('learning-path');
+                      }}
+                      onNavigateToGamification={() => {
+                        setActiveSubmissionReport(null);
+                        setActiveTab('gamification');
+                      }}
+                      onNavigateToFunZone={() => {
+                        setActiveSubmissionReport(null);
+                        setActiveTab('fun-zone');
+                      }}
+                      onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
+                    />
+                  ) : null
                 )}
 
                 {activeTab === 'children' && parentAccount && (
@@ -1005,6 +1032,7 @@ export default function App() {
                     activeChildId={activeChildId}
                     onChildSelect={setActiveChildId}
                     onNavigateToArena={() => setActiveTab('arena')}
+                    examHistory={examHistory}
                   />
                 )}
 

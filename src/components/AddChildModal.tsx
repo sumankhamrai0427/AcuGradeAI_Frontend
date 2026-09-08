@@ -56,24 +56,24 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onC
 
   return (
     <div ref={wrapperRef} className="relative w-full">
-      <div 
+      <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`w-full px-3 py-2.5 rounded-xl border text-sm flex justify-between items-center cursor-pointer ${disabled ? 'opacity-60 cursor-not-allowed bg-stone-50' : 'bg-white'} ${hasError ? 'border-red-500 bg-red-50' : 'border-stone-300'}`}
       >
         <span className={selectedOption ? 'text-stone-900' : 'text-stone-500'}>{selectedOption ? selectedOption.label : placeholder}</span>
         <ChevronDown className={`w-4 h-4 text-stone-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </div>
-      
+
       {isOpen && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-stone-200 rounded-xl shadow-xl max-h-60 overflow-hidden flex flex-col">
           <div className="p-2 border-b border-stone-100">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-stone-400" />
-              <input 
-                type="text" 
-                value={search} 
-                onChange={e => setSearch(e.target.value)} 
-                placeholder="Search..." 
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search..."
                 className="w-full pl-9 pr-3 py-2 text-xs border border-stone-200 rounded-lg focus:outline-hidden focus:border-yellow-400"
                 autoFocus
                 onClick={e => e.stopPropagation()}
@@ -85,7 +85,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({ options, value, onC
               <div className="p-3 text-xs text-stone-500 text-center">No results found</div>
             ) : (
               filteredOptions.map(opt => (
-                <div 
+                <div
                   key={opt.value}
                   onClick={() => { onChange(opt.value); setIsOpen(false); setSearch(''); }}
                   className={`px-3 py-2 text-sm rounded-lg cursor-pointer transition-colors ${value === opt.value ? 'bg-yellow-50 text-yellow-900 font-medium' : 'hover:bg-stone-50 text-stone-700'}`}
@@ -179,7 +179,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
 
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = "Full name is required";
-    
+
     const trimmedUsername = username.trim();
     if (!trimmedUsername) {
       newErrors.username = "Username is required";
@@ -235,11 +235,11 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
   };
 
   // Filter classes based on selected board
-  const allowedClassNames = targetBoard 
+  const allowedClassNames = targetBoard
     ? (boardClassesMap?.[targetBoard] || (BOARD_CLASSES_MAP as any)[targetBoard] || null)
     : null;
 
-  const availableClasses = allowedClassNames 
+  const availableClasses = allowedClassNames
     ? classes.filter(c => allowedClassNames.includes(c.name))
     : classes;
 
@@ -289,7 +289,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
 
           <div>
             <label className="block text-xs font-semibold text-stone-700 mb-1">
-              Unique Username (for Student Login) <span className="text-red-500">*</span>
+              Create Username (for Student Login) <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -306,6 +306,41 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
             ) : (
               <p className="text-[10px] text-stone-400 mt-1 font-medium">No dots (.), no spaces. Child will use this username to log in.</p>
             )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-stone-700 mb-1">
+                Create Password <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors({ ...errors, password: '' });
+                }}
+                placeholder="••••••••"
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-hidden focus:ring-2 ${errors.password ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-stone-300 focus:ring-yellow-500'}`}
+              />
+              {errors.password && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.password}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-700 mb-1">
+                Confirm Password <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: '' });
+                }}
+                placeholder="••••••••"
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-hidden focus:ring-2 ${errors.confirmPassword ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-stone-300 focus:ring-yellow-500'}`}
+              />
+              {errors.confirmPassword && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.confirmPassword}</p>}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -352,41 +387,6 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
               placeholder="e.g. Delhi Public School"
               className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Create Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (errors.password) setErrors({ ...errors, password: '' });
-                }}
-                placeholder="••••••••"
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-hidden focus:ring-2 ${errors.password ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-stone-300 focus:ring-yellow-500'}`}
-              />
-              {errors.password && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.password}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Confirm Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: '' });
-                }}
-                placeholder="••••••••"
-                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-hidden focus:ring-2 ${errors.confirmPassword ? 'border-red-500 bg-red-50 focus:ring-red-500' : 'border-stone-300 focus:ring-yellow-500'}`}
-              />
-              {errors.confirmPassword && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.confirmPassword}</p>}
-            </div>
           </div>
 
           <div className="flex items-center justify-between gap-3 pt-4 border-t border-stone-100">

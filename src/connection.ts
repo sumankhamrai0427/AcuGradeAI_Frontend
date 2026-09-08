@@ -46,6 +46,9 @@ export const GET_APIS = {
 
   // Admin & Health
   adminStatistics: `${API_V1}/admin/statistics`,
+  adminDashboard: `${API_V1}/admin/dashboard`,
+  adminUsers: (params?: string) => `${API_V1}/admin/users${params ? `?${params}` : ''}`,
+  adminAuditLogs: (params?: string) => `${API_V1}/admin/audit-logs${params ? `?${params}` : ''}`,
   health: `${API_V1}/health`,
 };
 

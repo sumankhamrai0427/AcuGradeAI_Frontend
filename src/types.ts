@@ -56,6 +56,28 @@ export type Subject =
   | 'Computer Science' 
   | 'Logical Reasoning';
 
+export const CLASS_SUBJECTS_MAP: Record<string, Subject[]> = {
+  // Primary (Class 1 to 5)
+  'Class 1': ['Mathematics', 'English', 'Science', 'Social Studies', 'Computer Science', 'Logical Reasoning'],
+  'Class 2': ['Mathematics', 'English', 'Science', 'Social Studies', 'Computer Science', 'Logical Reasoning'],
+  'Class 3': ['Mathematics', 'English', 'Science', 'Social Studies', 'Computer Science', 'Logical Reasoning'],
+  'Class 4': ['Mathematics', 'English', 'Science', 'Social Studies', 'Computer Science', 'Logical Reasoning'],
+  'Class 5': ['Mathematics', 'English', 'Science', 'Social Studies', 'Computer Science', 'Logical Reasoning'],
+
+  // Middle School (Class 6 to 8)
+  'Class 6': ['Mathematics', 'Science', 'Physics', 'Chemistry', 'Biology', 'Social Studies', 'English', 'Computer Science', 'Logical Reasoning'],
+  'Class 7': ['Mathematics', 'Science', 'Physics', 'Chemistry', 'Biology', 'Social Studies', 'English', 'Computer Science', 'Logical Reasoning'],
+  'Class 8': ['Mathematics', 'Science', 'Physics', 'Chemistry', 'Biology', 'Social Studies', 'English', 'Computer Science', 'Logical Reasoning'],
+
+  // Secondary (Class 9 to 10)
+  'Class 9': ['Mathematics', 'Science', 'Physics', 'Chemistry', 'Biology', 'Social Studies', 'English', 'Computer Science', 'Logical Reasoning'],
+  'Class 10': ['Mathematics', 'Science', 'Physics', 'Chemistry', 'Biology', 'Social Studies', 'English', 'Computer Science', 'Logical Reasoning'],
+
+  // Higher Secondary (Class 11 to 12)
+  'Class 11': ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science', 'English', 'Logical Reasoning'],
+  'Class 12': ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science', 'English', 'Logical Reasoning'],
+};
+
 export type ExamDifficulty = 'simple' | 'medium' | 'hard';
 
 export type QuestionType = 'mcq' | 'objective' | 'numerical' | 'logical';
