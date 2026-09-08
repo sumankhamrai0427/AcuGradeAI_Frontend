@@ -13,14 +13,18 @@ import {
   ChevronRight,
   MessageSquare,
   Share2,
+  BookOpen,
 } from "lucide-react";
-import blogsData from "../data/blogs.json";
+import ApiServices from "../services/ApiServices";
+import DOMPurify from "dompurify";
 import { PublicHeader } from "./common/PublicHeader";
 import { PublicFooter } from "./common/PublicFooter";
 
 export interface BlogPostData {
   id: string;
   title: string;
+  heading?: string;
+  introduction?: string;
   slug: string;
   author: string;
   authorRole: string;
@@ -28,6 +32,7 @@ export interface BlogPostData {
   readTime: string;
   publishedDate: string;
   category: string;
+  categoryId: number | null;
   classRange: string;
   board: string;
   coverGradient: string;
@@ -47,25 +52,21 @@ const renderMD = (text: string) => {
   );
 };
 
-// ── Category colour
-const CAT_COLOR: Record<string, string> = {
-  "Board Strategies": "text-yellow-600",
-  "AI & RAG Learning": "text-violet-600",
-  "NEET & IIT": "text-rose-600",
-  "Parenting & Pedagogy": "text-emerald-600",
-};
-const catColor = (c: string) => CAT_COLOR[c] ?? "text-stone-500";
-
-const ALL_CATS = ["All", "Board Strategies", "AI & RAG Learning", "Parenting & Pedagogy"];
-
-
+const catColor = (_category: string) => "text-stone-500";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Cover image (gradient + emoji, like a real thumbnail)
 // ─────────────────────────────────────────────────────────────────────────────
 const CoverImg: React.FC<{ post: BlogPostData }> = ({ post }) => (
   <div className="relative w-full h-48 overflow-hidden bg-stone-100 flex items-center justify-center group-hover:opacity-90 transition-opacity">
-    <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+    {post.image ? (
+      <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+    ) : (
+      <div className="w-full h-full bg-gradient-to-br from-amber-100 via-stone-100 to-emerald-100 p-6 flex flex-col justify-end">
+        <BookOpen className="w-8 h-8 text-stone-700/40 mb-3" />
+        <p className="max-w-xs text-xl font-black leading-tight text-stone-800/80">AcuGrade Journal</p>
+      </div>
+    )}
     <div className="absolute inset-0 bg-black/10" />
     {/* class + board chips */}
     <div className="absolute top-3 left-3 flex gap-1.5 z-10">
@@ -123,10 +124,9 @@ const BlogCard: React.FC<{ post: BlogPostData }> = ({ post }) => (
 // ─────────────────────────────────────────────────────────────────────────────
 // Article Detail page
 // ─────────────────────────────────────────────────────────────────────────────
-const ArticleDetail: React.FC<{ post: BlogPostData; onBack: () => void }> = ({ post, onBack }) => {
+const ArticleDetail: React.FC<{ post: BlogPostData; allPosts: BlogPostData[]; onBack: () => void }> = ({ post, allPosts, onBack }) => {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [post]);
 
-  const allPosts = blogsData as BlogPostData[];
   const relatedPosts = allPosts.filter(p => p.category === post.category && p.id !== post.id).slice(0, 3);
   const latestPosts = allPosts.filter(p => p.id !== post.id).slice(0, 4);
 
@@ -154,7 +154,7 @@ const ArticleDetail: React.FC<{ post: BlogPostData; onBack: () => void }> = ({ p
             </div>
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl font-black text-stone-900 leading-tight mb-4">{post.title}</h1>
+            <h1 className="text-3xl sm:text-4xl font-black text-stone-900 leading-tight mb-4">{post.heading || post.title}</h1>
 
             {/* Meta: Author & Date */}
             <div className="text-sm text-stone-500 mb-6 font-medium">
@@ -182,10 +182,18 @@ const ArticleDetail: React.FC<{ post: BlogPostData; onBack: () => void }> = ({ p
 
             {/* Content Header */}
             <h2 className="text-xl font-bold text-stone-900 mb-4">Introduction</h2>
+            {post.introduction && (
+              <div
+                className="mb-6 text-stone-600 font-medium prose prose-stone max-w-none"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.introduction) }}
+              />
+            )}
 
             {/* Content Body */}
             <div className="space-y-6 text-stone-700 text-[15px] leading-relaxed">
-              {post.content?.map((para, i) => <p key={i}>{renderMD(para)}</p>)}
+              {post.content?.map((para, i) => (
+                <div key={i} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(para) }} />
+              ))}
             </div>
 
             {/* Previous & Next Post */}
@@ -266,23 +274,99 @@ const ArticleDetail: React.FC<{ post: BlogPostData; onBack: () => void }> = ({ p
 // Main BlogPage
 // ─────────────────────────────────────────────────────────────────────────────
 export const BlogPage: React.FC = () => {
-  const posts: BlogPostData[] = blogsData as BlogPostData[];
   const navigate = useNavigate();
   const { slug } = useParams<{ slug?: string }>();
 
+  const [posts, setPosts] = useState<BlogPostData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [activeCat, setActiveCat] = useState("All");
+  const [activeCat, setActiveCat] = useState<number | "All">("All");
+  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [postsPerPage, setPostsPerPage] = useState(6);
   const PER_PAGE_OPTIONS = [3, 6, 9, 12];
 
+  const loadPublicBlogs = () => {
+    let mounted = true;
+    Promise.all([
+      ApiServices.listBlogs({ status: "Published" }),
+      ApiServices.listBlogCategories(),
+    ])
+      .then(([blogsResponse, categoriesResponse]: any[]) => {
+        if (!mounted) return;
+        const categoryRecords = Array.isArray(categoriesResponse)
+          ? categoriesResponse
+          : Array.isArray(categoriesResponse?.items)
+            ? categoriesResponse.items
+            : Array.isArray(categoriesResponse?.data)
+              ? categoriesResponse.data
+              : [];
+        setCategories(categoryRecords
+          .filter((category: any) => category?.isActive !== false)
+          .map((category: any) => ({ id: Number(category.id), name: category.name }))
+          .filter((category: { id: number; name: string }) => Number.isFinite(category.id) && category.name));
+
+        const response = blogsResponse;
+        const records = Array.isArray(response)
+          ? response
+          : Array.isArray(response?.items)
+            ? response.items
+            : Array.isArray(response?.data)
+              ? response.data
+              : [];
+        setPosts(records.map((blog: any) => ({
+              id: String(blog.id),
+              title: blog.title || "Untitled blog",
+              heading: blog.heading || blog.title || "Untitled blog",
+              introduction: blog.introduction || "",
+              slug: blog.slug || `blog-${blog.id}`,
+              author: blog.author || "Admin User",
+              authorRole: "AcuGrade AI",
+              authorAvatar: "",
+              readTime: "5 min read",
+              publishedDate: blog.isoDate || blog.date || new Date().toISOString(),
+              category: blog.category || "Uncategorized",
+              categoryId: blog.categoryId == null ? null : Number(blog.categoryId),
+              classRange: "All classes",
+              board: "All boards",
+              coverGradient: "",
+              coverEmoji: "",
+              summary: blog.introduction || blog.content || "Read the latest learning update from AcuGrade AI.",
+              content: Array.isArray(blog.content) && blog.content.length > 0
+                ? blog.content
+                : (blog.content || "Read the latest learning update from AcuGrade AI.").split(/\n\s*\n/),
+              tags: Array.isArray(blog.tags) ? blog.tags : [],
+              featured: false,
+              image: blog.imageUrl || blog.image || "",
+            })));
+      })
+      .catch((error) => console.error("Failed to load public blogs and categories:", error))
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => { mounted = false; };
+  };
+
+  useEffect(() => {
+    const cleanup = loadPublicBlogs();
+    const handleFocus = () => loadPublicBlogs();
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      cleanup?.();
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
+
   const selectedPost = slug ? posts.find((p) => p.slug === slug) ?? null : null;
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [selectedPost]);
 
-  const filtered = useMemo(() => {
+  useEffect(() => {
     setCurrentPage(1);
+  }, [search, activeCat]);
+
+  const filtered = useMemo(() => {
     return posts.filter((p) => {
-      const okCat = activeCat === "All" || p.category === activeCat;
+      const okCat = activeCat === "All" || p.categoryId === activeCat;
       const q = search.toLowerCase();
       const okQ = !q || p.title.toLowerCase().includes(q) || p.summary.toLowerCase().includes(q)
         || p.author.toLowerCase().includes(q) || p.board.toLowerCase().includes(q)
@@ -319,7 +403,7 @@ export const BlogPage: React.FC = () => {
       <div className="min-h-screen flex flex-col">
         <PublicHeader />
         <div className="flex-1">
-          <ArticleDetail post={selectedPost} onBack={() => navigate("/blog")} />
+          <ArticleDetail post={selectedPost} allPosts={posts} onBack={() => navigate("/blog")} />
         </div>
         <PublicFooter />
       </div>
@@ -339,9 +423,10 @@ export const BlogPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
             {/* Left: title + subtitle */}
             <div>
-              <h1 className="text-3xl font-black text-stone-900 leading-tight">Blogs For You</h1>
+              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-amber-700 mb-3">AcuGrade Journal</p>
+              <h1 className="text-4xl sm:text-5xl font-black text-stone-900 leading-[0.95]">Blogs &amp; Stories</h1>
               <p className="text-sm text-stone-500 mt-1 max-w-md">
-                Explore career guidance, exam strategies, and board-specific updates to help your child grow professionally — Class 1 to 12.
+                Deep dives into learning, exam strategy, and the small practices that help students grow with confidence.
               </p>
             </div>
             {/* Right: search bar */}
@@ -363,10 +448,31 @@ export const BlogPage: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-8 border-b border-stone-100">
+            {[
+              { id: "All" as const, name: "All" },
+              ...categories,
+            ].map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => setActiveCat(category.id)}
+                className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-colors ${activeCat === category.id
+                  ? "bg-stone-900 text-white"
+                  : "bg-stone-100 text-stone-500 hover:bg-amber-100 hover:text-stone-800"
+                  }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+
 
 
           {/* ── Grid */}
-          {filtered.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-24 text-sm text-stone-500">Loading blogs...</div>
+          ) : filtered.length > 0 ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {paginated.map((post) => (

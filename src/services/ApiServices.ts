@@ -171,7 +171,7 @@ class ApiServices {
   checkUsername(username: string) { return this.get(GET_APIS.checkUsername(username)); }
   getRoles() { return this.get(GET_APIS.roles); }
   verifySession() { return this.get(GET_APIS.verifySession); }
-  async getMenuPermissions() { 
+  async getMenuPermissions() {
     const res = await this.get(GET_APIS.menuPermissions);
     if (Array.isArray(res)) return res;
     if (res && Array.isArray(res.pageAccess)) return res.pageAccess;
@@ -225,7 +225,7 @@ class ApiServices {
   listConversations() { return this.get(GET_APIS.conversations); }
   createConversation(body: any) { return this.post(POST_APIS.createConversation, body); }
   sendMessage(conversationId: string, body: any) { return this.post(POST_APIS.sendMessage(conversationId), body); }
-  sendChatMessage(body: { messages: {role: string, content: string}[], student_id?: string | number }) { return this.post(POST_APIS.chat, body); }
+  sendChatMessage(body: { messages: { role: string, content: string }[], student_id?: string | number }) { return this.post(POST_APIS.chat, body); }
   markMessageRead(messageId: string) { return this.put(PUT_APIS.markMessageRead(messageId)); }
   createDossier(body: any) { return this.post(POST_APIS.createDossier, body); }
   listDossiers() { return this.get(GET_APIS.dossiers); }
@@ -239,6 +239,29 @@ class ApiServices {
   adminLogin(body: any) { return apiClient.post(POST_APIS.adminLogin, body); }
   adminResetPassword(body: any) { return this.post(POST_APIS.adminResetPassword, body); }
   adminStatistics() { return this.get(GET_APIS.adminStatistics); }
+
+  // ── Blogs ─────────────────────────────────
+  listBlogs(filters?: any) {
+    const params = filters ? new URLSearchParams(filters).toString() : '';
+    return this.get(`${GET_APIS.blogs}${params ? `?${params}` : ''}`);
+  }
+  getBlog(id: string | number) { return this.get(GET_APIS.blogById(id)); }
+  createBlog(body: any) { return this.post(POST_APIS.createBlog, body); }
+  uploadBlogImage(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post(POST_APIS.uploadBlogImage, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((res) => res.data.data !== undefined ? res.data.data : res.data);
+  }
+  updateBlog(id: string | number, body: any) { return this.put(PUT_APIS.updateBlog(id), body); }
+  deleteBlog(id: string | number) { return this.del(DELETE_APIS.deleteBlog(id)); }
+  listBlogCategories() { return this.get(GET_APIS.blogCategories); }
+  createBlogCategory(body: any) { return this.post(POST_APIS.createBlogCategory, body); }
+  updateBlogCategory(id: string | number, body: any) { return this.put(PUT_APIS.updateBlogCategory(id), body); }
+  deleteBlogCategory(id: string | number) { return this.del(DELETE_APIS.deleteBlogCategory(id)); }
+  listBlogAuthors() { return this.get(GET_APIS.blogAuthors); }
+  createBlogAuthor(body: any) { return this.post(POST_APIS.createBlogAuthor, body); }
 
   // ── Health ────────────────────────────────
   checkHealth() { return this.get(GET_APIS.health); }

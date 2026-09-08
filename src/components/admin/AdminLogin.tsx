@@ -42,6 +42,86 @@ import ApiServices, {
   clearTokens,
   getStoredTokens,
 } from '../../services/ApiServices';
+import { BASE_URL } from '../../connection';
+import 'jodit/es2021/jodit.min.css';
+import { lazy, Suspense } from 'react';
+
+const JoditEditor = lazy(() => import('jodit-react'));
+
+const BLOG_EDITOR_CONFIG = {
+  readonly: false,
+  enter: 'p',
+  toolbarAdaptive: false,
+  toolbarSticky: false,
+  showCharsCounter: false,
+  showWordsCounter: false,
+  showXPathInStatusbar: false,
+  cleanHTML: {
+    safeJavaScriptLink: true,
+    safeLinksTarget: true,
+  },
+  link: {
+    followOnDblClick: true,
+    openInNewTabCheckbox: true,
+    openInNewTabCheckboxDefaultChecked: true,
+    noFollowCheckbox: true,
+    processVideoLink: false,
+  },
+  buttons: 'bold,italic,underline,|,paragraph,|,ul,ol,|,align,|,link,|,undo,redo,|,source',
+  buttonsXS: 'bold,italic,underline,|,paragraph,|,ul,ol,|,align,|,link,|,undo,redo',
+};
+
+const INTRODUCTION_EDITOR_CONFIG = {
+  ...BLOG_EDITOR_CONFIG,
+  height: 240,
+  placeholder: 'Write the introduction...',
+};
+
+const BLOG_CONTENT_EDITOR_CONFIG = {
+  ...BLOG_EDITOR_CONFIG,
+  height: 320,
+  placeholder: 'Write the blog content here...',
+};
+
+const BlogEditPage: React.FC<{ blogId: string; onBack: () => void; onSaved: () => void }> = ({ blogId, onBack, onSaved }) => {
+  const [blog, setBlog] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    ApiServices.listBlogs({ status: 'all' })
+      .then((response: any) => {
+        const records = Array.isArray(response) ? response : response?.items || response?.data || [];
+        setBlog(records.find((item: any) => String(item.id) === String(blogId)) || null);
+      })
+      .catch((err: any) => setError(err?.message || 'Failed to load blog'))
+      .finally(() => setLoading(false));
+  }, [blogId]);
+
+  if (loading) return <div className="py-24 text-center text-stone-500">Loading blog editor...</div>;
+  if (!blog) return <div className="py-24 text-center text-rose-600">{error || 'Blog not found'}</div>;
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-6">
+      <div className="flex items-center gap-3">
+        <button type="button" onClick={onBack} className="p-2 hover:bg-stone-100 rounded-xl text-stone-500 cursor-pointer">
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-black text-stone-900">Jodit Editor</h1>
+          <p className="text-sm text-stone-500">Edit blog heading, introduction and content.</p>
+        </div>
+      </div>
+      <BlogFormModal
+        isOpen
+        fullPage
+        initialBlog={blog}
+        onClose={onBack}
+        onSuccess={() => { onSaved(); onBack(); }}
+      />
+    </div>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -109,97 +189,679 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, collapsed, onCli
 );
 
 // ─────────────────────────────────────────────────────────────
-// Dashboard View
+// Shared full-page blog editor component
 // ─────────────────────────────────────────────────────────────
-const DashboardView: React.FC = () => (
-  <div className="space-y-8">
+interface BlogFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  initialBlog?: any | null;
+  onSuccess: () => void;
+  fullPage?: boolean;
+}
 
-    {/* Stats Grid */}
-    <div>
-      <h2 className="text-xs font-black uppercase tracking-widest text-stone-400 mb-4">Platform Overview</h2>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          icon={<Users className="w-6 h-6 text-white" />}
-          label="Total Users"
-          value="12,480"
-          change="+8.2%"
-          accent="bg-amber-400"
-        />
-        <StatCard
-          icon={<BookOpen className="w-6 h-6 text-white" />}
-          label="Active Courses"
-          value="348"
-          change="+3.1%"
-          accent="bg-yellow-500"
-        />
-        <StatCard
-          icon={<Activity className="w-6 h-6 text-white" />}
-          label="Sessions Today"
-          value="2,193"
-          change="+14%"
-          accent="bg-amber-500"
-        />
-        <StatCard
-          icon={<TrendingUp className="w-6 h-6 text-white" />}
-          label="Completion Rate"
-          value="78.4%"
-          change="+2.3%"
-          accent="bg-yellow-400"
-        />
-      </div>
-    </div>
+const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialBlog, onSuccess, fullPage = false }) => {
+  const [title, setTitle] = useState('');
+  const [heading, setHeading] = useState('');
+  const [introduction, setIntroduction] = useState('');
+  const [content, setContent] = useState('');
+  const [subcategory, setSubcategory] = useState('');
+  const [coverImage, setCoverImage] = useState('');
+  const [tags, setTags] = useState('');
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [metaKeywords, setMetaKeywords] = useState('');
+  const [canonicalUrl, setCanonicalUrl] = useState('');
+  const [isPinned, setIsPinned] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [author, setAuthor] = useState('Admin User');
+  const [category, setCategory] = useState('Education');
+  const [status, setStatus] = useState<'Published' | 'Draft'>('Published');
+  const [blogDate, setBlogDate] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    {/* Recent Activity */}
-    <div>
-      <h2 className="text-xs font-black uppercase tracking-widest text-stone-400 mb-4">Recent Activity</h2>
-      <div className="admin-card space-y-4">
-        {[
-          { icon: <UserCheck className="w-4 h-4 text-amber-600" />, text: 'New user registration: Priya Sharma', time: '2 min ago', bg: 'bg-amber-50' },
-          { icon: <BookMarked className="w-4 h-4 text-yellow-600" />, text: 'Course "CBSE Math Grade 8" updated', time: '15 min ago', bg: 'bg-yellow-50' },
-          { icon: <AlertCircle className="w-4 h-4 text-rose-500" />, text: 'Failed login attempt detected (IP: 192.168.x.x)', time: '32 min ago', bg: 'bg-red-50' },
-          { icon: <BarChart3 className="w-4 h-4 text-emerald-600" />, text: 'Monthly report generated for August 2026', time: '1 hr ago', bg: 'bg-emerald-50' },
-          { icon: <UserCheck className="w-4 h-4 text-amber-600" />, text: 'New user registration: Arjun Mehta', time: '2 hr ago', bg: 'bg-amber-50' },
-        ].map((item, i) => (
-          <div key={i} className="flex items-start gap-3">
-            <div className={`w-8 h-8 rounded-xl ${item.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-              {item.icon}
+  const [categories, setCategories] = useState<string[]>([
+    'Education',
+    'Technology',
+    'Engineering',
+    'Parenting',
+    'Platform News',
+  ]);
+  const [authors, setAuthors] = useState<string[]>([
+    'Admin User',
+    'Sonia Khatun',
+    'Tech Team',
+  ]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    ApiServices.listBlogCategories()
+      .then((res: any) => {
+        const catList = Array.isArray(res) ? res : res?.data || [];
+        if (Array.isArray(catList) && catList.length > 0) {
+          const names = catList.map((c: any) => c.name);
+          setCategories(prev => Array.from(new Set([...names, ...prev])));
+        }
+      })
+      .catch(() => {});
+
+    ApiServices.listBlogAuthors()
+      .then((res: any) => {
+        const authList = Array.isArray(res) ? res : res?.data || [];
+        if (Array.isArray(authList) && authList.length > 0) {
+          const names = authList.map((a: any) => a.name);
+          setAuthors(prev => Array.from(new Set([...names, ...prev])));
+        }
+      })
+      .catch(() => {});
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (initialBlog) {
+      setTitle(initialBlog.title || '');
+      setHeading(initialBlog.heading || initialBlog.title || '');
+      setIntroduction(initialBlog.introduction || '');
+      setContent(initialBlog.content || '');
+      setSubcategory(initialBlog.subcategory || '');
+      setCoverImage(initialBlog.imageUrl || initialBlog.image_url || '');
+      setTags(Array.isArray(initialBlog.tags) ? initialBlog.tags.join(', ') : (initialBlog.tags || ''));
+      setMetaTitle(initialBlog.metaTitle || initialBlog.meta_title || '');
+      setMetaDescription(initialBlog.metaDescription || initialBlog.meta_description || '');
+      setMetaKeywords(initialBlog.metaKeywords || initialBlog.meta_keywords || '');
+      setCanonicalUrl(initialBlog.canonicalUrl || initialBlog.canonical_url || '');
+      setIsPinned(Boolean(initialBlog.isPinned ?? initialBlog.is_pinned));
+      setAuthor(initialBlog.author || 'Admin User');
+      setCategory(initialBlog.category || 'Education');
+      setStatus(initialBlog.status === 'Draft' ? 'Draft' : 'Published');
+      setBlogDate(
+        initialBlog.isoDate
+          ? initialBlog.isoDate.slice(0, 10)
+          : new Date().toISOString().slice(0, 10)
+      );
+    } else {
+      setTitle('');
+      setHeading('');
+      setIntroduction('');
+      setContent('');
+      setSubcategory('');
+      setCoverImage('');
+      setTags('');
+      setMetaTitle('');
+      setMetaDescription('');
+      setMetaKeywords('');
+      setCanonicalUrl('');
+      setIsPinned(false);
+      setAuthor('Admin User');
+      setCategory('Education');
+      setStatus('Published');
+      setBlogDate(new Date().toISOString().slice(0, 10));
+    }
+    setError(null);
+  }, [initialBlog, isOpen]);
+
+  if (!isOpen) return null;
+
+  const uploadImage = async (file: File) => {
+    setUploading(true);
+    try {
+      const result = await ApiServices.uploadBlogImage(file);
+      const url = result.url?.startsWith('http') ? result.url : `${BASE_URL || ''}${result.url}`;
+      return url;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      setCoverImage(await uploadImage(file));
+    } catch (err: any) {
+      setError(err?.message || 'Failed to upload cover image');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const nextStatus = submitter?.value === 'Draft' || submitter?.value === 'Published'
+      ? submitter.value
+      : status;
+    if (!title.trim()) {
+      setError('Blog title is required');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const payload = {
+        title: title.trim(),
+        heading: heading.trim() || title.trim(),
+        introduction: introduction.trim(),
+        content,
+        subcategory: subcategory.trim(),
+        image_url: coverImage,
+        is_pinned: isPinned,
+        is_post: nextStatus === 'Published',
+        tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean),
+        meta_title: metaTitle.trim(),
+        meta_description: metaDescription.trim(),
+        meta_keywords: metaKeywords.trim(),
+        canonical_url: canonicalUrl.trim(),
+        author: author.trim(),
+        category: category.trim(),
+        status: nextStatus,
+        date: blogDate || new Date().toISOString().slice(0, 10),
+      };
+
+      if (initialBlog?.id) {
+        await ApiServices.updateBlog(initialBlog.id, payload);
+      } else {
+        await ApiServices.createBlog(payload);
+      }
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Failed to save blog post'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className={fullPage ? 'min-h-[calc(100vh-8rem)] w-full' : 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200'}>
+      <div
+        className={fullPage ? 'bg-white border border-stone-200 shadow-sm w-full max-w-6xl mx-auto overflow-hidden flex flex-col' : 'bg-white rounded-2xl border border-stone-200 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]'}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/60">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+              <BookOpen className="w-4 h-4" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-stone-800 truncate">{item.text}</p>
-              <p className="text-xs text-stone-400 font-medium mt-0.5">{item.time}</p>
+            <div>
+              <h2 className="text-lg font-black text-stone-900">
+                {initialBlog ? 'Edit Blog Post' : 'Create New Blog'}
+              </h2>
+              <p className="text-xs text-stone-500 font-medium">
+                {initialBlog ? 'Update existing blog details in MySQL' : 'Publish a new curriculum blog post to MySQL'}
+              </p>
             </div>
           </div>
-        ))}
-      </div>
-    </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-    {/* System Metrics */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="admin-card">
-        <h3 className="text-sm font-bold text-stone-800 mb-4">Revenue Growth</h3>
-        <div className="h-48 w-full flex items-end gap-2 mt-4 px-2">
-          {[40, 60, 45, 80, 55, 90, 70].map((h, i) => (
-            <div key={i} className="flex-1 bg-gradient-to-t from-amber-200 to-amber-400 rounded-t-md" style={{ height: `${h}%` }}></div>
-          ))}
-        </div>
-        <div className="flex justify-between mt-2 text-xs text-stone-400 font-medium px-2">
-          <span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span>
-        </div>
-      </div>
-      <div className="admin-card">
-        <h3 className="text-sm font-bold text-stone-800 mb-4">User Acquisition</h3>
-        <div className="h-48 w-full flex items-end gap-2 mt-4 px-2">
-          {[30, 50, 40, 70, 65, 85, 95].map((h, i) => (
-            <div key={i} className="flex-1 bg-gradient-to-t from-emerald-200 to-emerald-400 rounded-t-md" style={{ height: `${h}%` }}></div>
-          ))}
-        </div>
-        <div className="flex justify-between mt-2 text-xs text-stone-400 font-medium px-2">
-          <span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span>
-        </div>
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className={`${fullPage ? 'p-5 sm:p-8' : 'p-6'} space-y-4 overflow-y-auto`}>
+          {error && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+              Blog Title <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. 10 Tips for Effective Online Learning"
+              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+              Heading
+            </label>
+            <input
+              type="text"
+              value={heading}
+              onChange={(e) => setHeading(e.target.value)}
+              placeholder="Main article heading"
+              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+              Introduction
+            </label>
+            <Suspense fallback={<div className="h-64 flex items-center justify-center text-sm text-stone-500">Loading editor...</div>}>
+                <JoditEditor
+                  key={`blog-introduction-editor-${initialBlog?.id ?? 'new'}`}
+                  value={introduction}
+                  onChange={(value: string) => setIntroduction(value)}
+                  config={INTRODUCTION_EDITOR_CONFIG}
+                />
+            </Suspense>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">Subcategory</label>
+              <input value={subcategory} onChange={(e) => setSubcategory(e.target.value)} placeholder="e.g. Exam Strategy" className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">Tags</label>
+              <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="math, learning, exams" className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">Featured / Cover Image</label>
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleCoverUpload} className="w-full text-xs text-stone-500 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-100 file:px-3 file:py-2 file:font-bold file:text-amber-800" />
+              {coverImage && <img src={coverImage} alt="Cover preview" className="mt-3 h-24 w-full rounded-lg object-cover border border-stone-200" />}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+              Blog Content
+            </label>
+            <Suspense fallback={<div className="h-80 flex items-center justify-center text-sm text-stone-500">Loading editor...</div>}>
+                <JoditEditor
+                  key={`blog-editor-${initialBlog?.id ?? 'new'}`}
+                  value={content}
+                  onChange={(value: string) => setContent(value)}
+                  config={BLOG_CONTENT_EDITOR_CONFIG}
+                />
+            </Suspense>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all cursor-pointer"
+              >
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                Author
+              </label>
+              <select
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all cursor-pointer"
+              >
+                {authors.map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="border-t border-stone-100 pt-4 space-y-4">
+            <p className="text-xs font-black uppercase tracking-wider text-stone-500">Search Metadata</p>
+            <input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder="Meta title" className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            <textarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} placeholder="Meta description" rows={2} className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-y" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <input value={metaKeywords} onChange={(e) => setMetaKeywords(e.target.value)} placeholder="Meta keywords" className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              <input value={canonicalUrl} onChange={(e) => setCanonicalUrl(e.target.value)} placeholder="Canonical URL" type="url" className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm font-semibold text-stone-700 cursor-pointer">
+              <input type="checkbox" checked={isPinned} onChange={(e) => setIsPinned(e.target.checked)} className="h-4 w-4 accent-amber-500" />
+              Pin blog
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                Status
+              </label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as 'Published' | 'Draft')}
+                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all cursor-pointer"
+              >
+                <option value="Published">Published</option>
+                <option value="Draft">Draft</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                Publication Date
+              </label>
+              <input
+                type="date"
+                value={blogDate}
+                onChange={(e) => setBlogDate(e.target.value)}
+                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {/* Footer buttons */}
+          <div className="pt-4 border-t border-stone-100 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-stone-600 hover:bg-stone-100 border border-stone-200 transition-all disabled:opacity-50 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              value="Draft"
+              disabled={loading || uploading}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-stone-700 hover:bg-stone-100 border border-stone-200 transition-all disabled:opacity-50 cursor-pointer"
+            >
+              Save Draft
+            </button>
+            <button
+              type="submit"
+              value="Published"
+              disabled={loading || uploading}
+              className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {initialBlog ? 'Update Blog' : 'Publish Blog'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// Dashboard View
+// ─────────────────────────────────────────────────────────────
+const DashboardView: React.FC = () => {
+  const navigate = useNavigate();
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingBlog, setEditingBlog] = useState<any | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  const fetchBlogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await ApiServices.listBlogs({ status: 'all' });
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.items)
+          ? res.items
+          : Array.isArray(res?.data)
+            ? res.data
+            : [];
+      setBlogs(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error('Failed to fetch blogs:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBlogs();
+  }, [fetchBlogs]);
+
+  const handleCreateBlog = () => {
+    navigate('/add-blogs');
+  };
+
+  const handleEditBlog = (b: any) => {
+    navigate(`/edit-blog/${b.id}`);
+  };
+
+  const handleDeleteBlog = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this blog post?')) return;
+    setDeletingId(id);
+    try {
+      await ApiServices.deleteBlog(id);
+      setActionSuccess('Blog deleted successfully');
+      setTimeout(() => setActionSuccess(null), 3500);
+      await fetchBlogs();
+    } catch (err) {
+      console.error('Failed to delete blog:', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Toast Notification */}
+      {actionSuccess && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold shadow-sm animate-in fade-in duration-300">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+          <span>{actionSuccess}</span>
+        </div>
+      )}
+
+      {/* Stats Grid */}
+      <div>
+        <h2 className="text-xs font-black uppercase tracking-widest text-stone-400 mb-4">Platform Overview</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            icon={<Users className="w-6 h-6 text-white" />}
+            label="Total Users"
+            value="12,480"
+            change="+8.2%"
+            accent="bg-amber-400"
+          />
+          <StatCard
+            icon={<BookOpen className="w-6 h-6 text-white" />}
+            label="Active Courses"
+            value="348"
+            change="+3.1%"
+            accent="bg-yellow-500"
+          />
+          <StatCard
+            icon={<Activity className="w-6 h-6 text-white" />}
+            label="Sessions Today"
+            value="2,193"
+            change="+14%"
+            accent="bg-amber-500"
+          />
+          <StatCard
+            icon={<TrendingUp className="w-6 h-6 text-white" />}
+            label="Completion Rate"
+            value="78.4%"
+            change="+2.3%"
+            accent="bg-yellow-400"
+          />
+        </div>
+      </div>
+
+      {/* ── Dynamic Platform Blogs Section ── */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-yellow-600" />
+              <h2 className="text-xl font-black text-stone-900">Platform Blogs</h2>
+            </div>
+            <p className="text-sm text-stone-500 font-medium mt-0.5">
+              Live curriculum blogs and pedagogical updates from MySQL database.
+            </p>
+          </div>
+          <button
+            id="dashboard-create-blog-btn"
+            onClick={handleCreateBlog}
+            className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-all whitespace-nowrap active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Add Blog
+          </button>
+        </div>
+
+        <div className="admin-card overflow-hidden !p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-stone-100 bg-stone-50/60">
+                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Title</th>
+                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Author</th>
+                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Category</th>
+                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Status</th>
+                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Date</th>
+                  <th className="text-right px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-50">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-10 text-center text-stone-400 font-medium">
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                        <span>Loading blogs from MySQL...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : blogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-10 text-center text-stone-400 font-medium">
+                      <p className="font-semibold text-stone-600 mb-1">No blogs found in MySQL</p>
+                      <p className="text-xs">Click "Create Blog" above to publish your first post.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  blogs.map((b) => (
+                    <tr key={b.id} className="hover:bg-amber-50/40 transition-colors group">
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-stone-800">{b.title}</p>
+                      </td>
+                      <td className="px-6 py-4 text-stone-600 font-medium">{b.author || 'Admin User'}</td>
+                      <td className="px-6 py-4 text-stone-600">{b.category || 'General'}</td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                            b.status === 'Published'
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                              : 'bg-amber-50 text-amber-600 border border-amber-200'
+                          }`}
+                        >
+                          {b.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-stone-500 text-xs">{b.date}</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              handleEditBlog(b);
+                            }}
+                            title="Edit Blog"
+                            className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBlog(b.id)}
+                            disabled={deletingId === b.id}
+                            title="Delete Blog"
+                            className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            {deletingId === b.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div>
+        <h2 className="text-xs font-black uppercase tracking-widest text-stone-400 mb-4">Recent Activity</h2>
+        <div className="admin-card space-y-4">
+          {[
+            { icon: <UserCheck className="w-4 h-4 text-amber-600" />, text: 'New user registration: Priya Sharma', time: '2 min ago', bg: 'bg-amber-50' },
+            { icon: <BookMarked className="w-4 h-4 text-yellow-600" />, text: 'Course "CBSE Math Grade 8" updated', time: '15 min ago', bg: 'bg-yellow-50' },
+            { icon: <AlertCircle className="w-4 h-4 text-rose-500" />, text: 'Failed login attempt detected (IP: 192.168.x.x)', time: '32 min ago', bg: 'bg-red-50' },
+            { icon: <BarChart3 className="w-4 h-4 text-emerald-600" />, text: 'Monthly report generated for August 2026', time: '1 hr ago', bg: 'bg-emerald-50' },
+            { icon: <UserCheck className="w-4 h-4 text-amber-600" />, text: 'New user registration: Arjun Mehta', time: '2 hr ago', bg: 'bg-amber-50' },
+          ].map((item, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className={`w-8 h-8 rounded-xl ${item.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                {item.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-stone-800 truncate">{item.text}</p>
+                <p className="text-xs text-stone-400 font-medium mt-0.5">{item.time}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* System Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="admin-card">
+          <h3 className="text-sm font-bold text-stone-800 mb-4">Revenue Growth</h3>
+          <div className="h-48 w-full flex items-end gap-2 mt-4 px-2">
+            {[40, 60, 45, 80, 55, 90, 70].map((h, i) => (
+              <div key={i} className="flex-1 bg-gradient-to-t from-amber-200 to-amber-400 rounded-t-md" style={{ height: `${h}%` }}></div>
+            ))}
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-stone-400 font-medium px-2">
+            <span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span>
+          </div>
+        </div>
+        <div className="admin-card">
+          <h3 className="text-sm font-bold text-stone-800 mb-4">User Acquisition</h3>
+          <div className="h-48 w-full flex items-end gap-2 mt-4 px-2">
+            {[30, 50, 40, 70, 65, 85, 95].map((h, i) => (
+              <div key={i} className="flex-1 bg-gradient-to-t from-emerald-200 to-emerald-400 rounded-t-md" style={{ height: `${h}%` }}></div>
+            ))}
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-stone-400 font-medium px-2">
+            <span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Blog Creation & Edit Modal */}
+    </div>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────
 // Users View
@@ -371,32 +1033,96 @@ const ReportsView: React.FC = () => {
 // Manage Blogs View
 // ─────────────────────────────────────────────────────────────
 const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setActiveView }) => {
-  const blogs = [
-    { title: '10 Tips for Effective Online Learning', author: 'Sonia Khatun', category: 'Education', status: 'Published', date: 'Sep 1, 2026' },
-    { title: 'The Future of AI in Education', author: 'Admin User', category: 'Technology', status: 'Draft', date: 'Aug 28, 2026' },
-    { title: 'Understanding RAG Architecture', author: 'Tech Team', category: 'Engineering', status: 'Published', date: 'Aug 20, 2026' },
-    { title: 'Parenting in the Digital Age', author: 'Sonia Khatun', category: 'Parenting', status: 'Published', date: 'Aug 15, 2026' },
-  ];
+  const navigate = useNavigate();
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingBlog, setEditingBlog] = useState<any | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const fetchBlogs = useCallback(async (query?: string) => {
+    setLoading(true);
+    try {
+      const filters = { ...(query && query.trim() ? { search: query.trim() } : {}), status: 'all' };
+      const res = await ApiServices.listBlogs(filters);
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.items)
+          ? res.items
+          : Array.isArray(res?.data)
+            ? res.data
+            : [];
+      setBlogs(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error('Failed to fetch blogs:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBlogs();
+  }, [fetchBlogs]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    fetchBlogs(val);
+  };
+
+  const handleCreateBlog = () => {
+    navigate('/add-blogs');
+  };
+
+  const handleEditBlog = (b: any) => {
+    navigate(`/edit-blog/${b.id}`);
+  };
+
+  const handleDeleteBlog = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this blog post?')) return;
+    setDeletingId(id);
+    try {
+      await ApiServices.deleteBlog(id);
+      setToast('Blog deleted successfully');
+      setTimeout(() => setToast(null), 3500);
+      await fetchBlogs(searchQuery);
+    } catch (err) {
+      console.error('Failed to delete blog:', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold shadow-sm animate-in fade-in duration-300">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+          <span>{toast}</span>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-stone-900">Manage Blogs</h1>
-          <p className="text-sm text-stone-500 font-medium mt-1">Create and manage content for your platform.</p>
+          <p className="text-sm text-stone-500 font-medium mt-1">Create and manage content for your platform from MySQL.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input
               type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
               placeholder="Search blogs..."
               className="w-full sm:w-64 pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all"
             />
           </div>
           <button
-            onClick={() => setActiveView('add-blogs' as AdminView)}
-            className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all whitespace-nowrap"
+            onClick={handleCreateBlog}
+            className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all whitespace-nowrap cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" />
             Add Blog
@@ -418,35 +1144,78 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-50">
-              {blogs.map((b, i) => (
-                <tr key={i} className="hover:bg-amber-50/40 transition-colors group">
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-stone-800">{b.title}</p>
-                  </td>
-                  <td className="px-6 py-4 text-stone-600 font-medium">{b.author}</td>
-                  <td className="px-6 py-4 text-stone-600">{b.category}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${b.status === 'Published' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-                      {b.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-stone-500 text-xs">{b.date}</td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-stone-400 font-medium">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                      <span>Loading blogs from MySQL...</span>
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : blogs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-stone-400 font-medium">
+                    <p className="font-semibold text-stone-600 mb-1">No blogs found in MySQL</p>
+                    <p className="text-xs">Click "Add Blog" above to create and publish your first post.</p>
+                  </td>
+                </tr>
+              ) : (
+                blogs.map((b) => (
+                  <tr key={b.id} className="hover:bg-amber-50/40 transition-colors group">
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-stone-800">{b.title}</p>
+                    </td>
+                    <td className="px-6 py-4 text-stone-600 font-medium">{b.author || 'Admin User'}</td>
+                    <td className="px-6 py-4 text-stone-600">{b.category || 'General'}</td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                          b.status === 'Published'
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-600 border border-amber-200'
+                        }`}
+                      >
+                        {b.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-stone-500 text-xs">{b.date}</td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            handleEditBlog(b);
+                          }}
+                          title="Edit Blog"
+                          className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBlog(b.id)}
+                          disabled={deletingId === b.id}
+                          title="Delete Blog"
+                          className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {deletingId === b.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
     </div>
   );
 };
@@ -455,36 +1224,109 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
 // Add Blog View
 // ─────────────────────────────────────────────────────────────
 const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setActiveView }) => {
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Education');
+  const [author, setAuthor] = useState('Admin User');
+  const [content, setContent] = useState('');
+  const [categories, setCategories] = useState<string[]>([
+    'Education',
+    'Technology',
+    'Engineering',
+    'Parenting',
+    'Platform News',
+  ]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    ApiServices.listBlogCategories()
+      .then((res: any) => {
+        const catList = res?.data || [];
+        if (Array.isArray(catList) && catList.length > 0) {
+          const names = catList.map((c: any) => c.name);
+          setCategories(prev => Array.from(new Set([...names, ...prev])));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSave = async (status: 'Published' | 'Draft') => {
+    if (!title.trim()) {
+      setError('Blog title is required');
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+    try {
+      await ApiServices.createBlog({
+        title: title.trim(),
+        category,
+        author: author.trim() || 'Admin User',
+        status,
+        date: new Date().toISOString().slice(0, 10),
+      });
+      setActiveView('manage-blogs' as AdminView);
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Failed to create blog'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setActiveView('manage-blogs' as AdminView)}
-            className="p-2 hover:bg-stone-100 rounded-xl transition-colors text-stone-500"
+            className="p-2 hover:bg-stone-100 rounded-xl transition-colors text-stone-500 cursor-pointer"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-2xl font-black text-stone-900">Create New Blog</h1>
-            <p className="text-sm text-stone-500 font-medium mt-1">Draft a new post for your audience.</p>
+            <p className="text-sm text-stone-500 font-medium mt-1">Draft a new post for your audience in MySQL.</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 rounded-xl text-sm font-semibold text-stone-600 hover:bg-stone-100 border border-stone-200 transition-all">
-            Save as Draft
+          <button
+            onClick={() => handleSave('Draft')}
+            disabled={submitting}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-stone-600 hover:bg-stone-100 border border-stone-200 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {submitting ? 'Saving...' : 'Save as Draft'}
           </button>
-          <button className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-semibold shadow-sm transition-all">
+          <button
+            onClick={() => handleSave('Published')}
+            disabled={submitting}
+            className="flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+          >
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
             Publish Post
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-rose-800 text-sm font-semibold shadow-sm">
+          <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
       <div className="admin-card space-y-6">
         <div>
           <label className="block text-sm font-bold text-stone-700 mb-2">Blog Title</label>
           <input
             type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter an engaging title..."
             className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
           />
@@ -493,51 +1335,38 @@ const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setA
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-bold text-stone-700 mb-2">Category</label>
-            <select className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all appearance-none">
-              <option>Education</option>
-              <option>Technology</option>
-              <option>Parenting</option>
-              <option>Platform News</option>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all cursor-pointer"
+            >
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
             </select>
           </div>
           <div>
             <label className="block text-sm font-bold text-stone-700 mb-2">Author</label>
             <input
               type="text"
-              defaultValue="Admin User"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="e.g. Admin User"
               className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-stone-700 mb-2">Cover Image</label>
-          <div className="border-2 border-dashed border-stone-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-stone-50 hover:border-stone-300 transition-all cursor-pointer group">
-            <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-stone-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <ImageIcon className="w-6 h-6 text-stone-400" />
-            </div>
-            <p className="text-sm font-bold text-stone-700">Click to upload cover image</p>
-            <p className="text-xs text-stone-400 font-medium mt-1">SVG, PNG, JPG or GIF (max. 5MB)</p>
-          </div>
-        </div>
-
-        <div>
           <label className="block text-sm font-bold text-stone-700 mb-2">Content</label>
-          <div className="border border-stone-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-amber-400 transition-all">
-            <div className="bg-stone-50 border-b border-stone-200 p-2 flex items-center gap-2">
-              {/* Dummy Toolbar */}
-              <button className="p-1.5 hover:bg-stone-200 rounded text-stone-600 font-bold px-2">B</button>
-              <button className="p-1.5 hover:bg-stone-200 rounded text-stone-600 italic px-2">I</button>
-              <button className="p-1.5 hover:bg-stone-200 rounded text-stone-600 underline px-2">U</button>
-              <div className="w-px h-4 bg-stone-300 mx-1"></div>
-              <button className="p-1.5 hover:bg-stone-200 rounded text-stone-600"><FileText className="w-4 h-4" /></button>
-            </div>
-            <textarea
-              rows={12}
-              placeholder="Write your blog content here..."
-              className="w-full p-4 bg-white text-sm font-medium text-stone-800 focus:outline-none resize-y"
-            ></textarea>
-          </div>
+          <Suspense fallback={<div className="h-80 flex items-center justify-center text-sm text-stone-500">Loading editor...</div>}>
+              <JoditEditor
+                key="add-blog-editor"
+                value={content}
+                onChange={(value: string) => setContent(value)}
+                config={BLOG_CONTENT_EDITOR_CONFIG}
+              />
+          </Suspense>
         </div>
       </div>
     </div>
@@ -622,7 +1451,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
   // navigate-based replacement for setActiveView — child views use this to navigate between pages
   const navigate = useNavigate();
   const location = useLocation();
-  const activeView: AdminView = location.pathname.split('/').pop() || 'dashboard';
+  const isBlogEditor = location.pathname.startsWith('/edit-blog/');
+  const activeView: AdminView = isBlogEditor ? 'edit-blog' : location.pathname.split('/').pop() || 'dashboard';
+  const editBlogId = location.pathname.split('/').pop() || '';
   const setActiveView = (view: string) => {
     if (view.startsWith('/')) navigate(view);
     else navigate('/' + view);
@@ -873,7 +1704,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
               reports:        <ReportsView />,
               blogs:          <ManageBlogsView setActiveView={(v) => navigate('/' + v)} />,
               'manage-blogs': <ManageBlogsView setActiveView={(v) => navigate('/' + v)} />,
-              'add-blogs':    <AddBlogView setActiveView={(v) => navigate('/' + v)} />,
+              'add-blogs':    <BlogFormModal isOpen fullPage initialBlog={null} onClose={() => navigate('/manage-blogs')} onSuccess={() => navigate('/manage-blogs')} />,
+              'edit-blog':   <BlogEditPage blogId={editBlogId} onBack={() => navigate('/manage-blogs')} onSaved={() => {}} />,
               category:       <CategoryView setActiveView={(v) => navigate('/' + v)} />,
             };
 
@@ -919,7 +1751,7 @@ const AdminLogin: React.FC = () => {
     if (!tokens) return false;
     const payload = decodeTokenPayload(tokens.accessToken);
     const role = (payload?.role ?? '').toUpperCase();
-    return role === 'ADMIN' || role === 'SUPER_ADMIN';
+    return role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'AUTHOR';
   });
 
   const [adminUser, setAdminUser] = useState<any>(() => {

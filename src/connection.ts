@@ -38,6 +38,11 @@ export const GET_APIS = {
   publicDossier: (token: string) => `${API_V1}/dossiers/public/${encodeURIComponent(token)}`,
   ptmSchedules: `${API_V1}/ptm/schedules`,
 
+  // Blogs
+  blogs: `${API_V1}/blogs`,
+  blogById: (id: string | number) => `${API_V1}/blogs/${id}`,
+  blogCategories: `${API_V1}/blogs/categories`,
+  blogAuthors: `${API_V1}/blogs/authors`,
 
   // Admin & Health
   adminStatistics: `${API_V1}/admin/statistics`,
@@ -76,6 +81,11 @@ export const POST_APIS = {
   createDossier: `${API_V1}/dossiers`,
   schedulePTM: `${API_V1}/ptm/schedule`,
 
+  // Blogs
+  createBlog: `${API_V1}/blogs`,
+  uploadBlogImage: `${API_V1}/files/upload-image`,
+  createBlogCategory: `${API_V1}/blogs/categories`,
+  createBlogAuthor: `${API_V1}/blogs/authors`,
 
   // Admin
   adminLogin: `${API_V1}/admin/login`,
@@ -85,11 +95,15 @@ export const POST_APIS = {
 export const PUT_APIS = {
   updateChild: (id: string | number) => `${API_V1}/parents/me/children/${id}`,
   updateRunbook: (id: string) => `${API_V1}/runbooks/${id}`,
+  updateBlog: (id: string | number) => `${API_V1}/blogs/${id}`,
+  updateBlogCategory: (id: string | number) => `${API_V1}/blogs/categories/${id}`,
   markMessageRead: (id: string) => `${API_V1}/messages/${id}/read`,
 };
 
 export const DELETE_APIS = {
   deleteChild: (id: string | number) => `${API_V1}/parents/me/children/${id}`,
   deleteRunbook: (id: string) => `${API_V1}/runbooks/${id}`,
+  deleteBlog: (id: string | number) => `${API_V1}/blogs/${id}`,
+  deleteBlogCategory: (id: string | number) => `${API_V1}/blogs/categories/${id}`,
   deleteDossier: (id: string) => `${API_V1}/dossiers/${encodeURIComponent(id)}`,
 };

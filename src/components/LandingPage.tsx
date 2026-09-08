@@ -15,7 +15,6 @@ import {
   BarChart3,
   MessageSquare,
   Gamepad2,
-  Flame,
   Award,
   CheckCircle2,
   ChevronDown,
@@ -253,8 +252,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 sm:pt-20 pb-16">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="reveal-on-scroll">
+
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-yellow-200 text-yellow-700 text-xs font-bold shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" />
                 Study Buddy-powered learning for students, teachers & parents
                 <span className={`w-1.5 h-1.5 rounded-full ${isBackendOnline === false ? 'bg-rose-500' : 'bg-yellow-500'
                   }`} />
@@ -369,114 +368,123 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="py-20 bg-stone-50">
+      <section id="features" className="py-16 bg-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto reveal-on-scroll">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-bold">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-100/80 text-yellow-800 text-xs font-bold shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-yellow-600 animate-pulse" />
               What You Can Do
             </div>
             <h2 className="mt-4 text-3xl sm:text-4xl font-black tracking-tight capitalize">
               Everything you need to learn better
             </h2>
-            <p className="mt-3 text-stone-600">
+            <p className="mt-3 text-stone-600 text-sm sm:text-base">
               Simple tools for learning, practice, motivation and communication.
             </p>
           </div>
 
-          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {[
               {
                 icon: Target,
                 title: 'Smart Assessment',
                 text: 'Take short assessments that show exactly which topics need attention.',
-                bg: 'bg-yellow-50',
-                fg: 'text-yellow-600',
+                bg: 'bg-amber-100/70',
+                fg: 'text-amber-700',
+                hoverBorder: 'hover:border-amber-300',
               },
               {
                 icon: Brain,
                 title: 'Study Buddy Insights',
                 text: 'Study Buddy finds strengths, weak areas and common mistake patterns.',
-                bg: 'bg-yellow-50',
-                fg: 'text-yellow-600',
+                bg: 'bg-yellow-100/70',
+                fg: 'text-yellow-700',
+                hoverBorder: 'hover:border-yellow-300',
               },
               {
                 icon: TrendingUp,
                 title: 'Personalized Learning',
                 text: 'Get lessons, resources and practice based on your current level.',
-                bg: 'bg-yellow-50',
-                fg: 'text-yellow-600',
+                bg: 'bg-orange-100/70',
+                fg: 'text-orange-700',
+                hoverBorder: 'hover:border-orange-300',
               },
               {
                 icon: Trophy,
                 title: 'Points & Badges',
                 text: 'Earn points for correct answers and badges for milestones.',
-                bg: 'bg-yellow-50',
-                fg: 'text-yellow-600',
+                bg: 'bg-emerald-100/70',
+                fg: 'text-emerald-700',
+                hoverBorder: 'hover:border-emerald-300',
               },
               {
                 icon: BarChart3,
                 title: 'Progress Tracking',
                 text: 'See scores, topic mastery, streaks and improvement over time.',
-                bg: 'bg-sky-50',
-                fg: 'text-sky-600',
+                bg: 'bg-sky-100/70',
+                fg: 'text-sky-700',
+                hoverBorder: 'hover:border-sky-300',
               },
               {
                 icon: MessageSquare,
                 title: 'Parent-Teacher Connect',
                 text: 'Share progress and communicate securely about the student.',
-                bg: 'bg-pink-50',
-                fg: 'text-pink-600',
+                bg: 'bg-rose-100/70',
+                fg: 'text-rose-700',
+                hoverBorder: 'hover:border-rose-300',
               },
             ].map((feature) => {
               const Icon = feature.icon;
               return (
                 <div
                   key={feature.title}
-                  className="group bg-white rounded-3xl border border-stone-200 p-6 hover:-translate-y-1 hover:shadow-xl hover:shadow-stone-200/60 transition-all reveal-on-scroll"
+                  className={`group bg-white rounded-2xl border border-stone-200/80 p-5 hover:-translate-y-1.5 hover:shadow-lg hover:shadow-stone-200/60 transition-all duration-300 reveal-on-scroll ${feature.hoverBorder}`}
                 >
-                  <div className={`w-12 h-12 rounded-2xl ${feature.bg} ${feature.fg} flex items-center justify-center`}>
-                    <Icon className="w-6 h-6" />
+                  {/* Header: Icon + Title Side-by-Side */}
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl ${feature.bg} ${feature.fg} flex items-center justify-center shrink-0 shadow-inner transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-black text-stone-800 text-base leading-snug group-hover:text-amber-600 transition-colors">
+                      {feature.title}
+                    </h3>
                   </div>
-                  <h3 className="mt-5 font-black text-lg">{feature.title}</h3>
-                  <p className="mt-2 text-sm text-stone-600 leading-relaxed">
+
+                  {/* Description Text */}
+                  <p className="mt-3 text-xs sm:text-sm text-stone-600 leading-relaxed font-medium">
                     {feature.text}
                   </p>
-                  <div className="mt-5 flex items-center gap-1 text-xs font-bold text-yellow-600">
-                    Learn more <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
                 </div>
               );
             })}
           </div>
         </div>
       </section>
-
       {/* KNOW THE TIME */}
       <section className="py-8 bg-gradient-to-br from-yellow-50 via-amber-50/50 to-white border-y border-yellow-200 overflow-hidden relative">
         <style>{`
-          @keyframes float-gentle {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-14px); }
-          }
-          @keyframes tick-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-          }
-          @keyframes wiggle {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(3deg); }
-            75% { transform: rotate(-3deg); }
-          }
-          @keyframes fade-slide-up {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .animate-float-gentle { animation: float-gentle 4s ease-in-out infinite; }
-          .animate-tick-pulse { animation: tick-pulse 2s ease-in-out infinite; }
-          .animate-wiggle { animation: wiggle 3s ease-in-out infinite; }
-          .animate-fade-slide { animation: fade-slide-up 0.8s ease-out forwards; }
-        `}</style>
+    @keyframes float-gentle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-14px); }
+    }
+    @keyframes tick-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(3deg); }
+      75% { transform: rotate(-3deg); }
+    }
+    @keyframes fade-slide-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-float-gentle { animation: float-gentle 4s ease-in-out infinite; }
+    .animate-tick-pulse { animation: tick-pulse 2s ease-in-out infinite; }
+    .animate-wiggle { animation: wiggle 3s ease-in-out infinite; }
+    .animate-fade-slide { animation: fade-slide-up 0.8s ease-out forwards; }
+  `}</style>
 
         {/* Floating decorations */}
         <div className="absolute inset-0 pointer-events-none">
@@ -508,13 +516,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 Short on <span className="text-yellow-500">Time?</span> ⏳
               </h2>
 
-              <p className="mt-10 text-stone-600 text-lg max-w-md">
+              <p className="mt-6 text-stone-600 text-lg max-w-md">
                 Exams approaching fast? Study Buddy quickly finds your weak spots so you can focus on what really matters and learn faster.
               </p>
 
               <button
                 onClick={() => openAuth('register')}
-                className="mt-25 px-5 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white font-extrabold text-sm transition-colors"
+                className="mt-8 px-8 py-3.5 rounded-xl bg-yellow-500 hover:bg-yellow-600 text-white font-black text-base shadow-md shadow-yellow-500/20 hover:shadow-lg hover:shadow-yellow-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer"
               >
                 Start Learning
               </button>
@@ -525,12 +533,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
+
       {/* HOW IT WORKS */}
       <section id="how-it-works" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto reveal-on-scroll">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-bold">
-              <Lightbulb className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold shadow-sm">
+              <Lightbulb className="w-3.5 h-3.5 text-yellow-600 animate-pulse" />
               How It Works
             </div>
             <h2 className="mt-4 text-3xl sm:text-4xl font-black capitalize">
@@ -543,20 +552,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           <div className="mt-12 grid md:grid-cols-4 gap-5">
             {[
-              ['01', 'Assess', 'Take a quiz or diagnostic test.', '📝'],
-              ['02', 'Analyze', 'Study Buddy identifies strong and weak topics.', '🤖'],
-              ['03', 'Learn', 'Follow lessons, resources and practice.', '📚'],
-              ['04', 'Improve', 'Retest, earn rewards and move up.', '🚀'],
-            ].map(([number, title, text, emoji], i) => (
-              <div key={number} className={`relative p-6 rounded-3xl ${title === 'Assess' || title === 'Learn' ? 'bg-[#FFF7CC]' : 'bg-stone-50'} border border-stone-200`}>
+              ['01', 'Assess', 'Take a quiz or diagnostic test.', '📝', 'bg-amber-50/80 hover:border-amber-300 hover:shadow-amber-200/60', 'bg-amber-300 text-amber-900'],
+              ['02', 'Analyze', 'Study Buddy identifies strong and weak topics.', '🤖', 'bg-sky-50/80 hover:border-sky-300 hover:shadow-sky-200/60', 'bg-sky-300 text-sky-900'],
+              ['03', 'Learn', 'Follow lessons, resources and practice.', '📚', 'bg-rose-50/80 hover:border-rose-300 hover:shadow-rose-200/60', 'bg-rose-300 text-rose-900'],
+              ['04', 'Improve', 'Retest, earn rewards and move up.', '🚀', 'bg-emerald-50/80 hover:border-emerald-300 hover:shadow-emerald-200/60', 'bg-emerald-300 text-emerald-900'],
+            ].map(([number, title, text, emoji, colorClass, badgeClass], i) => (
+              <div
+                key={number}
+                className={`group relative p-6 rounded-3xl ${colorClass} border border-stone-200/70 backdrop-blur-sm transition-all duration-300 ease-out hover:-translate-y-2.5 hover:shadow-2xl`}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="w-10 h-10 rounded-xl bg-yellow-400 text-stone-900 flex items-center justify-center text-xs font-black">
+                  {/* Number badge (No black background on hover) */}
+                  <span className={`w-10 h-10 rounded-xl ${badgeClass} flex items-center justify-center text-xs font-black shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
                     {number}
                   </span>
-                  <span className="text-2xl">{emoji}</span>
+                  {/* Cute Emoji Bounce & Rotate Animation */}
+                  <span className="text-3xl transition-transform duration-300 group-hover:scale-125 group-hover:-rotate-12 inline-block">
+                    {emoji}
+                  </span>
                 </div>
-                <h3 className="mt-5 font-black text-lg">{title}</h3>
-                <p className="mt-2 text-sm text-stone-600 leading-relaxed">{text}</p>
+
+                <h3 className="mt-5 font-black text-lg text-stone-800 transition-colors duration-300 group-hover:text-amber-600">
+                  {title}
+                </h3>
+                <p className="mt-2 text-sm text-stone-600 leading-relaxed">
+                  {text}
+                </p>
               </div>
             ))}
           </div>
@@ -709,8 +730,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-amber-400 rounded-full blur-[80px] opacity-20"></div>
 
             <div className="relative z-10 flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-left">
-              <div className="w-16 h-16 shrink-0 rounded-[1.5rem] bg-gradient-to-br from-yellow-400 to-amber-500 text-white flex items-center justify-center shadow-lg shadow-yellow-500/30">
-                <Sparkles className="w-8 h-8" />
+              <div className="relative w-16 h-16 shrink-0 rounded-[1.25rem] bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30" aria-label="High ability student thinking badge">
+                <Brain className="w-10 h-10" strokeWidth={1.75} />
+                <span className="absolute right-2 top-1 text-sm font-black leading-none">+</span>
+                <span className="absolute right-1.5 top-4 h-1.5 w-1.5 rounded-full bg-white" />
               </div>
               <div>
                 <h3 className="text-2xl font-black text-stone-900">Advanced students get harder content.</h3>
@@ -726,18 +749,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* GAMIFICATION */}
       <section className="py-20 bg-gradient-to-br from-amber-50 via-white to-amber-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            <div className="reveal-on-scroll">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-amber-200 text-amber-700 text-xs font-bold">
-                <Trophy className="w-3.5 h-3.5" />
-                Learning, but make it fun
+          <div className="grid lg:grid-cols-2 gap-10 items-stretch">
+
+            {/* 1st CARD (Thoda andar ki or shifted with Left Padding) */}
+            <div className="reveal-on-scroll flex flex-col justify-between pl-2 sm:pl-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-amber-200 text-amber-700 text-xs font-bold">
+                  <Trophy className="w-3.5 h-3.5" />
+                  Learning, but make it fun
+                </div>
+                <h2 className="mt-4 text-3xl sm:text-4xl font-black capitalize">
+                  Rewards that make children want to keep going
+                </h2>
+                <p className="mt-4 text-stone-600 leading-relaxed">
+                  Correct answers earn points. Milestones unlock badges. Daily activity builds streaks. Students can see a friendly leaderboard and take short educational brain breaks.
+                </p>
               </div>
-              <h2 className="mt-4 text-3xl sm:text-4xl font-black capitalize">
-                Rewards that make children want to keep going
-              </h2>
-              <p className="mt-4 text-stone-600 leading-relaxed">
-                Correct answers earn points. Milestones unlock badges. Daily activity builds streaks. Students can see a friendly leaderboard and take short educational brain breaks.
-              </p>
 
               <div className="mt-7 grid sm:grid-cols-2 gap-4">
                 {[
@@ -755,46 +782,57 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
             </div>
 
-            <div className="relative rounded-[2rem] border border-amber-200 shadow-2xl p-6 sm:p-8 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden reveal-on-scroll">
-              <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-yellow-300 rounded-full blur-3xl opacity-30"></div>
+            {/* 2nd CARD (Balanced Spacing & Clean Hover Animations) */}
+            <div className="group/card relative rounded-[2rem] border border-amber-200 shadow-xl hover:shadow-2xl p-6 sm:p-7 bg-gradient-to-br from-amber-50 to-orange-50 overflow-hidden reveal-on-scroll flex flex-col justify-between transition-all duration-300 hover:-translate-y-1">
+              <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-yellow-300 rounded-full blur-3xl opacity-30 group-hover/card:opacity-50 transition-opacity"></div>
 
-              <div className="relative z-10 flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-amber-700 font-bold uppercase tracking-wider">This Week</div>
-                  <div className="text-2xl font-black text-stone-900 mt-1">Rahul's Rewards</div>
-                </div>
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg shadow-yellow-500/30">
-                  <Award className="w-6 h-6 text-white" />
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-3 relative z-10">
-                {[
-                  ['Correct answers', '+120 XP', 'text-amber-600', 'bg-white'],
-                  ['7-day streak', '+70 XP', 'text-amber-600', 'bg-white'],
-                  ['Geometry badge', 'Unlocked!', 'text-amber-600', 'bg-amber-100/50'],
-                  ['Leaderboard', '#3', 'text-amber-600', 'bg-white'],
-                ].map(([label, value, color, bg]) => (
-                  <div key={label} className={`flex items-center justify-between p-4 rounded-2xl ${bg} border border-white shadow-sm`}>
-                    <span className="text-sm font-bold text-stone-700">{label}</span>
-                    <span className={`text-sm font-black ${color}`}>{value}</span>
+              <div>
+                {/* Header */}
+                <div className="relative z-10 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs text-amber-700 font-bold uppercase tracking-wider">This Week</div>
+                    <div className="text-2xl font-black text-stone-900 mt-1 group-hover/card:text-amber-700 transition-colors">Rahul's Rewards</div>
                   </div>
-                ))}
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg shadow-yellow-500/30 transition-transform duration-300 group-hover/card:scale-110 group-hover/card:rotate-6">
+                    <Award className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+
+                {/* XP & Badges List with Hover */}
+                <div className="mt-5 space-y-2.5 relative z-10">
+                  {[
+                    ['Correct answers', '+120 XP', 'text-amber-600', 'bg-white/80 hover:bg-white'],
+                    ['7-day streak', '+70 XP', 'text-amber-600', 'bg-white/80 hover:bg-white'],
+                    ['Geometry badge', 'Unlocked!', 'text-amber-600', 'bg-amber-100/60 hover:bg-amber-100'],
+                    ['Leaderboard', '#3', 'text-amber-600', 'bg-white/80 hover:bg-white'],
+                  ].map(([label, value, color, bg]) => (
+                    <div
+                      key={label}
+                      className={`flex items-center justify-between p-3.5 rounded-2xl ${bg} border border-white shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-md cursor-pointer`}
+                    >
+                      <span className="text-sm font-bold text-stone-700">{label}</span>
+                      <span className={`text-sm font-black ${color}`}>{value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="mt-5 p-5 rounded-2xl bg-gradient-to-r from-yellow-100 to-amber-100 border border-yellow-200/50 relative z-10">
+              {/* Brain Break Banner with Hover */}
+              <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-yellow-100 to-amber-100 border border-yellow-200/60 relative z-10 transition-all duration-300 hover:scale-[1.01] hover:border-amber-300 shadow-sm">
                 <div className="flex items-center gap-2 font-black text-sm text-stone-900">
-                  <Gamepad2 className="w-4 h-4 text-amber-600" />
+                  <Gamepad2 className="w-4 h-4 text-amber-600 animate-pulse" />
                   Brain Break
                 </div>
-                <p className="text-xs font-semibold text-stone-600 mt-1.5 leading-relaxed">
+                <p className="text-xs font-semibold text-stone-600 mt-1 leading-relaxed">
                   Solve 3 quick puzzles and unlock a fun fact.
                 </p>
               </div>
             </div>
+
           </div>
         </div>
       </section>
+
 
       {/* INTERACTIVE DEMO */}
       <section id="demo" className="py-20 bg-white border-y border-stone-200">
@@ -969,65 +1007,122 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </p>
             </div>
           </div>
-
-          <div className="mt-6 flex justify-center reveal-on-scroll">
-            <div className="px-5 py-3 rounded-2xl bg-white border border-stone-200 text-xs font-bold text-stone-600 flex items-center gap-2">
-              <Lock className="w-4 h-4 text-yellow-600" />
-              Authorized access and secure communication
-            </div>
-          </div>
         </div>
       </section>
 
       {/* CURRICULUM */}
-      <section className="py-20 bg-white">
+      <section className="py-20 pb-8 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 reveal-on-scroll">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-bold">
-                <BookOpen className="w-3.5 h-3.5" />
-                Curriculum
-              </div>
-              <h2 className="mt-4 text-3xl sm:text-4xl font-black capitalize">
-                Choose the learning track that fits
-              </h2>
-              <p className="mt-3 text-stone-600 max-w-2xl">
-                Support for school learning and higher-level preparation across the platform.
-              </p>
-            </div>
-            <button
-              onClick={() => openAuth('register')}
-              className="px-5 py-3 rounded-xl bg-stone-900 text-white font-bold text-sm"
-            >
-              Explore After Sign Up
-            </button>
+
+          {/* CENTERED HEADER */}
+          <div className="text-center max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-black capitalize tracking-tight text-stone-900">
+              Choose the learning track that fits
+            </h2>
+            <p className="mt-3 text-stone-600 text-sm sm:text-base font-medium">
+              Support for school learning and higher-level preparation across the platform.
+            </p>
           </div>
 
+          {/* CUTE COMPACT CARDS GRID */}
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              ['CBSE & NCERT', 'Class 5–12', 'School learning and board preparation'],
-              ['ICSE & ISC', 'Class 5–12', 'Structured subject practice'],
-              ['Cambridge', 'IGCSE & A-Level', 'International curriculum support'],
-              ['Competitive Prep', 'HOTS (Higher Order Thinking Skills) / Foundation', 'More challenging practice'],
-            ].map(([title, level, text], i) => (
-              <div key={title} className="rounded-3xl border border-stone-200 p-5 bg-stone-50 reveal-on-scroll" style={{ transitionDelay: `${i * 100}ms` }}>
-                <div className="w-10 h-10 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-yellow-600">
-                  <Zap className="w-5 h-5" />
+              {
+                title: 'CBSE & NCERT',
+                level: 'Class 5–12',
+                text: 'School learning and board preparation',
+                color: 'bg-amber-100 text-amber-700 hover:border-amber-300',
+                svg: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'ICSE & ISC',
+                level: 'Class 5–12',
+                text: 'Structured subject practice',
+                color: 'bg-sky-100 text-sky-700 hover:border-sky-300',
+                svg: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 01-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'Cambridge',
+                level: 'IGCSE & A-Level',
+                text: 'International curriculum support',
+                color: 'bg-rose-100 text-rose-700 hover:border-rose-300',
+                svg: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m6 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'Competitive Prep',
+                level: 'HOTS / Foundation',
+                text: 'More challenging practice',
+                color: 'bg-emerald-100 text-emerald-700 hover:border-emerald-300',
+                svg: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                ),
+              },
+            ].map((track) => (
+              <div
+                key={track.title}
+                className={`group bg-stone-50/80 rounded-2xl border border-stone-200/80 p-5 hover:-translate-y-1.5 hover:bg-white hover:shadow-xl hover:shadow-amber-500/5 transition-all duration-300 ${track.color}`}
+              >
+                {/* Icon + Level Badge */}
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-inner transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                    {track.svg}
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-white border border-stone-200/60 text-[11px] font-black text-amber-700 shadow-2xs">
+                    {track.level}
+                  </span>
                 </div>
-                <h3 className="mt-4 font-black">{title}</h3>
-                <div className="mt-1 text-xs font-bold text-yellow-600">{level}</div>
-                <p className="mt-3 text-xs text-stone-500 leading-relaxed">{text}</p>
+
+                {/* Title & Text */}
+                <h3 className="mt-4 font-black text-stone-800 text-base group-hover:text-amber-600 transition-colors">
+                  {track.title}
+                </h3>
+                <p className="mt-1.5 text-xs font-medium text-stone-500 leading-relaxed">
+                  {track.text}
+                </p>
               </div>
             ))}
           </div>
+
+          {/* CENTERED BUTTON */}
+          <div className="mt-10 text-center">
+            <button
+              onClick={() => typeof openAuth === 'function' && openAuth('register')}
+              className="group relative inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-stone-900 font-black text-sm shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/40 hover:-translate-y-1 active:translate-y-0 transition-all duration-300 cursor-pointer"
+            >
+              <span>Explore After Sign Up</span>
+              <svg className="w-4 h-4 text-stone-900 transition-transform group-hover:rotate-12 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </button>
+          </div>
+
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="relative py-24 bg-gradient-to-b from-white to-amber-50/50 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-200/20 blur-[100px] rounded-full pointer-events-none"></div>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center reveal-on-scroll">
+      <section className="relative pt-16 pb-20 bg-gradient-to-b from-white to-amber-50/50 overflow-hidden border-t border-amber-200/60 shadow-[0_-12px_30px_-10px_rgba(251,191,36,0.15)]">
+        {/* Background Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-200/20 blur-[100px] rounded-full pointer-events-none z-0"></div>
+
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+
+          {/* Heading & Badge */}
+          <div className="text-center reveal-on-scroll relative z-20">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-100/80 border border-yellow-200 text-yellow-800 text-xs font-bold shadow-sm">
               <Lightbulb className="w-4 h-4 text-yellow-600" />
               FAQ
@@ -1037,20 +1132,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </h2>
           </div>
 
-          <div className="mt-12 space-y-4">
+          {/* Accordion Items */}
+          <div className="mt-12 space-y-4 relative z-20">
             {faqs.map((faq, index) => {
               const open = openFaq === index;
               return (
-                <div key={faq.q} className={`bg-white/80 backdrop-blur-md rounded-2xl border transition-all duration-300 overflow-hidden ${open ? 'border-yellow-300 shadow-xl shadow-yellow-500/10' : 'border-stone-200 hover:border-yellow-200 hover:shadow-md'}`}>
+                <div
+                  key={faq.q}
+                  className={`bg-white/80 backdrop-blur-md rounded-2xl border transition-all duration-300 overflow-hidden ${open ? 'border-yellow-300 shadow-xl shadow-yellow-500/10' : 'border-stone-200 hover:border-yellow-200 hover:shadow-md'
+                    }`}
+                >
                   <button
                     onClick={() => setOpenFaq(open ? null : index)}
-                    className="w-full p-6 flex items-center justify-between gap-4 text-left font-bold text-stone-800"
+                    className="w-full p-6 flex items-center justify-between gap-4 text-left font-bold text-stone-800 cursor-pointer"
                   >
-                    <span className="text-lg">{faq.q}</span>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${open ? 'bg-yellow-100 text-yellow-700' : 'bg-stone-100 text-stone-400'}`}>
+                    <span className="text-lg text-stone-900">{faq.q}</span>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${open ? 'bg-yellow-100 text-yellow-700' : 'bg-stone-100 text-stone-400'
+                      }`}>
                       <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
                     </div>
                   </button>
+
                   {open && (
                     <div className="px-6 pb-6 text-stone-600 leading-relaxed pt-2">
                       {faq.a}
@@ -1060,9 +1162,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               );
             })}
           </div>
+
         </div>
       </section>
-
       {/* FINAL CTA */}
       <section className="relative py-24 overflow-hidden bg-stone-950 text-white">
         <div className="absolute inset-0">
@@ -1093,3 +1195,4 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     </div>
   );
 };
+

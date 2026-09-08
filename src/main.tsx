@@ -36,7 +36,10 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/admin/analytics" element={<AdminLogin />} />
           <Route path="/admin/settings" element={<AdminLogin />} />
           <Route path="/manage-blogs" element={<AdminLogin />} />
+          <Route path="/add-blogs" element={<AdminLogin />} />
+          <Route path="/edit-blog/:blogId" element={<AdminLogin />} />
           <Route path="/category" element={<AdminLogin />} />
+          <Route path="/*" element={<App />} />
         </Routes>
       </BrowserRouter>
     </GoogleOAuthProvider>
