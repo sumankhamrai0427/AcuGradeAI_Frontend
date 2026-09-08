@@ -85,13 +85,13 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
     const childExams = (child.recentExams && child.recentExams.length > 0)
       ? child.recentExams
       : examHistory.filter(e => String(e.studentId) === String(child.id));
-    
+
     const isKids = ['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(c => (child.classGrade || '').includes(c));
     const defaultTotal = isKids ? 5 : 15;
 
     const childTotalObtained = childExams.reduce((acc, e) => acc + (e.marksObtained || 0), 0);
     const childTotalPossible = childExams.reduce((acc, e) => acc + (e.totalMarks || defaultTotal), 0);
-    
+
     const scorePct = childTotalPossible > 0
       ? (childTotalObtained / childTotalPossible) * 100
       : (child.averageScore > 10 ? child.averageScore : (child.averageScore * 10));
@@ -128,6 +128,52 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
     ? Math.round(childrenMetrics.reduce((sum, cm) => sum + cm.readinessScore, 0) / totalChildren)
     : 0;
   const overallReadinessPct = hasData ? `${overallReadinessVal}%` : 'N/A';
+
+  // Adaptive Smart Summary for Card 2: LEARNING PROGRESS
+  const progressCardData = useMemo(() => {
+    if (totalChildren === 0) {
+      return {
+        mainText: 'N/A',
+        subText: 'No children added'
+      };
+    }
+    if (totalChildren === 1) {
+      const single = childrenMetrics[0];
+      return {
+        mainText: `${single.scorePct}%`,
+        subText: single.child ? `${single.child.name}` : 'Individual Score'
+      };
+    }
+    // Multiple children: Check if any child has low score (< 60%) or 0 exams
+    const hasLowScore = childrenMetrics.some(cm => cm.scorePct < 60);
+    return {
+      mainText: hasLowScore ? '🟡 Needs Focus' : '🟢 On Track',
+      subText: 'Tap to view child progress →'
+    };
+  }, [totalChildren, childrenMetrics]);
+
+  // Adaptive Smart Summary for Card 3: EXAM READINESS
+  const readinessCardData = useMemo(() => {
+    if (totalChildren === 0) {
+      return {
+        mainText: 'N/A',
+        subText: 'No children added'
+      };
+    }
+    if (totalChildren === 1) {
+      const single = childrenMetrics[0];
+      return {
+        mainText: `${single.readinessScore}%`,
+        subText: single.child ? `${single.child.name}` : 'Individual Readiness'
+      };
+    }
+    // Multiple children: All ready if every child has readinessScore >= 70 and has exams
+    const allReady = childrenMetrics.every(cm => cm.readinessScore >= 70 && cm.totalExams > 0);
+    return {
+      mainText: allReady ? '🎯 Board Ready' : '⏳ In Preparation',
+      subText: 'Tap for individual readiness →'
+    };
+  }, [totalChildren, childrenMetrics]);
 
   // Max Learning Streak across children
   const maxFamilyStreak = hasData
@@ -401,15 +447,44 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
       {/* 1. TOP SUMMARY CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Card 1: My Children (Yellow/Orange) */}
-        <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-2xl border border-yellow-100 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-2xl border border-yellow-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
           <div className="absolute -right-4 -top-4 w-20 h-20 bg-yellow-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <div className="flex items-center gap-2 mb-2 relative z-10">
-            <div className="w-7 h-7 rounded-xl bg-white shadow-sm flex items-center justify-center">
-              <Users className="w-3.5 h-3.5 text-yellow-600" />
+          <div className="flex items-center justify-between mb-2 relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-white shadow-xs flex items-center justify-center">
+                <Users className="w-3.5 h-3.5 text-yellow-600" />
+              </div>
+              <span className="text-xs font-bold text-yellow-900 uppercase tracking-wider">My Children</span>
             </div>
-            <span className="text-xs font-bold text-yellow-900 uppercase tracking-wider">My Children</span>
+            <span className="text-[10px] font-bold bg-yellow-200/70 text-yellow-900 px-2 py-0.5 rounded-full border border-yellow-300/60 shadow-2xs">
+              {totalChildren} Active
+            </span>
           </div>
-          <p className="text-2xl font-black text-stone-900 relative z-10">{totalChildren} <span className="text-sm font-semibold text-yellow-700">Active</span></p>
+          <div className="flex items-end justify-between relative z-10 mt-1">
+            <div>
+              <p className="text-2xl font-black text-stone-900">{totalChildren}</p>
+              <p className="text-[10px] text-yellow-800 font-semibold mt-0.5">
+                {totalChildren === 1 ? 'Registered Student' : 'Registered Students'}
+              </p>
+            </div>
+            {/* Child Avatar Stack */}
+            <div className="flex items-center -space-x-2 pb-0.5">
+              {parentAccount.children.slice(0, 3).map((c, i) => (
+                <div
+                  key={c.id || i}
+                  title={c.name}
+                  className="w-7 h-7 rounded-full bg-white border-2 border-yellow-200 flex items-center justify-center text-xs shadow-xs"
+                >
+                  {c.avatar || '👦'}
+                </div>
+              ))}
+              {totalChildren > 3 && (
+                <div className="w-7 h-7 rounded-full bg-yellow-300 border-2 border-white flex items-center justify-center text-[10px] font-black text-yellow-950 shadow-xs">
+                  +{totalChildren - 3}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Card 2: Overall Progress (Emerald/Teal - Clickable) */}
@@ -428,8 +503,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             <ChevronRight className="w-3.5 h-3.5 text-emerald-600/60 group-hover:translate-x-0.5 transition-transform" />
           </div>
           <div className="relative z-10">
-            <p className="text-2xl font-black text-stone-900">{avgFamilyScore}</p>
-            <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">Across all children</p>
+            <p className="text-xl sm:text-2xl font-black text-stone-900">{progressCardData.mainText}</p>
+            <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">{progressCardData.subText}</p>
           </div>
         </div>
 
@@ -449,23 +524,47 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             <ChevronRight className="w-3.5 h-3.5 text-blue-600/60 group-hover:translate-x-0.5 transition-transform" />
           </div>
           <div className="relative z-10">
-            <p className="text-2xl font-black text-stone-900">{overallReadinessPct}</p>
-            <p className="text-[10px] text-blue-700 font-semibold mt-0.5">Based on assessments</p>
+            <p className="text-xl sm:text-2xl font-black text-stone-900">{readinessCardData.mainText}</p>
+            <p className="text-[10px] text-blue-700 font-semibold mt-0.5">{readinessCardData.subText}</p>
           </div>
         </div>
 
         {/* Card 4: Learning Streak (Rose/Pink) */}
-        <div className="bg-gradient-to-br from-rose-50 to-pink-50 p-4 rounded-2xl border border-rose-100 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-br from-rose-50 to-pink-50 p-4 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
           <div className="absolute -right-4 -top-4 w-20 h-20 bg-rose-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
-          <div className="flex items-center gap-2 mb-2 relative z-10">
-            <div className="w-7 h-7 rounded-xl bg-white shadow-sm flex items-center justify-center">
-              <Flame className="w-3.5 h-3.5 text-rose-500" />
+          <div className="flex items-center justify-between mb-2 relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-white shadow-xs flex items-center justify-center">
+                <Flame className="w-3.5 h-3.5 text-rose-500" />
+              </div>
+              <span className="text-xs font-bold text-rose-900 uppercase tracking-wider">Streak</span>
             </div>
-            <span className="text-xs font-bold text-rose-900 uppercase tracking-wider">Streak</span>
+            <span className="text-[10px] font-bold bg-rose-200/70 text-rose-900 px-2 py-0.5 rounded-full border border-rose-300/60 shadow-2xs flex items-center gap-1">
+              🔥 Active
+            </span>
           </div>
-          <div className="relative z-10">
-            <p className="text-2xl font-black text-stone-900">{learningStreakText}</p>
-            <p className="text-[10px] text-rose-700 font-semibold mt-0.5">Active learning</p>
+          <div className="flex items-end justify-between relative z-10 mt-1">
+            <div>
+              <p className="text-2xl font-black text-stone-900">{learningStreakText}</p>
+              <p className="text-[10px] text-rose-700 font-semibold mt-0.5">Consistent learning</p>
+            </div>
+            {/* 7-Day Mini Sprint Rhythm Dots */}
+            <div className="flex items-center gap-1 pb-1">
+              {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+                const isActive = day <= Math.min(maxFamilyStreak, 7);
+                return (
+                  <span
+                    key={day}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      isActive
+                        ? 'bg-rose-500 shadow-2xs scale-110'
+                        : 'bg-rose-200/80'
+                    }`}
+                    title={`Day ${day}`}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -478,7 +577,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             <p className="text-xs text-stone-500 font-medium">Track each child's learning journey.</p>
           </div>
           {parentAccount.children.length > 0 && (
-            <button 
+            <button
               onClick={onOpenAddChildModal}
               className="flex items-center gap-1.5 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 rounded-xl text-xs font-black text-stone-900 hover:shadow-md hover:-translate-y-0.5 transition-all shadow-sm border border-yellow-500/50"
             >
@@ -494,7 +593,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
               <Users className="w-10 h-10 text-stone-300 mb-3" />
               <p className="font-bold text-stone-700">No Children Added Yet</p>
               <p className="text-sm text-stone-500 mt-1 mb-4">Add your children to start tracking their learning journey.</p>
-              <button 
+              <button
                 onClick={onOpenAddChildModal}
                 className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-stone-900 font-bold rounded-xl transition-colors shadow-sm"
               >
@@ -839,13 +938,12 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
       {activeModalMetric && (
         <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${
-                  activeModalMetric === 'progress' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
-                }`}>
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${activeModalMetric === 'progress' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+                  }`}>
                   {activeModalMetric === 'progress' ? <TrendingUp className="w-5 h-5" /> : <Award className="w-5 h-5" />}
                 </div>
                 <div>
@@ -854,8 +952,12 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                   </h3>
                   <p className="text-xs text-stone-500">
                     {activeModalMetric === 'progress'
-                      ? `Average progress across all children is ${avgFamilyScore}.`
-                      : `Average exam readiness across all children is ${overallReadinessPct}.`}
+                      ? (totalChildren === 1
+                        ? `Diagnostic learning progress for ${childrenMetrics[0]?.child.name || 'student'}.`
+                        : `Individual learning progress for all ${totalChildren} children. Tap to view profile.`)
+                      : (totalChildren === 1
+                        ? `Exam & board readiness evaluation for ${childrenMetrics[0]?.child.name || 'student'}.`
+                        : `Individual exam readiness for all ${totalChildren} children. Tap to view profile.`)}
                   </p>
                 </div>
               </div>
@@ -894,11 +996,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                           navigate('/reports');
                         }
                       }}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer group hover:scale-[1.01] hover:shadow-md ${
-                        isSelected
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer group hover:scale-[1.01] hover:shadow-md ${isSelected
                           ? 'border-yellow-400 bg-yellow-50/40'
                           : 'border-stone-200 bg-stone-50/70 hover:border-yellow-300 hover:bg-white'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between gap-3 mb-2.5">
                         <div className="flex items-center gap-3 min-w-0">
@@ -945,9 +1046,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                       <div className="space-y-1 mt-2">
                         <div className="w-full h-2 bg-stone-200 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${
-                              activeModalMetric === 'progress' ? 'bg-emerald-500' : 'bg-blue-500'
-                            }`}
+                            className={`h-full rounded-full transition-all ${activeModalMetric === 'progress' ? 'bg-emerald-500' : 'bg-blue-500'
+                              }`}
                             style={{ width: `${Math.min(100, Math.max(5, scorePct))}%` }}
                           />
                         </div>
