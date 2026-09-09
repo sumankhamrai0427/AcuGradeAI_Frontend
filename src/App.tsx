@@ -50,7 +50,9 @@ import {
   Smile,
   Gamepad2,
   LogOut,
-  Loader2
+  Loader2,
+  CalendarClock,
+  CheckCheck
 } from 'lucide-react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Sidebar, PageAccess } from './components/Sidebar';
@@ -75,6 +77,8 @@ import { LoginPage } from './components/LoginPage';
 import { LandingPage } from './components/LandingPage';
 import { ChildPinModal } from './components/ChildPinModal';
 import { PublicDossierView } from './components/PublicDossierView';
+import { ParentExamScheduler } from './components/ParentExamScheduler';
+import { AppNotification } from './types/api';
 import ApiServices, {
   getStoredTokens,
   clearTokens,
@@ -159,6 +163,71 @@ export default function App() {
   const personaMenuRef = useRef<HTMLDivElement>(null);
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
+
+  const fetchNotifications = useCallback(async () => {
+    if (!authRole) return;
+    try {
+      const res = await ApiServices.getNotifications();
+      if (res) {
+        setNotifications(res.notifications || []);
+        setUnreadNotifCount(res.unreadCount || 0);
+      }
+    } catch (err) {
+      // Quietly ignore network/auth errors on background poll
+    }
+  }, [authRole]);
+
+  // Real-Time Notification Polling (every 15 seconds)
+  useEffect(() => {
+    if (!authRole) return;
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(interval);
+  }, [authRole, fetchNotifications]);
+
+  const handleMarkNotificationRead = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    try {
+      await ApiServices.markNotificationRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      setUnreadNotifCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    try {
+      await ApiServices.markAllNotificationsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadNotifCount(0);
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+    }
+  };
+
+  const handleNotificationClick = async (notif: AppNotification) => {
+    if (!notif.isRead) {
+      handleMarkNotificationRead(notif.id);
+    }
+    setShowNotificationMenu(false);
+
+    if (notif.type === 'EXAM_ASSIGNED') {
+      setActiveTab('arena');
+    } else if (notif.type === 'EXAM_SUBMITTED') {
+      if (notif.metadata?.submissionId) {
+        // If we have submission metadata, switch to reports or open submission
+        setActiveTab('schedule-exam');
+      } else {
+        setActiveTab('reports');
+      }
+    } else if (notif.actionUrl) {
+      const cleanUrl = notif.actionUrl.startsWith('/') ? notif.actionUrl.substring(1) : notif.actionUrl;
+      setActiveTab(cleanUrl);
+    }
+  };
 
   // Close persona dropdown when clicking anywhere outside
   useEffect(() => {
@@ -745,12 +814,12 @@ export default function App() {
       )}
 
       {/* Left Sidebar (High Density Theme with Global Collapse / Expand) */}
-      <div className={`fixed inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'} ${mobileSidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'} ${mobileSidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full'} print:hidden`}>
         <Sidebar pageAccess={pageAccess} isSidebarCollapsed={isSidebarCollapsed} setMobileSidebarOpen={setMobileSidebarOpen} onToggleSidebar={toggleSidebar} onLogout={handleLogout} activePersona={activePersona} activeChildName={activeChild?.name} />
       </div>
 
       {/* Main Workspace Area (High Density Theme) */}
-      <main className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0 relative print:w-full print:block print:overflow-visible print:p-0 print:m-0">
         {(isBootstrapping || !parentAccount) && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/40 backdrop-blur-sm">
             <Loader2 className="w-10 h-10 animate-spin text-yellow-500 mb-4" />
@@ -758,9 +827,9 @@ export default function App() {
           </div>
         )}
 
-        <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-500 ${(isBootstrapping || !parentAccount) ? 'blur-sm pointer-events-none opacity-60' : ''}`}>
+        <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-500 ${(isBootstrapping || !parentAccount) ? 'blur-sm pointer-events-none opacity-60' : ''} print:w-full print:block print:overflow-visible`}>
           {/* Top Header Bar */}
-          <header className="h-14 lg:h-16 bg-gradient-to-r from-yellow-50/90 via-white/90 to-orange-50/90 backdrop-blur-xl border-b border-stone-200/50 flex items-center justify-between px-4 sm:px-6 lg:px-8 flex-shrink-0 z-20 sticky top-0">
+          <header className="h-14 lg:h-16 bg-gradient-to-r from-yellow-50/90 via-white/90 to-orange-50/90 backdrop-blur-xl border-b border-stone-200/50 flex items-center justify-between px-4 sm:px-6 lg:px-8 flex-shrink-0 z-20 sticky top-0 print:hidden">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               {/* Mobile-only Sidebar Toggle (hidden on desktop) */}
               <button
@@ -788,68 +857,112 @@ export default function App() {
                 </span>
               </div>
 
-              {/* Notification Bell & Dropdown — only active when children exist */}
-              {(parentAccount?.children?.length ?? 0) > 0 ? (
-                <div className="relative" ref={notificationMenuRef}>
-                  <button
-                    onClick={() => setShowNotificationMenu(!showNotificationMenu)}
-                    className="relative p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors"
-                  >
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-1.5 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse border-2 border-white"></span>
-                  </button>
-                  {showNotificationMenu && (
-                    <div className="absolute right-0 mt-2 w-[340px] bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-stone-200/50 p-3 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right flex flex-col gap-2 max-h-[420px] overflow-y-auto custom-scrollbar">
-                      <div className="px-3 py-1.5 border-b border-stone-100 flex items-center justify-between">
-                        <span className="text-xs font-bold text-stone-900">Student Profiles & Activity</span>
-                        <span className="text-[10px] text-stone-400 font-semibold">{parentAccount?.children?.length || 0} Registered</span>
-                      </div>
-                      {(parentAccount?.children || []).map((child) => {
-                        return (
-                          <div key={child.id} className="p-3.5 rounded-2xl border bg-stone-50/80 border-stone-200/60 flex flex-col gap-2.5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-amber-100/70 border border-amber-200 flex items-center justify-center text-xl shrink-0">
-                                {child.avatar || '👦'}
-                              </div>
-                              <div className="flex flex-col min-w-0 flex-1">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs font-bold text-stone-900 truncate">{child.name}</span>
-                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-stone-200 text-stone-700">{child.classGrade}</span>
-                                </div>
-                                <span className="text-[10px] text-stone-500 font-medium truncate">
-                                  Username: <strong className="text-stone-800">@{child.username || child.name?.toLowerCase().replace(/\s+/g, '')}</strong>
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-between text-[10px] text-stone-500 bg-white px-2.5 py-1.5 rounded-lg border border-stone-100">
-                              <span>Exams taken: <strong className="text-stone-800">{child.totalExamsTaken || 0}</strong></span>
-                              <span>Avg Score: <strong className="text-stone-800">{child.averageScore ? `${(child.averageScore * 10).toFixed(0)}%` : 'N/A'}</strong></span>
-                            </div>
-
-                            <button
-                              onClick={() => {
-                                setShowNotificationMenu(false);
-                                setActiveChildId(child.id);
-                                setActiveTab('reports');
-                              }}
-                              className="w-full py-2 px-3 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                            >
-                              <span>View Mastery & Reports</span>
-                              <ArrowRight className="w-3 h-3" />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* No children — plain inactive bell */
-                <button className="p-2 rounded-full text-stone-400 cursor-default" disabled>
+              {/* Real-Time Notification Bell & Dropdown */}
+              <div className="relative" ref={notificationMenuRef}>
+                <button
+                  onClick={() => setShowNotificationMenu(!showNotificationMenu)}
+                  className="relative p-2 rounded-full hover:bg-stone-100 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+                  title="Notifications"
+                >
                   <Bell className="w-5 h-5" />
+                  {unreadNotifCount > 0 && (
+                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse border-2 border-white shadow-xs">
+                      {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                    </span>
+                  )}
                 </button>
-              )}
+
+                {showNotificationMenu && (
+                  <div className="absolute right-0 mt-2 w-[360px] sm:w-[380px] bg-white rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-stone-200/70 p-3 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right flex flex-col gap-2 max-h-[480px] overflow-hidden">
+                    
+                    {/* Header */}
+                    <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-stone-900">Notifications</span>
+                        {unreadNotifCount > 0 && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                            {unreadNotifCount} new
+                          </span>
+                        )}
+                      </div>
+                      {unreadNotifCount > 0 && (
+                        <button
+                          onClick={handleMarkAllNotificationsRead}
+                          className="text-[11px] font-semibold text-yellow-700 hover:text-yellow-800 flex items-center gap-1 hover:underline cursor-pointer"
+                        >
+                          <CheckCheck className="w-3.5 h-3.5" />
+                          <span>Mark all as read</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Notification Items List */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2 p-1 max-h-[380px]">
+                      {notifications.length === 0 ? (
+                        <div className="py-12 text-center space-y-2">
+                          <div className="w-10 h-10 rounded-full bg-amber-50 border border-amber-200/60 flex items-center justify-center text-lg mx-auto">
+                            🔔
+                          </div>
+                          <p className="text-xs font-bold text-stone-800">All caught up!</p>
+                          <p className="text-[11px] text-stone-400">No notifications at the moment.</p>
+                        </div>
+                      ) : (
+                        notifications.map((notif) => {
+                          const isAssigned = notif.type === 'EXAM_ASSIGNED';
+                          const isSubmitted = notif.type === 'EXAM_SUBMITTED';
+
+                          return (
+                            <div
+                              key={notif.id}
+                              onClick={() => handleNotificationClick(notif)}
+                              className={`p-3 rounded-2xl border transition-all duration-150 flex items-start gap-3 cursor-pointer group text-left ${
+                                !notif.isRead
+                                  ? 'bg-gradient-to-r from-amber-50/70 via-yellow-50/40 to-white border-amber-200/80 shadow-xs'
+                                  : 'bg-white hover:bg-stone-50/80 border-stone-200/60 opacity-80 hover:opacity-100'
+                              }`}
+                            >
+                              {/* Icon Badge */}
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm mt-0.5 border ${
+                                isAssigned 
+                                  ? 'bg-amber-100 border-amber-200 text-amber-800' 
+                                  : isSubmitted 
+                                  ? 'bg-emerald-100 border-emerald-200 text-emerald-800' 
+                                  : 'bg-yellow-100 border-yellow-200 text-yellow-800'
+                              }`}>
+                                {isAssigned ? '📝' : isSubmitted ? '🎯' : '🔔'}
+                              </div>
+
+                              {/* Text Body */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-1">
+                                  <h4 className={`text-xs truncate ${!notif.isRead ? 'font-bold text-stone-900' : 'font-semibold text-stone-700'}`}>
+                                    {notif.title}
+                                  </h4>
+                                  {!notif.isRead && (
+                                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-stone-600 mt-0.5 line-clamp-2 leading-relaxed">
+                                  {notif.message}
+                                </p>
+                                <div className="flex items-center justify-between mt-2 pt-1 border-t border-stone-100/80 text-[10px] text-stone-400">
+                                  <span>
+                                    {notif.createdAt ? new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                                  </span>
+                                  <span className="text-yellow-700 font-semibold group-hover:underline flex items-center gap-0.5">
+                                    {isAssigned ? 'Open Arena →' : isSubmitted ? 'View Report →' : 'View →'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                  </div>
+                )}
+              </div>
 
               <div className="relative" ref={personaMenuRef}>
                 <button
@@ -956,7 +1069,7 @@ export default function App() {
           </header>
 
           {/* Scrollable Main Content Frame (High Density Theme) */}
-          <div className="flex-1 overflow-y-auto bg-stone-50 p-4 sm:p-6 lg:p-8">
+          <div className="flex-1 overflow-y-auto bg-stone-50 p-4 sm:p-6 lg:p-8 print:p-0 print:m-0 print:bg-white print:w-full print:block print:overflow-visible">
 
 
             {activeSubmissionReport ? (
@@ -1041,6 +1154,16 @@ export default function App() {
                     examHistory={examHistory}
                     parentAccount={parentAccount}
                     onViewSubmissionReport={(submission) => setActiveSubmissionReport(submission)}
+                  />
+                )}
+
+                {activeTab === 'schedule-exam' && parentAccount && (
+                  <ParentExamScheduler
+                    parentAccount={parentAccount}
+                    activeChildId={activeChildId}
+                    onChildSelect={setActiveChildId}
+                    onViewSubmissionReport={(submission) => setActiveSubmissionReport(submission)}
+                    onNavigateToArena={() => setActiveTab('arena')}
                   />
                 )}
 

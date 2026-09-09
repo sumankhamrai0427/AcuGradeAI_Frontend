@@ -74,6 +74,22 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [generationStep, setGenerationStep] = useState('');
 
+  const [assignedExam, setAssignedExam] = useState<any>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await ApiServices.getAssignedExams();
+        if (res && res.assignedExams && res.assignedExams.length > 0) {
+          const match = res.assignedExams[0];
+          setAssignedExam(match);
+          if (match.subject) setSelectedSubject(match.subject as Subject);
+          if (match.difficulty) setSelectedDifficulty(match.difficulty as ExamDifficulty);
+        }
+      } catch (e) {}
+    })();
+  }, [activeChild?.id]);
+
   useEffect(() => {
     if (initialExam) {
       setActiveExam(initialExam);
@@ -120,10 +136,19 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
     setGenerationStep('Loading Your Fun Game... 🎮');
 
     try {
-      const res: any = await ApiServices.generateQuickTest(activeChild.id, 5);
+      const res: any = await ApiServices.generateQuickTest({
+        studentId: activeChild.id,
+        scheduledExamId: assignedExam?.id,
+        subject: assignedExam?.subject || selectedSubject,
+        difficulty: assignedExam?.difficulty || selectedDifficulty,
+        limit: assignedExam?.questionCount || 5,
+      });
       const generatedExam = res?.exam || res;
       if (generatedExam && generatedExam.questions && generatedExam.questions.length > 0) {
-        setActiveExam(generatedExam);
+        setActiveExam({
+          ...generatedExam,
+          scheduledExamId: assignedExam?.id || generatedExam.scheduledExamId,
+        });
         setCurrentQuestionIdx(0);
         setAnswers({});
         setFlaggedQuestions({});
@@ -167,6 +192,7 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
       const res: any = await ApiServices.submitExam(activeExam.id, {
         answers,
         timeTakenSeconds: sanitizedTime,
+        scheduledExamId: (activeExam as any).scheduledExamId || (activeExam as any).scheduled_exam_id || assignedExam?.id,
       });
 
       const submission: ExamSubmission = res?.submission || res;
@@ -203,6 +229,7 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
         };
       });
 
+      const examTotalMarks = activeExam.totalMarks || activeExam.questions.length || 5;
       const submission: ExamSubmission = {
         id: `kids-sub-${Date.now()}`,
         examId: activeExam.id,
@@ -215,14 +242,14 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
         difficulty: activeExam.difficulty,
         answers,
         marksObtained,
-        totalMarks: activeExam.totalMarks || 5,
-        accuracyPercentage: Math.round((marksObtained / (activeExam.totalMarks || 5)) * 100),
+        totalMarks: examTotalMarks,
+        accuracyPercentage: Math.round((marksObtained / examTotalMarks) * 100),
         timeTakenSeconds: sanitizedTime,
         submittedAt: new Date().toISOString(),
         evaluations,
         analysis: {
-          overallBand: marksObtained >= 4 ? 'Master' : marksObtained >= 3 ? 'Proficient' : 'Developing',
-          masteryScorePercentage: Math.round((marksObtained / (activeExam.totalMarks || 5)) * 100),
+          overallBand: (marksObtained / examTotalMarks) >= 0.8 ? 'Master' : (marksObtained / examTotalMarks) >= 0.6 ? 'Proficient' : 'Developing',
+          masteryScorePercentage: Math.round((marksObtained / examTotalMarks) * 100),
           strengths: ['Great job solving interactive puzzles! 🌟'],
           areasToImprove: [],
           kGraphInsights: [],
@@ -337,14 +364,9 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
                 {(currentQ.type === 'mcq' || currentQ.type === 'logical') && currentQ.options && (
                   <div className="space-y-2">
                     {currentQ.options.map((opt, oIdx) => {
-                      let letter = String.fromCharCode(65 + oIdx);
-                      let cleanText = opt;
-                      const match = opt.match(/^([A-D])[\.\)]\s*(.*)$/i);
-                      if (match) {
-                        letter = match[1].toUpperCase();
-                        cleanText = match[2];
-                      }
-                      const isSelected = answers[currentQ.id]?.toUpperCase() === letter || answers[currentQ.id] === opt || answers[currentQ.id] === cleanText;
+                      const letter = String.fromCharCode(65 + oIdx);
+                      const cleanText = opt.replace(/^(?:option\s+)?\(?[A-Da-d]\)?[\).\:\-]?\s*/i, '').trim();
+                      const isSelected = answers[currentQ.id]?.toUpperCase() === letter || answers[currentQ.id]?.trim().toLowerCase() === cleanText.toLowerCase() || answers[currentQ.id] === opt;
                       return (
                         <label
                           key={oIdx}
@@ -548,7 +570,11 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
           <h2 className="text-xl font-bold text-stone-900 flex items-center justify-center gap-2">
             <span>Pick Your Quest!</span> 🗺️
           </h2>
-          <p className="text-xs text-stone-500 mt-1">Click below to start your quick 5-question fun challenge</p>
+          <p className="text-xs text-stone-500 mt-1">
+            {assignedExam
+              ? `Click below to start your parent-assigned ${assignedExam.questionCount}-question ${assignedExam.subject} challenge`
+              : 'Click below to start your quick 5-question fun challenge'}
+          </p>
         </div>
 
         {/* Action Button */}

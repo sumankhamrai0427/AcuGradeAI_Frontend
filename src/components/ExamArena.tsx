@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Board,
   ClassGrade,
@@ -24,7 +24,8 @@ import {
   Calculator,
   Layers,
   Award,
-  Zap
+  Zap,
+  CalendarClock
 } from 'lucide-react';
 import ApiServices from '../services/ApiServices';
 
@@ -104,7 +105,82 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
   const [selectedSubject, setSelectedSubject] = useState<Subject>('Mathematics');
   const [selectedDifficulty, setSelectedDifficulty] = useState<ExamDifficulty>('medium');
 
-  const blueprint = getExamBlueprint(selectedGrade);
+  const [assignedExam, setAssignedExam] = useState<any>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await ApiServices.getAssignedExams();
+        if (res && res.assignedExams && res.assignedExams.length > 0) {
+          const match = res.assignedExams[0];
+          setAssignedExam(match);
+          if (match.subject) setSelectedSubject(match.subject as Subject);
+          if (match.difficulty) setSelectedDifficulty(match.difficulty as ExamDifficulty);
+        } else {
+          setAssignedExam(null);
+        }
+      } catch (e) {
+        setAssignedExam(null);
+      }
+    })();
+  }, [activeChildId]);
+
+  const blueprint = useMemo(() => {
+    if (assignedExam) {
+      const qCount = assignedExam.questionCount || 5;
+      const duration = assignedExam.timeLimitMinutes || 10;
+      const marks = assignedExam.totalMarks || qCount;
+      return {
+        isAssigned: true,
+        questionCount: qCount,
+        totalMarks: marks,
+        durationMinutes: duration,
+        breakdown: assignedExam.chapterTopic 
+          ? `Focus Chapter / Topic: ${assignedExam.chapterTopic} • ${qCount} Questions (${marks} Marks)`
+          : `Parent Assigned ${qCount}-Question Drill for ${assignedExam.subject} (${(assignedExam.difficulty || 'simple').toUpperCase()})`,
+        badgeText: `${qCount} Questions • ${marks} Marks • Assigned Test`,
+        titleLabel: `${qCount}-Question Assigned Challenge`,
+        buttonText: `Start ${qCount}-Question Diagnostic Exam`,
+      };
+    }
+
+    const g = (selectedGrade || '').toLowerCase().trim();
+    if (['class 11', 'class 12', 'neet', 'iit'].some(c => g.includes(c))) {
+      return {
+        isAssigned: false,
+        questionCount: 10,
+        totalMarks: 20,
+        durationMinutes: 25,
+        breakdown: 'Structured HOTS & Competitive Multi-Mark Problems',
+        badgeText: '10 Questions • 20 Marks • Competitive Drill',
+        titleLabel: '20-Mark Competitive Exam',
+        buttonText: 'Start 20-Mark Diagnostic Exam',
+      };
+    }
+    if (['class 9', 'class 10'].some(c => g.includes(c))) {
+      return {
+        isAssigned: false,
+        questionCount: 10,
+        totalMarks: 15,
+        durationMinutes: 20,
+        breakdown: '5 Questions (1-Mark MCQ) + 5 Questions (2-Mark SAQ)',
+        badgeText: '10 Questions • 15 Marks • Board Readiness',
+        titleLabel: '15-Mark Board Readiness Exam',
+        buttonText: 'Start 15-Mark Diagnostic Exam',
+      };
+    }
+    // Class 5 to 8
+    return {
+      isAssigned: false,
+      questionCount: 10,
+      totalMarks: 15,
+      durationMinutes: 15,
+      breakdown: '5 Questions (1-Mark MCQ) + 5 Questions (2-Mark SAQ)',
+      badgeText: '10 Questions • 15 Marks • Adaptive Diagnostic',
+      titleLabel: '15-Mark Diagnostic Exam',
+      buttonText: 'Start 15-Mark Diagnostic Exam',
+    };
+  }, [assignedExam, selectedGrade]);
 
   // Exam taking state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -166,13 +242,9 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
     setGenerationStep('Retrieving Board Syllabus & RAG Runbook Nodes...');
 
     try {
-      const isKids = ['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(k => (selectedGrade || '').toLowerCase().includes(k.toLowerCase()));
-      setTimeout(() => setGenerationStep(isKids ? 'Grounding 5 calibrated questions for 5 marks...' : 'Grounding 10 calibrated questions (5 MCQ + 5 SAQ) for 15 marks...'), 600);
+      setTimeout(() => setGenerationStep(`Grounding ${blueprint.questionCount} calibrated questions for ${blueprint.totalMarks} marks...`), 400);
 
-      // Weak topics are no longer sent from the client — the backend derives
-      // them itself from the student's stored mastery history
-      // (helper/exam_generator.py:get_weak_topics), since a client-supplied
-      // list can't be trusted as an input to exam personalization.
+      // Weak topics are derived server-side from mastery history
       if (!activeChildId) return;
 
       const { exam } = await ApiServices.generateExam({
@@ -181,13 +253,17 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
         classGrade: selectedGrade,
         subject: selectedSubject,
         difficulty: selectedDifficulty,
+        questionCount: blueprint.questionCount,
+        timeLimitMinutes: blueprint.durationMinutes,
+        scheduledExamId: assignedExam?.id,
+        chapterTopic: assignedExam?.chapterTopic,
       });
 
       setActiveExam(exam);
       setCurrentQuestionIdx(0);
       setAnswers({});
       setFlaggedQuestions({});
-      setTimeRemainingSeconds((exam.timeLimitMinutes || 15) * 60);
+      setTimeRemainingSeconds((exam.timeLimitMinutes || blueprint.durationMinutes || 15) * 60);
     } catch (err) {
       console.error('Error generating exam:', err);
     } finally {
@@ -226,7 +302,11 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
       // correctAnswer included — back to the server on every submission.)
       const { submission } = await ApiServices.submitExam(
         activeExam.id,
-        { answers, timeTakenSeconds: Math.max(10, totalSecondsSpent) }
+        {
+          answers,
+          timeTakenSeconds: Math.max(10, totalSecondsSpent),
+          scheduledExamId: (activeExam as any).scheduledExamId || (activeExam as any).scheduled_exam_id || (assignedExam ? assignedExam.id : undefined),
+        }
       );
       onExamComplete(submission);
     } catch (err) {
@@ -332,8 +412,9 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                 {(currentQ.type === 'mcq' || currentQ.type === 'logical' || currentQ.type === 'saq') && currentQ.options && currentQ.options.length > 0 && (
                   <div className="space-y-2.5">
                     {currentQ.options.map((opt, oIdx) => {
-                      const letter = opt.trim().charAt(0).toUpperCase();
-                      const isSelected = answers[currentQ.id]?.toUpperCase() === letter || answers[currentQ.id] === opt;
+                      const letter = String.fromCharCode(65 + oIdx);
+                      const cleanText = opt.replace(/^(?:option\s+)?\(?[A-Da-d]\)?[\).\:\-]?\s*/i, '').trim();
+                      const isSelected = answers[currentQ.id]?.toUpperCase() === letter || answers[currentQ.id]?.trim().toLowerCase() === cleanText.toLowerCase() || answers[currentQ.id] === opt;
                       return (
                         <label
                           key={oIdx}
@@ -348,7 +429,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                             }`}>
                             {letter}
                           </div>
-                          <span className="text-sm sm:text-base leading-snug">{opt}</span>
+                          <span className="text-sm sm:text-base leading-snug">{cleanText || opt}</span>
                         </label>
                       );
                     })}
@@ -595,6 +676,31 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {assignedExam && (
+            <div className="md:col-span-2 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 rounded-2xl p-4 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shrink-0">
+                  📝
+                </div>
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-yellow-100 flex items-center gap-1.5">
+                    <CalendarClock className="w-3.5 h-3.5" />
+                    <span>Parent Assigned Challenge ({assignedExam.questionCount} Questions • {assignedExam.timeLimitMinutes} Mins)</span>
+                  </div>
+                  <div className="text-sm font-black text-white mt-0.5">
+                    {assignedExam.subject} {assignedExam.chapterTopic ? `— ${assignedExam.chapterTopic}` : ''} • {(assignedExam.difficulty || 'simple').toUpperCase()}
+                  </div>
+                  {assignedExam.parentInstructions && (
+                    <p className="text-xs text-yellow-100 mt-0.5 italic">"{assignedExam.parentInstructions}"</p>
+                  )}
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-stone-900 text-yellow-300 text-xs font-bold shrink-0">
+                Active Assignment
+              </span>
+            </div>
+          )}
+
           {isStudentPersona ? (
             /* Student View: Auto-locked Enrolled Syllabus Banner */
             <div className="md:col-span-2 bg-gradient-to-r from-yellow-50/90 via-amber-50/70 to-yellow-50/90 rounded-2xl p-4 sm:p-5 border border-yellow-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
@@ -618,9 +724,9 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
               </div>
               <div className="text-left sm:text-right flex sm:flex-col items-center sm:items-end justify-between gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-yellow-200">
                 <span className="text-[11px] font-semibold text-yellow-700 bg-yellow-50 px-2.5 py-0.5 rounded-full border border-yellow-300">
-                  ✓ Ready for Practice
+                  ✓ {assignedExam ? 'Assigned Challenge Ready' : 'Ready for Practice'}
                 </span>
-                <span className="text-[10px] text-stone-400">Adaptive {blueprint.totalMarks}-Mark Challenge</span>
+                <span className="text-[10px] text-stone-400">{assignedExam ? `${blueprint.questionCount} Questions (${blueprint.durationMinutes} Mins)` : `Adaptive ${blueprint.totalMarks}-Mark Challenge`}</span>
               </div>
             </div>
           ) : (
@@ -683,53 +789,81 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
           {/* Subject Selector */}
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-              3. Subject
-            </label>
-            <select
-              id="subject-dropdown-select"
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value as Subject)}
-              className="w-full px-4 py-3 rounded-xl border border-stone-300 bg-white text-stone-800 text-sm font-medium focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
-            >
-              {SUBJECTS.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
+                3. Subject
+              </label>
+              {assignedExam && (
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  🔒 Locked by Parent
+                </span>
+              )}
+            </div>
+            {assignedExam ? (
+              <div className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-100/90 text-stone-800 text-sm font-semibold flex items-center justify-between shadow-2xs">
+                <span>{assignedExam.subject}</span>
+                <span className="text-xs text-stone-500 font-medium">Assigned Subject</span>
+              </div>
+            ) : (
+              <select
+                id="subject-dropdown-select"
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value as Subject)}
+                className="w-full px-4 py-3 rounded-xl border border-stone-300 bg-white text-stone-800 text-sm font-medium focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
+              >
+                {SUBJECTS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Difficulty Level */}
           <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-              4. Exam Level
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['simple', 'medium', 'hard'] as ExamDifficulty[]).map((d) => {
-                const isSel = selectedDifficulty === d;
-                const labels: Record<ExamDifficulty, { title: string; subtitle: string }> = {
-                  simple: { title: 'Simple', subtitle: 'Foundation' },
-                  medium: { title: 'Medium', subtitle: 'Proficiency' },
-                  hard: { title: 'Hard', subtitle: 'HOTS / Olympiad' }
-                };
-                return (
-                  <button
-                    key={d}
-                    id={`diff-btn-${d}`}
-                    type="button"
-                    onClick={() => setSelectedDifficulty(d)}
-                    className={`py-2 px-3 rounded-xl border text-left transition-all ${isSel
-                      ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
-                      : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
-                      }`}
-                  >
-                    <div className="font-bold text-xs capitalize">{labels[d].title}</div>
-                    <div className={`text-[10px] ${isSel ? 'text-stone-300' : 'text-stone-400'}`}>
-                      {labels[d].subtitle}
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
+                4. Exam Level
+              </label>
+              {assignedExam && (
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  🔒 Locked by Parent
+                </span>
+              )}
             </div>
+            {assignedExam ? (
+              <div className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-100/90 text-stone-800 text-sm font-semibold flex items-center justify-between shadow-2xs">
+                <span className="capitalize">{assignedExam.difficulty || 'Simple'} Level</span>
+                <span className="text-xs text-stone-500 font-medium">Parent Calibration</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {(['simple', 'medium', 'hard'] as ExamDifficulty[]).map((d) => {
+                  const isSel = selectedDifficulty === d;
+                  const labels: Record<ExamDifficulty, { title: string; subtitle: string }> = {
+                    simple: { title: 'Simple', subtitle: 'Foundation' },
+                    medium: { title: 'Medium', subtitle: 'Proficiency' },
+                    hard: { title: 'Hard', subtitle: 'HOTS / Olympiad' }
+                  };
+                  return (
+                    <button
+                      key={d}
+                      id={`diff-btn-${d}`}
+                      type="button"
+                      onClick={() => setSelectedDifficulty(d)}
+                      className={`py-2 px-3 rounded-xl border text-left transition-all ${isSel
+                        ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
+                        : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
+                        }`}
+                    >
+                      <div className="font-bold text-xs capitalize">{labels[d].title}</div>
+                      <div className={`text-[10px] ${isSel ? 'text-stone-300' : 'text-stone-400'}`}>
+                        {labels[d].subtitle}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 

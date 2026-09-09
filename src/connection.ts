@@ -17,11 +17,16 @@ export const GET_APIS = {
   parentChildren: `${API_V1}/parents/me/children`,
   childOverview: (id: string | number) => `${API_V1}/parents/me/children/${id}/overview`,
   childLearningPath: (id: string | number) => `${API_V1}/parents/me/children/${id}/learning-path`,
+  scheduledExams: `${API_V1}/parents/scheduled-exams`,
 
   // Student
   studentDashboard: `${API_V1}/students/dashboard`,
   studentMe: `${API_V1}/students/me`,
   studentLearningPath: `${API_V1}/students/me/learning-path`,
+  assignedExams: `${API_V1}/students/assigned-exams`,
+
+  // Notifications
+  notifications: `${API_V1}/notifications`,
 
   // Runbooks
   runbooks: `${API_V1}/runbooks`,
@@ -63,6 +68,10 @@ export const POST_APIS = {
 
   // Parent
   addChild: `${API_V1}/parents/add-child`,
+  scheduleExam: `${API_V1}/parents/schedule-exam`,
+
+  // Notifications
+  markAllNotificationsRead: `${API_V1}/notifications/read-all`,
 
   // Exams
   generateExam: `${BASE_URL}/api/v1/exams/generate`,
@@ -101,10 +110,12 @@ export const PUT_APIS = {
   updateBlog: (id: string | number) => `${API_V1}/blogs/${id}`,
   updateBlogCategory: (id: string | number) => `${API_V1}/blogs/categories/${id}`,
   markMessageRead: (id: string) => `${API_V1}/messages/${id}/read`,
+  markNotificationRead: (id: string) => `${API_V1}/notifications/${id}/read`,
 };
 
 export const DELETE_APIS = {
   deleteChild: (id: string | number) => `${API_V1}/parents/me/children/${id}`,
+  deleteScheduledExam: (id: string) => `${API_V1}/parents/scheduled-exams/${id}`,
   deleteRunbook: (id: string) => `${API_V1}/runbooks/${id}`,
   deleteBlog: (id: string | number) => `${API_V1}/blogs/${id}`,
   deleteBlogCategory: (id: string | number) => `${API_V1}/blogs/categories/${id}`,

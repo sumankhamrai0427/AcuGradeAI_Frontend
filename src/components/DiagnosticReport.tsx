@@ -110,7 +110,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
   const totalExamXP = baseXP + perfectBonus + speedBonus + 30; // 30 streak XP
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-8 print:max-w-none print:w-full print:p-0 print:m-0">
       {/* Top Banner / Breadcrumb & Action bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6 print:hidden">
         <button
@@ -151,8 +151,22 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
         </div>
       </div>
 
+      {/* Official Print Header */}
+      <div className="hidden print:block pb-3 mb-4 border-b-2 border-stone-800">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-black text-stone-900 tracking-tight">AcuGrade AI • Student Assessment Dossier</h1>
+            <p className="text-xs text-stone-600 font-semibold">Diagnostic & Formative Academic Performance Summary</p>
+          </div>
+          <div className="text-right text-xs text-stone-600">
+            <p className="font-bold">Date: {new Date().toLocaleDateString('en-GB')}</p>
+            <p>{submission.classGrade || 'Class 3'} • {submission.board || 'ICSE'}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Gamification Points Banner */}
-      <div className="bg-gradient-to-r from-amber-500 to-yellow-500 rounded-2xl p-4 text-white shadow-xs mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-gradient-to-r from-amber-500 to-yellow-500 rounded-2xl p-4 text-white shadow-xs mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-xl shrink-0">
             ⚡
@@ -181,15 +195,15 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-yellow-50 text-yellow-700 border border-yellow-300">
-                {isKid ? '5-Mark Adventure Challenge Result 🌟' : `${totalMarks}-Mark Diagnostic Analytical Result 🎯`}
+                {isKid ? `${totalMarks}-Mark Adventure Challenge Result 🌟` : `${totalMarks}-Mark Diagnostic Analytical Result 🎯`}
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-700">
-                {submission.board} • {submission.classGrade}
+                {submission.board || 'Curriculum'} • {submission.classGrade || 'Grade'}
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-stone-900">{submission.examTitle}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-stone-900">{submission.examTitle || `${submission.subject || 'Subject'} Assessment`}</h1>
             <p className="text-xs text-stone-500 mt-1">
-              Candidate: <strong className="text-stone-800">{submission.studentName}</strong> • Tested Subject: <strong className="text-stone-800">{submission.subject}</strong> ({submission.difficulty.toUpperCase()})
+              Candidate: <strong className="text-stone-800">{submission.studentName || 'Student'}</strong> • Tested Subject: <strong className="text-stone-800">{submission.subject || 'General'}</strong> ({(submission.difficulty || 'medium').toUpperCase()})
             </p>
           </div>
 
@@ -197,7 +211,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
           <div className="flex items-center gap-4 bg-stone-50 p-4 rounded-2xl border border-stone-100 shrink-0">
             <div className="text-center">
               <div className="text-3xl sm:text-4xl font-extrabold text-yellow-600">
-                {submission.marksObtained}<span className="text-lg sm:text-xl text-stone-400 font-normal">/{totalMarks}</span>
+                {marksObtained}<span className="text-lg sm:text-xl text-stone-400 font-normal">/{totalMarks}</span>
               </div>
               <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mt-0.5">
                 Marks Scored ({accuracyPct}%)
@@ -218,7 +232,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
               </span>
               <div className="text-[11px] text-stone-500 mt-1 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                <span>{Math.floor(submission.timeTakenSeconds / 60)}m {submission.timeTakenSeconds % 60}s</span>
+                <span>{Math.floor((timeTakenSeconds || 0) / 60)}m {(timeTakenSeconds || 0) % 60}s</span>
               </div>
             </div>
           </div>
@@ -328,7 +342,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
 
         {/* Encouraged Next Exam CTA */}
         {nextExam && (
-          <div className="mt-6 p-5 rounded-2xl bg-stone-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="mt-6 p-5 rounded-2xl bg-stone-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-yellow-300 block mb-1">
                 {isKid ? 'Next Fun Adventure Challenge 🚀' : 'AI-RAG Recommended Next Level Exam'}
@@ -355,7 +369,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
 
       {/* Brain Break & Fun Zone Banner */}
       {onNavigateToFunZone && (
-        <div className="bg-gradient-to-r from-pink-500/10 via-amber-500/10 to-yellow-500/10 border border-pink-200/80 rounded-2xl p-4 sm:p-5 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-gradient-to-r from-pink-500/10 via-amber-500/10 to-yellow-500/10 border border-pink-200/80 rounded-2xl p-4 sm:p-5 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-600 shrink-0">
               <Smile className="w-5 h-5" />
@@ -377,11 +391,13 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
         </div>
       )}
 
-      {/* Section: Comprehensive 10-Question Itemized Review */}
+      {/* Section: Comprehensive Itemized Review */}
       <div className="bg-white rounded-3xl border border-stone-200 shadow-sm p-6 sm:p-8 mb-8">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-stone-100 mb-6">
           <div>
-            <h2 className="text-lg font-bold text-stone-900">10-Question Itemized Review & AI Explanations</h2>
+            <h2 className="text-lg font-bold text-stone-900">
+              {evaluations.length > 0 ? `${evaluations.length}-Question Itemized Review & AI Explanations` : 'Itemized Question Review & AI Explanations'}
+            </h2>
             <p className="text-xs text-stone-500">Compare student choices with correct answers, step-by-step logic, and reference links</p>
           </div>
 
@@ -401,8 +417,8 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
           </div>
         </div>
 
-        {/* 10 Question Accordion List */}
-        <div className="space-y-4">
+        {/* Screen-Only 10 Question Accordion List */}
+        <div className="space-y-4 print:hidden">
           {evaluations.length > 0 ? (
             evaluations.map((eq) => {
             const isExpanded = !!expandedQuestions[eq.questionId];
@@ -411,7 +427,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
                 key={eq.questionId}
                 className={`rounded-2xl border transition-all ${
                   eq.isCorrect 
-                    ? 'border-yellow-300 bg-yellow-50/20' 
+                    ? 'border-emerald-200 bg-emerald-50/20' 
                     : 'border-rose-200 bg-rose-50/20'
                 }`}
               >
@@ -422,7 +438,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
                 >
                   <div className="flex items-center gap-3 pr-4">
                     {eq.isCorrect ? (
-                      <div className="w-7 h-7 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center font-bold text-xs shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
                         ✓
                       </div>
                     ) : (
@@ -444,7 +460,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
                         <span>•</span>
                         <span>{eq.topic}</span>
                         <span>•</span>
-                        <span className={eq.isCorrect ? 'text-yellow-700 font-semibold' : 'text-rose-600 font-semibold'}>
+                        <span className={eq.isCorrect ? 'text-emerald-700 font-semibold' : 'text-rose-600 font-semibold'}>
                           {eq.marksAwarded} / {(eq as any).questionMarks || (eq.isCorrect ? eq.marksAwarded : 1)} {((eq as any).questionMarks || (eq.isCorrect ? eq.marksAwarded : 1)) > 1 ? 'Marks' : 'Mark'}
                         </span>
                       </div>
@@ -453,7 +469,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
 
                   <div className="flex items-center gap-3 shrink-0">
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold hidden sm:inline-block ${
-                      eq.isCorrect ? 'bg-yellow-100 text-yellow-800' : 'bg-rose-100 text-rose-800'
+                      eq.isCorrect ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'
                     }`}>
                       {eq.isCorrect ? `Correct (+${eq.marksAwarded}.0)` : 'Incorrect (0.0)'}
                     </span>
@@ -472,39 +488,73 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
                     {/* Options (if MCQ/Logical) */}
                     {eq.options && eq.options.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {eq.options.map((opt, oIdx) => (
-                          <div
-                            key={oIdx}
-                            className={`p-2.5 rounded-xl border text-xs ${
-                              opt.trim().startsWith(eq.correctAnswer) || opt === eq.correctAnswer
-                                ? 'bg-yellow-50 border-yellow-300 text-yellow-950 font-semibold'
-                                : opt.trim().startsWith(eq.studentAnswer) || opt === eq.studentAnswer
-                                ? 'bg-rose-50 border-rose-300 text-rose-950'
-                                : 'bg-stone-50/50 border-stone-200 text-stone-600'
-                            }`}
-                          >
-                            {opt}
-                          </div>
-                        ))}
+                        {eq.options.map((opt, oIdx) => {
+                          const optStr = (opt || '').trim();
+                          const optLetter = optStr.charAt(0).toUpperCase();
+                          const cleanOptText = optStr.replace(/^(?:option\s+)?\(?[A-Da-d]\)?[\).\:\-]?\s*/i, '').trim();
+                          const optBody = cleanOptText.toLowerCase();
+                          const cleanCorrect = (eq.correctAnswer || '').trim().toLowerCase();
+                          const cleanStudent = (eq.studentAnswer || '').trim().toLowerCase();
+
+                          const isCorrectOpt = Boolean(
+                            eq.correctAnswer && (
+                              eq.correctAnswer.toUpperCase() === optLetter ||
+                              eq.correctAnswer.toUpperCase() === String.fromCharCode(65 + oIdx) ||
+                              optStr.toUpperCase().startsWith(eq.correctAnswer.toUpperCase()) ||
+                              (optBody && optBody === cleanCorrect) ||
+                              (cleanCorrect.length > 3 && optBody.includes(cleanCorrect)) ||
+                              (cleanCorrect.length > 3 && cleanCorrect.includes(optBody))
+                            )
+                          );
+                          const isStudentOpt = Boolean(
+                            eq.studentAnswer && (
+                              eq.studentAnswer.toUpperCase() === optLetter ||
+                              eq.studentAnswer.toUpperCase() === String.fromCharCode(65 + oIdx) ||
+                              optStr.toUpperCase().startsWith(eq.studentAnswer.toUpperCase()) ||
+                              (optBody && optBody === cleanStudent) ||
+                              optStr.toLowerCase() === cleanStudent
+                            )
+                          );
+
+                          return (
+                            <div
+                              key={oIdx}
+                              className={`p-2.5 rounded-xl border text-xs transition-all ${
+                                isCorrectOpt
+                                  ? 'bg-emerald-50 border-emerald-400 text-emerald-950 font-bold shadow-2xs ring-1 ring-emerald-300/40'
+                                  : isStudentOpt
+                                  ? 'bg-rose-50 border-rose-300 text-rose-950 font-medium'
+                                  : 'bg-stone-50/50 border-stone-200 text-stone-600'
+                              }`}
+                            >
+                              <span className="font-bold mr-1.5">{String.fromCharCode(65 + oIdx)}.</span>
+                              {cleanOptText || opt}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
                     {/* Answers Comparison */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="p-3 rounded-xl border border-stone-200 bg-white">
-                        <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">
+                      <div className={`p-3 rounded-xl border ${
+                        eq.isCorrect 
+                          ? 'border-emerald-300 bg-emerald-50/40' 
+                          : 'border-rose-200 bg-rose-50/40'
+                      }`}>
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
                           Candidate Selected Answer:
                         </span>
-                        <span className={`text-xs sm:text-sm font-semibold ${eq.isCorrect ? 'text-yellow-700' : 'text-rose-600'}`}>
+                        <span className={`text-xs sm:text-sm font-bold ${eq.isCorrect ? 'text-emerald-700' : 'text-rose-600'}`}>
                           {eq.studentAnswer || '(No answer selected)'}
                         </span>
                       </div>
 
-                      <div className="p-3 rounded-xl border border-yellow-300 bg-yellow-50/50">
-                        <span className="text-[11px] font-bold text-yellow-700 uppercase tracking-wider block">
+                      <div className="p-3 rounded-xl border border-emerald-400 bg-emerald-50/90 shadow-2xs">
+                        <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
                           Verified Correct Answer:
                         </span>
-                        <span className="text-xs sm:text-sm font-bold text-yellow-900">
+                        <span className="text-xs sm:text-sm font-black text-emerald-950">
                           {eq.correctAnswer}
                         </span>
                       </div>
@@ -564,6 +614,91 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
           </div>
         )}
         </div>
+
+        {/* Dedicated Print-Only Full-Width Question Items */}
+        {evaluations.length > 0 && (
+          <div className="hidden print:block space-y-2.5 mt-2">
+            {evaluations.map((eq) => (
+              <div key={eq.questionId} className="p-2.5 rounded-lg border border-stone-300 bg-white space-y-1 text-xs break-inside-avoid">
+                <div className="flex items-center justify-between">
+                  <div className="font-bold text-stone-900">
+                    <span>Q{eq.questionNumber}. </span>
+                    <span>{eq.questionText}</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[10.5px] font-bold shrink-0 ml-2 ${
+                    eq.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                  }`}>
+                    {eq.isCorrect ? `✓ Correct (+${eq.marksAwarded})` : `✗ Incorrect (0/${(eq as any).questionMarks || 1})`}
+                  </span>
+                </div>
+
+                {eq.options && eq.options.length > 0 && (
+                  <div className="grid grid-cols-2 gap-1 text-[11px] my-1">
+                    {eq.options.map((opt, idx) => {
+                      const optStr = (opt || '').trim();
+                      const optLetter = optStr.charAt(0).toUpperCase();
+                      const cleanOptText = optStr.replace(/^(?:option\s+)?\(?[A-Da-d]\)?[\).\:\-]?\s*/i, '').trim();
+                      const optBody = cleanOptText.toLowerCase();
+                      const cleanCorrect = (eq.correctAnswer || '').trim().toLowerCase();
+                      const cleanStudent = (eq.studentAnswer || '').trim().toLowerCase();
+
+                      const isCorrectOpt = Boolean(
+                        eq.correctAnswer && (
+                          eq.correctAnswer.toUpperCase() === optLetter ||
+                          eq.correctAnswer.toUpperCase() === String.fromCharCode(65 + idx) ||
+                          optStr.toUpperCase().startsWith(eq.correctAnswer.toUpperCase()) ||
+                          (optBody && optBody === cleanCorrect) ||
+                          (cleanCorrect.length > 3 && optBody.includes(cleanCorrect)) ||
+                          (cleanCorrect.length > 3 && cleanCorrect.includes(optBody))
+                        )
+                      );
+                      const isStudentOpt = Boolean(
+                        eq.studentAnswer && (
+                          eq.studentAnswer.toUpperCase() === optLetter ||
+                          eq.studentAnswer.toUpperCase() === String.fromCharCode(65 + idx) ||
+                          optStr.toUpperCase().startsWith(eq.studentAnswer.toUpperCase()) ||
+                          (optBody && optBody === cleanStudent) ||
+                          optStr.toLowerCase() === cleanStudent
+                        )
+                      );
+                      return (
+                        <div key={idx} className={`px-2 py-0.5 rounded border ${
+                          isCorrectOpt
+                            ? 'border-emerald-500 bg-emerald-50 font-bold text-emerald-900'
+                            : isStudentOpt
+                            ? 'border-rose-400 bg-rose-50 text-rose-900'
+                            : 'border-stone-200 text-stone-600'
+                        }`}>
+                          <span className="font-bold mr-1">{String.fromCharCode(65 + idx)}.</span>
+                          {cleanOptText || opt}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-[11px] pt-1 border-t border-stone-100">
+                  <div>
+                    <span>Candidate Answer: </span>
+                    <strong className={eq.isCorrect ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'}>
+                      {eq.studentAnswer || '(None)'}
+                    </strong>
+                    <span className="mx-2">•</span>
+                    <span>Verified Answer: </span>
+                    <strong className="text-emerald-900 font-bold">{eq.correctAnswer}</strong>
+                  </div>
+                  <span className="text-[10px] text-stone-500 font-medium">{eq.topic}</span>
+                </div>
+
+                {eq.explanation && (
+                  <p className="text-[10.5px] text-stone-700 bg-stone-50 p-1.5 rounded border border-stone-200 leading-snug">
+                    <strong className="text-stone-800">Explanation: </strong>{eq.explanation}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Curated Study Resources Hub */}

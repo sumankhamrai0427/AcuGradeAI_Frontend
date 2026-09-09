@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ChildAccount,
   ExamSubmission,
   LearningPathNode,
   Badge,
 } from '../types';
+import { ScheduledExam } from '../types/api';
+import ApiServices from '../services/ApiServices';
 import {
   Zap,
   Flame,
@@ -25,6 +27,7 @@ import {
   BarChart3,
   BookOpen,
   PieChart as PieChartIcon,
+  CalendarClock,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -92,22 +95,31 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   // Total XP & Level calculation
   const xp = activeChild.xp || 0;
-  const currentLevel = Math.floor(xp / 100) + 1;
+  const currentLevel = activeChild.level || (Math.floor(xp / 100) + 1);
   const nextLevelXP = currentLevel * 100;
   const currentLevelBaseXP = (currentLevel - 1) * 100;
   const xpProgress = Math.min(100, Math.max(0, ((xp - currentLevelBaseXP) / (nextLevelXP - currentLevelBaseXP)) * 100));
+
+  const getTierTitle = (lvl: number) => {
+    if (lvl >= 15) return 'Elite Polymath';
+    if (lvl >= 10) return 'Scholar Tier';
+    if (lvl >= 6) return 'Honor Student';
+    if (lvl >= 3) return 'Rising Scholar';
+    return 'Novice Explorer';
+  };
 
   // Accuracy calculation
   const totalMarksObtained = studentExams.reduce((sum, e) => sum + (e.marksObtained || 0), 0);
   const totalMarksPossible = studentExams.reduce((sum, e) => sum + (e.totalMarks || defaultTotalMarks), 0);
   const accuracyPct = totalMarksPossible > 0
     ? Math.round((totalMarksObtained / totalMarksPossible) * 100)
-    : Math.round(activeChild.averageScore > 10 ? activeChild.averageScore : activeChild.averageScore * 10 || 75);
+    : Math.round(activeChild.averageScore > 10 ? activeChild.averageScore : (activeChild.averageScore * 10 || 0));
 
   const streakDays = activeChild.streakDays || 0;
 
-  // Unlocked badges count
-  const unlockedBadgesCount = (activeChild.badges || []).length;
+  // Unlocked badges count (checks earnedBadgeIds from backend / child account)
+  const earnedBadgeIds = activeChild.earnedBadgeIds || (activeChild as any).badges || [];
+  const unlockedBadgesCount = earnedBadgeIds.length;
 
   // Identify next recommended topic from learning path or mastery
   const nextRecommendedTopic = useMemo(() => {
@@ -212,8 +224,58 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     }
   }, [studentExams, timeframe, defaultTotalMarks]);
 
+  const [assignedExams, setAssignedExams] = useState<ScheduledExam[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const res = await ApiServices.getAssignedExams();
+        if (isMounted && res && res.assignedExams) {
+          setAssignedExams(res.assignedExams);
+        }
+      } catch (e) {
+        // quiet ignore
+      }
+    })();
+    return () => { isMounted = false; };
+  }, [activeChild.id]);
+
   return (
     <div className="space-y-6 pb-12">
+      
+      {/* ── PARENT ASSIGNED EXAM BANNER (IF ANY) ────────────────────────── */}
+      {assignedExams.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 rounded-3xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-start sm:items-center gap-3.5 z-10">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shrink-0">
+              📝
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/25 text-[11px] font-bold text-yellow-100 tracking-wide">
+                <CalendarClock className="w-3.5 h-3.5" />
+                <span>Parent Assigned Challenge ({assignedExams.length} Pending)</span>
+              </div>
+              <h3 className="text-lg font-black text-white mt-1">
+                {assignedExams[0].subject} {assignedExams[0].chapterTopic ? `— ${assignedExams[0].chapterTopic}` : ''}
+              </h3>
+              <p className="text-xs text-yellow-100 font-medium mt-0.5">
+                {assignedExams[0].questionCount} Questions • {assignedExams[0].timeLimitMinutes} Mins • {assignedExams[0].difficulty.toUpperCase()}
+                {assignedExams[0].parentInstructions ? ` • "${assignedExams[0].parentInstructions}"` : ''}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onNavigateToArena}
+            className="px-6 py-3 rounded-2xl bg-stone-900 hover:bg-black text-yellow-400 font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer shrink-0 z-10 hover:scale-105"
+          >
+            <span>Start Assigned Test</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* ── 4 TOP METRIC CARDS (FULL WIDTH ROW) ─────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: XP & Level */}
@@ -233,7 +295,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${xpProgress}%` }} />
             </div>
             <p className="text-[10px] font-bold text-stone-500 mt-1.5 flex justify-between">
-              <span>Scholar Tier</span>
+              <span>{getTierTitle(currentLevel)}</span>
               <span>{Math.round(xpProgress)}% to Lvl {currentLevel + 1}</span>
             </p>
           </div>
@@ -250,7 +312,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           <div className="mt-3">
             <div className="text-2xl sm:text-3xl font-black text-stone-900">{streakDays} <span className="text-sm font-bold text-stone-500">Days</span></div>
             <p className="text-xs font-semibold text-rose-700 mt-1 flex items-center gap-1">
-              {streakDays >= 3 ? '🔥 Super active learner!' : '🚀 Practice daily to build streak!'}
+              {streakDays >= 3 ? '🔥 Super active learner!' : streakDays > 0 ? '🔥 On a streak! Keep learning!' : '🚀 Practice daily to build streak!'}
             </p>
           </div>
         </div>
@@ -266,7 +328,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           <div className="mt-3">
             <div className="text-2xl sm:text-3xl font-black text-stone-900">{accuracyPct}%</div>
             <p className="text-xs font-semibold text-stone-500 mt-1">
-              Based on {studentExams.length} challenges
+              {studentExams.length > 0
+                ? `Based on ${studentExams.length} ${studentExams.length === 1 ? 'challenge' : 'challenges'}`
+                : 'No challenges completed yet'}
             </p>
           </div>
         </div>
@@ -309,6 +373,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                   <p className="text-xs text-stone-500 font-medium">
                     {isKid
                       ? '5 Questions • 5 Marks • ~10 Minutes'
+                      : ['Class 11', 'Class 12', 'NEET', 'IIT'].some(c => (activeChild.classGrade || '').includes(c))
+                      ? '10 Questions • 20 Marks • ~25 Minutes'
                       : '10 Questions • 15 Marks • ~15 Minutes'}
                   </p>
                 </div>

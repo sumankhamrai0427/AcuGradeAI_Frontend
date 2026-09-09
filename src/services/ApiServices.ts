@@ -193,16 +193,29 @@ class ApiServices {
   deleteChild(childId: string | number) { return this.del(DELETE_APIS.deleteChild(childId)); }
   getChildOverview(childId: string | number) { return this.get(GET_APIS.childOverview(childId)); }
   getChildLearningPath(childId: string | number) { return this.get(GET_APIS.childLearningPath(childId)); }
+  scheduleExam(body: any) { return this.post(POST_APIS.scheduleExam, body); }
+  getScheduledExams() { return this.get(GET_APIS.scheduledExams); }
+  deleteScheduledExam(id: string) { return this.del(DELETE_APIS.deleteScheduledExam(id)); }
 
   // ── Student ───────────────────────────────
   getStudentDashboard() { return this.get(GET_APIS.studentDashboard); }
   getStudentMe() { return this.get(GET_APIS.studentMe); }
   getStudentLearningPath() { return this.get(GET_APIS.studentLearningPath); }
+  getAssignedExams() { return this.get(GET_APIS.assignedExams); }
+
+  // ── Notifications ─────────────────────────
+  getNotifications() { return this.get(GET_APIS.notifications); }
+  markNotificationRead(notificationId: string) { return apiClient.patch(PUT_APIS.markNotificationRead(notificationId)).then(res => res.data.data !== undefined ? res.data.data : res.data); }
+  markAllNotificationsRead() { return this.post(POST_APIS.markAllNotificationsRead); }
+
 
   // ── Exams ─────────────────────────────────
   generateExam(body: any) { return this.post(POST_APIS.generateExam, body); }
-  generateQuickTest(studentId: string | number, limit: number = 10) {
-    return this.post(POST_APIS.generateQuickTest, { studentId, limit });
+  generateQuickTest(paramsOrStudentId: any, limit: number = 10) {
+    if (typeof paramsOrStudentId === 'object' && paramsOrStudentId !== null) {
+      return this.post(POST_APIS.generateQuickTest, paramsOrStudentId);
+    }
+    return this.post(POST_APIS.generateQuickTest, { studentId: paramsOrStudentId, limit });
   }
   submitExam(examId: string, body: any) { return this.post(POST_APIS.submitExam(examId), body); }
 
