@@ -254,7 +254,7 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
           setCategories(prev => Array.from(new Set([...names, ...prev])));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     ApiServices.listBlogAuthors()
       .then((res: any) => {
@@ -264,7 +264,7 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
           setAuthors(prev => Array.from(new Set([...names, ...prev])));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [isOpen]);
 
   useEffect(() => {
@@ -377,9 +377,9 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||
-          err?.response?.data?.error?.message ||
-          err?.message ||
-          'Failed to save blog post'
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Failed to save blog post'
       );
     } finally {
       setLoading(false);
@@ -457,12 +457,12 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
               Introduction
             </label>
             <Suspense fallback={<div className="h-64 flex items-center justify-center text-sm text-stone-500">Loading editor...</div>}>
-                <JoditEditor
-                  key={`blog-introduction-editor-${initialBlog?.id ?? 'new'}`}
-                  value={introduction}
-                  onChange={(value: string) => setIntroduction(value)}
-                  config={INTRODUCTION_EDITOR_CONFIG}
-                />
+              <JoditEditor
+                key={`blog-introduction-editor-${initialBlog?.id ?? 'new'}`}
+                value={introduction}
+                onChange={(value: string) => setIntroduction(value)}
+                config={INTRODUCTION_EDITOR_CONFIG}
+              />
             </Suspense>
           </div>
 
@@ -490,12 +490,12 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
               Blog Content
             </label>
             <Suspense fallback={<div className="h-80 flex items-center justify-center text-sm text-stone-500">Loading editor...</div>}>
-                <JoditEditor
-                  key={`blog-editor-${initialBlog?.id ?? 'new'}`}
-                  value={content}
-                  onChange={(value: string) => setContent(value)}
-                  config={BLOG_CONTENT_EDITOR_CONFIG}
-                />
+              <JoditEditor
+                key={`blog-editor-${initialBlog?.id ?? 'new'}`}
+                value={content}
+                onChange={(value: string) => setContent(value)}
+                config={BLOG_CONTENT_EDITOR_CONFIG}
+              />
             </Suspense>
           </div>
 
@@ -616,6 +616,7 @@ const DashboardView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editingBlog, setEditingBlog] = useState<any | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [blogToDelete, setBlogToDelete] = useState<{ id: number; title: string } | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   // Platform dynamic stats & audit logs state
@@ -704,8 +705,13 @@ const DashboardView: React.FC = () => {
     navigate(`/edit-blog/${b.id}`);
   };
 
-  const handleDeleteBlog = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this blog post?')) return;
+  const promptDeleteBlog = (blog: any) => {
+    setBlogToDelete({ id: blog.id, title: blog.title });
+  };
+
+  const handleExecuteDelete = async () => {
+    if (!blogToDelete) return;
+    const id = blogToDelete.id;
     setDeletingId(id);
     try {
       await ApiServices.deleteBlog(id);
@@ -717,6 +723,7 @@ const DashboardView: React.FC = () => {
       console.error('Failed to delete blog:', err);
     } finally {
       setDeletingId(null);
+      setBlogToDelete(null);
     }
   };
 
@@ -862,7 +869,7 @@ const DashboardView: React.FC = () => {
             icon={<GraduationCap className="w-6 h-6 text-white" />}
             label="Exams Generated"
             value={statsLoading ? '...' : (stats?.totalExamsGenerated ?? 0).toLocaleString()}
-            change="AI Created"
+            change="Smart Exams"
             positive={true}
             accent="bg-yellow-500"
           />
@@ -894,7 +901,7 @@ const DashboardView: React.FC = () => {
               <h2 className="text-xl font-black text-stone-900">Platform Blogs</h2>
             </div>
             <p className="text-sm text-stone-500 font-medium mt-0.5">
-              Live curriculum blogs and pedagogical updates from MySQL database.
+              Live curriculum blogs and pedagogical updates.
             </p>
           </div>
           <button
@@ -926,7 +933,7 @@ const DashboardView: React.FC = () => {
                     <td colSpan={6} className="px-6 py-10 text-center text-stone-400 font-medium">
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
-                        <span>Loading blogs from MySQL...</span>
+                        <span> </span>
                       </div>
                     </td>
                   </tr>
@@ -947,11 +954,10 @@ const DashboardView: React.FC = () => {
                       <td className="px-6 py-4 text-stone-600">{b.category || 'General'}</td>
                       <td className="px-6 py-4">
                         <span
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                            b.status === 'Published'
-                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                              : 'bg-amber-50 text-amber-600 border border-amber-200'
-                          }`}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold ${b.status === 'Published'
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-600 border border-amber-200'
+                            }`}
                         >
                           {b.status}
                         </span>
@@ -967,18 +973,19 @@ const DashboardView: React.FC = () => {
                               handleEditBlog(b);
                             }}
                             title="Edit Blog"
-                            className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors cursor-pointer"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteBlog(b.id)}
+                            type="button"
+                            onClick={() => promptDeleteBlog(b)}
                             disabled={deletingId === b.id}
                             title="Delete Blog"
-                            className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                            className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                           >
                             {deletingId === b.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
+                              <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
                             ) : (
                               <Trash2 className="w-4 h-4" />
                             )}
@@ -1017,11 +1024,10 @@ const DashboardView: React.FC = () => {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                          currentPage === pageNum
-                            ? 'bg-stone-900 text-white shadow-xs'
-                            : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
-                        }`}
+                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${currentPage === pageNum
+                          ? 'bg-stone-900 text-white shadow-xs'
+                          : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                          }`}
                       >
                         {pageNum}
                       </button>
@@ -1168,13 +1174,490 @@ const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* Blog Creation & Edit Modal */}
+      {/* Delete Confirmation Modal */}
+      {blogToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-stone-100 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center mb-4">
+                <Trash2 className="w-6 h-6 text-rose-400" />
+              </div>
+              <h3 className="text-lg font-bold text-stone-900 mb-1">Delete Blog Post?</h3>
+              <p className="text-xs text-stone-500 font-medium mb-5">
+                Are you sure you want to delete <span className="font-semibold text-stone-800">"{blogToDelete.title}"</span>? This action cannot be undone.
+              </p>
+              <div className="flex items-center gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => setBlogToDelete(null)}
+                  disabled={deletingId !== null}
+                  className="flex-1 py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteDelete}
+                  disabled={deletingId !== null}
+                  className="flex-1 py-2.5 px-4 bg-rose-400 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                >
+                  {deletingId !== null ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <span>Delete</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
+// // ─────────────────────────────────────────────────────────────
+// // Users View
+// // ─────────────────────────────────────────────────────────────
+// const UsersView: React.FC = () => {
+//   const [users, setUsers] = useState<any[]>([]);
+//   const [loading, setLoading] = useState(true);
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [totalCount, setTotalCount] = useState(0);
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [userToDelete, setUserToDelete] = useState<any | null>(null);
+//   const [userToEdit, setUserToEdit] = useState<any | null>(null);
+//   const [editName, setEditName] = useState('');
+//   const [editEmail, setEditEmail] = useState('');
+//   const [actionLoading, setActionLoading] = useState(false);
+//   const [actionError, setActionError] = useState('');
+//   const pageSize = 5;
+
+//   const fetchUsers = useCallback(async (page: number, search: string) => {
+//     setLoading(true);
+//     try {
+//       const res = await ApiServices.listAdminUsers({ page, limit: pageSize, search: search.trim() });
+//       const data = res?.data || res;
+//       const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+//       setUsers(items);
+//       setTotalCount(data?.pagination?.total ?? data?.total ?? items.length);
+//     } catch (err) {
+//       console.error('Failed to fetch admin users:', err);
+//     } finally {
+//       setLoading(false);
+//     }
+//   }, [pageSize]);
+
+//   useEffect(() => {
+//     fetchUsers(currentPage, searchQuery);
+//   }, [currentPage, searchQuery, fetchUsers]);
+
+//   const openEditModal = (user: any) => {
+//     setUserToEdit(user);
+//     setEditName(user.name || user.username || '');
+//     setEditEmail(user.email || '');
+//     setActionError('');
+//   };
+
+//   const closeActionModal = () => {
+//     if (actionLoading) return;
+//     setUserToDelete(null);
+//     setUserToEdit(null);
+//     setActionError('');
+//   };
+
+//   const handleDeleteUser = async () => {
+//     if (!userToDelete) return;
+//     setActionLoading(true);
+//     setActionError('');
+//     try {
+//       await ApiServices.deleteAdminUser(userToDelete.id);
+//       setUserToDelete(null);
+//       const nextTotal = Math.max(0, totalCount - 1);
+//       setTotalCount(nextTotal);
+//       const nextTotalPages = Math.max(1, Math.ceil(nextTotal / pageSize));
+//       const targetPage = currentPage > nextTotalPages ? nextTotalPages : currentPage;
+//       if (targetPage !== currentPage) {
+//         setCurrentPage(targetPage);
+//       } else {
+//         await fetchUsers(currentPage, searchQuery);
+//       }
+//     } catch (err: any) {
+//       setActionError(err?.message || 'Failed to delete user. Please try again.');
+//     } finally {
+//       setActionLoading(false);
+//     }
+//   };
+
+//   const handleEditUser = async (event: React.FormEvent) => {
+//     event.preventDefault();
+//     if (!userToEdit) return;
+//     setActionLoading(true);
+//     setActionError('');
+//     try {
+//       await ApiServices.updateAdminUser(userToEdit.id, {
+//         name: editName.trim(),
+//         email: editEmail.trim(),
+//       });
+//       setUserToEdit(null);
+//       await fetchUsers(currentPage, searchQuery);
+//     } catch (err: any) {
+//       setActionError(err?.message || 'Failed to update user. Please try again.');
+//     } finally {
+//       setActionLoading(false);
+//     }
+//   };
+
+//   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+//   const formatJoinedDate = (isoString?: string) => {
+//     if (!isoString) return '—';
+//     try {
+//       return new Date(isoString).toLocaleDateString('en-US', {
+//         month: 'short',
+//         day: 'numeric',
+//         year: 'numeric',
+//       });
+//     } catch {
+//       return '—';
+//     }
+//   };
+
+//   const getRoleBadgeStyle = (role?: string) => {
+//     const r = (role || '').toUpperCase();
+//     if (r === 'PARENT') return 'bg-amber-100 text-amber-800 border border-amber-200';
+//     if (r === 'STUDENT') return 'bg-pink-100 text-pink-800 border border-pink-200';
+//     if (r === 'TEACHER') return 'bg-blue-100 text-blue-800 border border-blue-200';
+//     if (r === 'ADMIN' || r === 'SUPER_ADMIN') return 'bg-purple-100 text-purple-800 border border-purple-200';
+//     return 'bg-stone-100 text-stone-700 border border-stone-200';
+//   };
+
+//   return (
+//     <div className="space-y-6">
+//       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+//         <div>
+//           <h1 className="text-2xl font-black text-stone-900">Users</h1>
+//           <p className="text-sm text-stone-500 font-medium mt-1">Manage all registered platform users and their access.</p>
+//         </div>
+
+//         {/* Search input */}
+//         <div className="relative w-full sm:w-72">
+//           <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+//           <input
+//             type="text"
+//             value={searchQuery}
+//             onChange={(e) => {
+//               setSearchQuery(e.target.value);
+//               setCurrentPage(1);
+//             }}
+//             placeholder="Search users by name, email..."
+//             className="w-full h-10 pl-10 pr-4 rounded-xl text-xs font-semibold text-stone-900 bg-white border border-stone-200 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 outline-none transition-all placeholder:text-stone-400"
+//           />
+//         </div>
+//       </div>
+
+//       <div className="admin-card overflow-hidden !p-0">
+//         <div className="overflow-x-auto">
+//           <table className="w-full text-sm">
+//             <thead>
+//               <tr className="border-b border-stone-100 bg-stone-50/60">
+//                 <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Name</th>
+//                 <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Role</th>
+//                 <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400 hidden sm:table-cell">Status</th>
+//                 <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400 hidden md:table-cell">Joined</th>
+//                 <th className="text-right px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Actions</th>
+//               </tr>
+//             </thead>
+//             <tbody className="divide-y divide-stone-50">
+//               {loading ? (
+//                 <tr>
+//                   <td colSpan={5} className="h-40 p-0 align-middle text-center">
+//                     <div className="flex h-full items-center justify-center">
+//                       <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+//                     </div>
+//                   </td>
+//                 </tr>
+//               ) : users.length === 0 ? (
+//                 <tr>
+//                   <td colSpan={5} className="px-6 py-12 text-center text-stone-400 font-medium">
+//                     <Users className="w-6 h-6 text-stone-300 mx-auto mb-2" />
+//                     <p className="font-semibold text-stone-600 mb-1">No users found</p>
+//                     <p className="text-xs">{searchQuery ? 'Try changing your search keywords.' : 'No registered users in database.'}</p>
+//                   </td>
+//                 </tr>
+//               ) : (
+//                 users.map((u) => (
+//                   <React.Fragment key={u.id}>
+//                     <tr className="hover:bg-amber-50/40 transition-colors group">
+//                       <td className="px-6 py-4">
+//                         <div className="flex items-center gap-3">
+//                           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-yellow-500 flex items-center justify-center text-white font-black text-sm shadow-sm flex-shrink-0">
+//                             {(u.name || u.username || 'U').charAt(0).toUpperCase()}
+//                           </div>
+//                           <div className="min-w-0">
+//                             <p className="font-semibold text-stone-800 truncate">{u.name || u.username}</p>
+//                             <p className="text-xs text-stone-400 truncate">{u.email || `@${u.username}`}</p>
+//                           </div>
+//                         </div>
+//                       </td>
+//                       <td className="px-6 py-4">
+//                         <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getRoleBadgeStyle(u.roleName || u.role)}`}>
+//                           {u.role || u.roleName || 'User'}
+//                         </span>
+//                       </td>
+//                       <td className="px-6 py-4 hidden sm:table-cell">
+//                         <span className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-1 rounded-full ${u.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
+//                           <span className={`w-1.5 h-1.5 rounded-full ${u.isActive !== false ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+//                           {u.isActive !== false ? 'Active' : 'Inactive'}
+//                         </span>
+//                       </td>
+//                       <td className="px-6 py-4 text-stone-500 text-xs hidden md:table-cell">
+//                         {formatJoinedDate(u.createdAt)}
+//                       </td>
+//                       <td className="px-6 py-4">
+//                         <div className="flex items-center justify-end gap-2">
+//                           {/* Soft Blue Edit Button */}
+//                           <button
+//                             type="button"
+//                             onClick={() => openEditModal(u)}
+//                             title="Edit User"
+//                             className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors cursor-pointer"
+//                           >
+//                             <Edit className="w-4 h-4" />
+//                           </button>
+
+//                           {/* Soft Red Delete Button */}
+//                           <button
+//                             type="button"
+//                             onClick={() => { setUserToDelete(u); setActionError(''); }}
+//                             disabled={actionLoading && userToDelete?.id === u.id}
+//                             title="Delete User"
+//                             className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+//                           >
+//                             <Trash2 className="w-4 h-4" />
+//                           </button>
+//                         </div>
+//                       </td>
+//                     </tr>
+//                     {u.linkedStudents?.map((student: { id: string | number; name: string }, index: number) => (
+//                       <tr key={student.id} className="bg-pink-50/30 hover:bg-pink-50/60 transition-colors">
+//                         <td className="px-6 py-3">
+//                           <div className="relative flex items-center gap-3 pl-10 sm:pl-12">
+//                             <span
+//                               aria-hidden="true"
+//                               className={`absolute left-3 top-0 w-px bg-pink-200 sm:left-4 ${index === u.linkedStudents.length - 1 ? 'h-1/2' : 'h-full'}`}
+//                             />
+//                             <span aria-hidden="true" className="absolute left-3 top-1/2 h-px w-5 bg-pink-200 sm:left-4 sm:w-6" />
+//                             <div className="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center text-pink-700 font-black text-xs shadow-sm flex-shrink-0">
+//                               {student.name.charAt(0).toUpperCase()}
+//                             </div>
+//                             <p className="min-w-0 truncate text-sm font-semibold text-stone-700">{student.name}</p>
+//                           </div>
+//                         </td>
+//                         <td className="px-6 py-3">
+//                           <span className="rounded-lg border border-pink-200 bg-pink-100 px-2.5 py-1 text-xs font-bold text-pink-800">Student</span>
+//                         </td>
+//                         <td className="px-6 py-3 text-xs font-medium text-stone-400 hidden sm:table-cell">—</td>
+//                         <td className="px-6 py-3 text-xs font-medium text-stone-400 hidden md:table-cell">—</td>
+//                         <td className="px-6 py-3 text-right text-xs font-medium text-stone-400">—</td>
+//                       </tr>
+//                     ))}
+//                   </React.Fragment>
+//                 ))
+//               )}
+//             </tbody>
+//           </table>
+//         </div>
+
+//         {/* Pagination Section */}
+//         {totalCount > 0 && (
+//           <div className="px-6 py-3.5 border-t border-stone-100 bg-stone-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+//             <span className="text-stone-500 font-medium">
+//               Showing <span className="font-bold text-stone-800">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+//               <span className="font-bold text-stone-800">{Math.min(currentPage * pageSize, totalCount)}</span> of{' '}
+//               <span className="font-bold text-stone-800">{totalCount}</span> users
+//             </span>
+
+//             {totalPages > 1 && (
+//               <div className="flex items-center gap-1.5">
+//                 <button
+//                   type="button"
+//                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+//                   disabled={currentPage === 1 || loading}
+//                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 font-semibold hover:bg-stone-50 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+//                 >
+//                   <ChevronLeft className="w-3.5 h-3.5" />
+//                   <span>Prev</span>
+//                 </button>
+
+//                 <div className="flex items-center gap-1">
+//                   {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNum) => (
+//                     <button
+//                       key={pageNum}
+//                       type="button"
+//                       onClick={() => setCurrentPage(pageNum)}
+//                       disabled={loading}
+//                       className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${currentPage === pageNum
+//                         ? 'bg-stone-900 text-white shadow-xs'
+//                         : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+//                         }`}
+//                     >
+//                       {pageNum}
+//                     </button>
+//                   ))}
+//                 </div>
+
+//                 <button
+//                   type="button"
+//                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+//                   disabled={currentPage === totalPages || loading}
+//                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 font-semibold hover:bg-stone-50 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+//                 >
+//                   <span>Next</span>
+//                   <ChevronRight className="w-3.5 h-3.5" />
+//                 </button>
+//               </div>
+//             )}
+//           </div>
+//         )}
+//       </div>
+
+//       {/* Delete Confirmation Modal */}
+//       {userToDelete && (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+//           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-stone-100 animate-in zoom-in-95 duration-200">
+//             <div className="flex flex-col items-center text-center">
+//               <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center mb-4">
+//                 <Trash2 className="w-6 h-6 text-rose-400" />
+//               </div>
+//               <h3 className="text-lg font-bold text-stone-900 mb-1">Delete User?</h3>
+//               <p className="text-xs text-stone-500 font-medium mb-5">
+//                 Are you sure you want to delete <span className="font-semibold text-stone-800">"{userToDelete.name || userToDelete.username || 'this user'}"</span>? This action cannot be undone.
+//               </p>
+//               {actionError && (
+//                 <div className="mb-4 p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-600 w-full text-center">
+//                   {actionError}
+//                 </div>
+//               )}
+//               <div className="flex items-center gap-3 w-full">
+//                 <button
+//                   type="button"
+//                   onClick={closeActionModal}
+//                   disabled={actionLoading}
+//                   className="flex-1 py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+//                 >
+//                   Cancel
+//                 </button>
+//                 <button
+//                   type="button"
+//                   onClick={handleDeleteUser}
+//                   disabled={actionLoading}
+//                   className="flex-1 py-2.5 px-4 bg-rose-400 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+//                 >
+//                   {actionLoading ? (
+//                     <>
+//                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
+//                       <span>Deleting...</span>
+//                     </>
+//                   ) : (
+//                     <span>Delete</span>
+//                   )}
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* Edit User Modal */}
+//       {userToEdit && (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs animate-in fade-in duration-200" role="dialog" aria-modal="true">
+//           <form onSubmit={handleEditUser} className="w-full max-w-sm sm:max-w-md rounded-2xl bg-white p-6 shadow-xl border border-stone-100 animate-in zoom-in-95 duration-200">
+//             <div className="flex items-center justify-between pb-4 mb-4 border-b border-stone-100">
+//               <div className="flex items-center gap-2.5">
+//                 <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+//                   <Edit className="w-4 h-4" />
+//                 </div>
+//                 <div>
+//                   <h3 className="text-lg font-black text-stone-900">Edit User</h3>
+//                   <p className="text-xs text-stone-400 font-medium">Update user details</p>
+//                 </div>
+//               </div>
+//               <button
+//                 type="button"
+//                 onClick={closeActionModal}
+//                 className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
+//               >
+//                 <X className="w-5 h-5" />
+//               </button>
+//             </div>
+
+//             <div className="space-y-4">
+//               <div>
+//                 <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">Name</label>
+//                 <input
+//                   value={editName}
+//                   onChange={(event) => setEditName(event.target.value)}
+//                   required
+//                   placeholder="Full name"
+//                   className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
+//                 />
+//               </div>
+//               <div>
+//                 <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">Email</label>
+//                 <input
+//                   type="email"
+//                   value={editEmail}
+//                   onChange={(event) => setEditEmail(event.target.value)}
+//                   required
+//                   placeholder="Email address"
+//                   className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
+//                 />
+//               </div>
+//             </div>
+
+//             {actionError && (
+//               <div className="mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700">
+//                 {actionError}
+//               </div>
+//             )}
+
+//             <div className="mt-6 pt-4 border-t border-stone-100 flex items-center justify-end gap-2.5">
+//               <button
+//                 type="button"
+//                 onClick={closeActionModal}
+//                 disabled={actionLoading}
+//                 className="px-4 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-100 border border-stone-200 transition-all cursor-pointer disabled:opacity-50"
+//               >
+//                 Cancel
+//               </button>
+//               <button
+//                 type="submit"
+//                 disabled={actionLoading || !editName.trim() || !editEmail.trim()}
+//                 className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-xs transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
+//               >
+//                 {actionLoading ? (
+//                   <>
+//                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
+//                     <span>Saving...</span>
+//                   </>
+//                 ) : (
+//                   <span>Save changes</span>
+//                 )}
+//               </button>
+//             </div>
+//           </form>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
 // ─────────────────────────────────────────────────────────────
-// Users View
+// Users View (Zero Unnecessary Scrolling)
 // ─────────────────────────────────────────────────────────────
 const UsersView: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -1182,16 +1665,22 @@ const UsersView: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const pageSize = 10;
+  const [userToDelete, setUserToDelete] = useState<any | null>(null);
+  const [userToEdit, setUserToEdit] = useState<any | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const pageSize = 5;
 
-  const fetchUsers = useCallback(async (page: number) => {
+  const fetchUsers = useCallback(async (page: number, search: string) => {
     setLoading(true);
     try {
-      const res = await ApiServices.listAdminUsers({ page, limit: pageSize });
+      const res = await ApiServices.listAdminUsers({ page, limit: pageSize, search: search.trim() });
       const data = res?.data || res;
       const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
       setUsers(items);
-      setTotalCount(data?.total ?? items.length);
+      setTotalCount(data?.pagination?.total ?? data?.total ?? items.length);
     } catch (err) {
       console.error('Failed to fetch admin users:', err);
     } finally {
@@ -1200,21 +1689,81 @@ const UsersView: React.FC = () => {
   }, [pageSize]);
 
   useEffect(() => {
-    fetchUsers(currentPage);
-  }, [currentPage, fetchUsers]);
+    fetchUsers(currentPage, searchQuery);
+  }, [currentPage, searchQuery, fetchUsers]);
 
-  const filteredUsers = users.filter((u) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (u.name && u.name.toLowerCase().includes(q)) ||
-      (u.email && u.email.toLowerCase().includes(q)) ||
-      (u.username && u.username.toLowerCase().includes(q)) ||
-      (u.role && u.role.toLowerCase().includes(q))
-    );
-  });
+  const openEditModal = (user: any) => {
+    setUserToEdit(user);
+    setEditName(user.name || user.username || '');
+    setEditEmail(user.email || '');
+    setActionError('');
+  };
+
+  const closeActionModal = () => {
+    if (actionLoading) return;
+    setUserToDelete(null);
+    setUserToEdit(null);
+    setActionError('');
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    setActionLoading(true);
+    setActionError('');
+    try {
+      await ApiServices.deleteAdminUser(userToDelete.id);
+      setUserToDelete(null);
+      setTotalCount((count) => Math.max(0, count - 1));
+      if (users.length === 1 && currentPage > 1) {
+        setCurrentPage((page) => page - 1);
+      } else {
+        setUsers((currentUsers) => currentUsers.filter((user) => user.id !== userToDelete.id));
+      }
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to delete user. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleEditUser = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!userToEdit) return;
+    setActionLoading(true);
+    setActionError('');
+    try {
+      const updatedUser = await ApiServices.updateAdminUser(userToEdit.id, {
+        name: editName.trim(),
+        email: editEmail.trim(),
+      });
+      setUsers((currentUsers) => currentUsers.map((user) => (
+        user.id === userToEdit.id ? { ...user, ...updatedUser } : user
+      )));
+      setUserToEdit(null);
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to update user. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const getPaginationPages = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   const formatJoinedDate = (isoString?: string) => {
     if (!isoString) return '—';
@@ -1232,100 +1781,151 @@ const UsersView: React.FC = () => {
   const getRoleBadgeStyle = (role?: string) => {
     const r = (role || '').toUpperCase();
     if (r === 'PARENT') return 'bg-amber-100 text-amber-800 border border-amber-200';
-    if (r === 'STUDENT') return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+    if (r === 'STUDENT') return 'bg-pink-100 text-pink-800 border border-pink-200';
     if (r === 'TEACHER') return 'bg-blue-100 text-blue-800 border border-blue-200';
     if (r === 'ADMIN' || r === 'SUPER_ADMIN') return 'bg-purple-100 text-purple-800 border border-purple-200';
     return 'bg-stone-100 text-stone-700 border border-stone-200';
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="w-full flex flex-col space-y-5 overflow-hidden">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-shrink-0">
         <div>
           <h1 className="text-2xl font-black text-stone-900">Users</h1>
-          <p className="text-sm text-stone-500 font-medium mt-1">Manage all registered platform users and their access.</p>
+          <p className="text-sm text-stone-500 font-medium mt-0.5">Manage all registered platform users and their access.</p>
         </div>
 
-        {/* Search input */}
         <div className="relative w-full sm:w-72">
           <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
             placeholder="Search users by name, email..."
             className="w-full h-10 pl-10 pr-4 rounded-xl text-xs font-semibold text-stone-900 bg-white border border-stone-200 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 outline-none transition-all placeholder:text-stone-400"
           />
         </div>
       </div>
 
-      <div className="admin-card overflow-hidden !p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+      {/* Main Table Card (Non-overflowing wrapper) */}
+      <div className="border border-stone-200 rounded-2xl bg-white shadow-xs overflow-hidden flex flex-col">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-sm text-left border-collapse">
             <thead>
               <tr className="border-b border-stone-100 bg-stone-50/60">
-                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Name</th>
-                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Role</th>
-                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400 hidden sm:table-cell">Status</th>
-                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400 hidden md:table-cell">Joined</th>
+                <th className="text-left px-6 py-3.5 text-xs font-black uppercase tracking-widest text-stone-400">Name</th>
+                <th className="text-left px-6 py-3.5 text-xs font-black uppercase tracking-widest text-stone-400">Role</th>
+                <th className="text-left px-6 py-3.5 text-xs font-black uppercase tracking-widest text-stone-400 hidden sm:table-cell">Status</th>
+                <th className="text-left px-6 py-3.5 text-xs font-black uppercase tracking-widest text-stone-400 hidden md:table-cell">Joined</th>
+                <th className="text-right px-6 py-3.5 text-xs font-black uppercase tracking-widest text-stone-400">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-50">
+            <tbody className="divide-y divide-stone-100">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-stone-400 font-medium">
-                    <div className="flex items-center justify-center gap-2">
+                  <td colSpan={5} className="py-12 align-middle text-center">
+                    <div className="flex items-center justify-center">
                       <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
-                      <span>Loading registered users from database...</span>
                     </div>
                   </td>
                 </tr>
-              ) : filteredUsers.length === 0 ? (
+              ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-stone-400 font-medium">
+                  <td colSpan={5} className="px-6 py-12 text-center text-stone-400 font-medium">
                     <Users className="w-6 h-6 text-stone-300 mx-auto mb-2" />
                     <p className="font-semibold text-stone-600 mb-1">No users found</p>
                     <p className="text-xs">{searchQuery ? 'Try changing your search keywords.' : 'No registered users in database.'}</p>
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-amber-50/40 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-yellow-500 flex items-center justify-center text-white font-black text-sm shadow-sm flex-shrink-0">
-                          {(u.name || u.username || 'U').charAt(0).toUpperCase()}
+                users.map((u) => (
+                  <React.Fragment key={u.id}>
+                    <tr className="hover:bg-amber-50/30 transition-colors">
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-yellow-500 flex items-center justify-center text-white font-black text-sm shadow-xs flex-shrink-0">
+                            {(u.name || u.username || 'U').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-stone-800 truncate">{u.name || u.username}</p>
+                            <p className="text-xs text-stone-400 truncate">{u.email || `@${u.username}`}</p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-stone-800 truncate">{u.name || u.username}</p>
-                          <p className="text-xs text-stone-400 truncate">{u.email || `@${u.username}`}</p>
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getRoleBadgeStyle(u.roleName || u.role)}`}>
+                          {u.role || u.roleName || 'User'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5 hidden sm:table-cell">
+                        <span className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-1 rounded-full ${u.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${u.isActive !== false ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                          {u.isActive !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5 text-stone-500 text-xs hidden md:table-cell">
+                        {formatJoinedDate(u.createdAt)}
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(u)}
+                            title="Edit user"
+                            aria-label="Edit user"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setUserToDelete(u); setActionError(''); }}
+                            title="Delete user"
+                            aria-label="Delete user"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getRoleBadgeStyle(u.roleName || u.role)}`}>
-                        {u.role || u.roleName || 'User'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 hidden sm:table-cell">
-                      <span className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-1 rounded-full ${u.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${u.isActive !== false ? 'bg-emerald-500' : 'bg-stone-400'}`} />
-                        {u.isActive !== false ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-stone-500 text-xs hidden md:table-cell">
-                      {formatJoinedDate(u.createdAt)}
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                    {u.linkedStudents?.map((student: { id: string | number; name: string }, index: number) => (
+                      <tr key={student.id} className="bg-pink-50/20 hover:bg-pink-50/40 transition-colors">
+                        <td className="px-6 py-2.5">
+                          <div className="relative flex items-center gap-3 pl-10 sm:pl-12">
+                            <span
+                              aria-hidden="true"
+                              className={`absolute left-3 top-0 w-px bg-pink-200 sm:left-4 ${index === u.linkedStudents.length - 1 ? 'h-1/2' : 'h-full'}`}
+                            />
+                            <span aria-hidden="true" className="absolute left-3 top-1/2 h-px w-5 bg-pink-200 sm:left-4 sm:w-6" />
+                            <div className="w-7 h-7 rounded-lg bg-pink-100 flex items-center justify-center text-pink-700 font-black text-xs shadow-xs flex-shrink-0">
+                              {student.name.charAt(0).toUpperCase()}
+                            </div>
+                            <p className="min-w-0 truncate text-xs font-semibold text-stone-700">{student.name}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-2.5">
+                          <span className="rounded-lg border border-pink-200 bg-pink-100 px-2.5 py-0.5 text-[11px] font-bold text-pink-800">Student</span>
+                        </td>
+                        <td className="px-6 py-2.5 text-xs font-medium text-stone-400 hidden sm:table-cell">—</td>
+                        <td className="px-6 py-2.5 text-xs font-medium text-stone-400 hidden md:table-cell">—</td>
+                        <td className="px-6 py-2.5 text-right text-xs font-medium text-stone-400">—</td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))
               )}
             </tbody>
           </table>
         </div>
 
-        {/* 10 items Pagination Footer */}
+        {/* Footer Pagination */}
         {totalCount > 0 && (
-          <div className="px-6 py-3.5 border-t border-stone-100 bg-stone-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="px-6 py-3 border-t border-stone-100 bg-stone-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs flex-shrink-0">
             <span className="text-stone-500 font-medium">
               Showing <span className="font-bold text-stone-800">{(currentPage - 1) * pageSize + 1}</span> to{' '}
               <span className="font-bold text-stone-800">{Math.min(currentPage * pageSize, totalCount)}</span> of{' '}
@@ -1335,6 +1935,7 @@ const UsersView: React.FC = () => {
             {totalPages > 1 && (
               <div className="flex items-center gap-1.5">
                 <button
+                  type="button"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1 || loading}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 font-semibold hover:bg-stone-50 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
@@ -1344,23 +1945,30 @@ const UsersView: React.FC = () => {
                 </button>
 
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
-                      disabled={loading}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        currentPage === pageNum
-                          ? 'bg-stone-900 text-white shadow-xs'
-                          : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
+                  {getPaginationPages().map((pageNum, idx) => (
+                    typeof pageNum === 'number' ? (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setCurrentPage(pageNum)}
+                        disabled={loading}
+                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${currentPage === pageNum
+                            ? 'bg-stone-900 text-white shadow-2xs'
+                            : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    ) : (
+                      <span key={idx} className="px-1 text-stone-400 text-xs font-bold">
+                        {pageNum}
+                      </span>
+                    )
                   ))}
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages || loading}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 font-semibold hover:bg-stone-50 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
@@ -1373,6 +1981,85 @@ const UsersView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Delete User Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 px-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-black text-stone-900">Delete User</h2>
+            <p className="mt-3 text-sm font-medium text-stone-600">
+              Are you sure you want to delete <span className="font-bold text-stone-800">"{userToDelete.name || userToDelete.username}"</span>?
+            </p>
+            {actionError && <p className="mt-3 text-xs font-semibold text-red-600">{actionError}</p>}
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeActionModal}
+                disabled={actionLoading}
+                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 disabled:opacity-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteUser}
+                disabled={actionLoading}
+                className="rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50 cursor-pointer"
+              >
+                {actionLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {userToEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 px-4" role="dialog" aria-modal="true">
+          <form onSubmit={handleEditUser} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-black text-stone-900">Edit User</h2>
+            <div className="mt-5 space-y-4">
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-stone-500">Name</span>
+                <input
+                  value={editName}
+                  onChange={(event) => setEditName(event.target.value)}
+                  required
+                  className="h-10 w-full rounded-lg border border-stone-200 px-3 text-sm font-medium text-stone-800 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-stone-500">Email</span>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(event) => setEditEmail(event.target.value)}
+                  required
+                  className="h-10 w-full rounded-lg border border-stone-200 px-3 text-sm font-medium text-stone-800 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
+                />
+              </label>
+            </div>
+            {actionError && <p className="mt-3 text-xs font-semibold text-red-600">{actionError}</p>}
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeActionModal}
+                disabled={actionLoading}
+                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 disabled:opacity-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={actionLoading || !editName.trim() || !editEmail.trim()}
+                className="rounded-lg bg-yellow-400 px-4 py-2 text-xs font-bold text-stone-900 hover:bg-yellow-500 disabled:opacity-50 cursor-pointer"
+              >
+                {actionLoading ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };
@@ -2158,11 +2845,10 @@ const CoursesView: React.FC = () => {
               setSelectedBoard(b);
               setCurrentPage(1);
             }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-              selectedBoard === b
-                ? 'bg-stone-900 text-white shadow-xs'
-                : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
-            }`}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${selectedBoard === b
+              ? 'bg-stone-900 text-white shadow-xs'
+              : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+              }`}
           >
             {b === 'ALL' ? 'All Boards' : b}
           </button>
@@ -2309,11 +2995,10 @@ const CoursesView: React.FC = () => {
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
                     disabled={loading}
-                    className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      currentPage === pageNum
-                        ? 'bg-stone-900 text-white shadow-xs'
-                        : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
-                    }`}
+                    className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${currentPage === pageNum
+                      ? 'bg-stone-900 text-white shadow-xs'
+                      : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                      }`}
                   >
                     {pageNum}
                   </button>
@@ -2414,17 +3099,22 @@ const ReportsView: React.FC = () => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// Manage Blogs View
+// Manage Blogs View (With Edit/Delete Colors, Pagination & Custom Modal)
 // ─────────────────────────────────────────────────────────────
 const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setActiveView }) => {
   const navigate = useNavigate();
   const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingBlog, setEditingBlog] = useState<any | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Custom Delete Modal State
+  const [blogToDelete, setBlogToDelete] = useState<{ id: number; title: string } | null>(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
 
   const fetchBlogs = useCallback(async (query?: string) => {
     setLoading(true);
@@ -2453,6 +3143,7 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearchQuery(val);
+    setCurrentPage(1);
     fetchBlogs(val);
   };
 
@@ -2464,8 +3155,15 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
     navigate(`/edit-blog/${b.id}`);
   };
 
-  const handleDeleteBlog = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this blog post?')) return;
+  // Open delete modal
+  const promptDeleteBlog = (blog: any) => {
+    setBlogToDelete({ id: blog.id, title: blog.title });
+  };
+
+  // Execute actual API deletion
+  const handleExecuteDelete = async () => {
+    if (!blogToDelete) return;
+    const id = blogToDelete.id;
     setDeletingId(id);
     try {
       await ApiServices.deleteBlog(id);
@@ -2476,11 +3174,15 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
       console.error('Failed to delete blog:', err);
     } finally {
       setDeletingId(null);
+      setBlogToDelete(null);
     }
   };
 
+  const totalPages = Math.ceil(blogs.length / pageSize);
+  const paginatedBlogs = blogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       {toast && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold shadow-sm animate-in fade-in duration-300">
           <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
@@ -2491,7 +3193,7 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-stone-900">Manage Blogs</h1>
-          <p className="text-sm text-stone-500 font-medium mt-1">Create and manage content for your platform from MySQL.</p>
+          <p className="text-sm text-stone-500 font-medium mt-1">Create and manage content for your platform.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -2533,7 +3235,7 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
                   <td colSpan={6} className="px-6 py-10 text-center text-stone-400 font-medium">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
-                      <span>Loading blogs from MySQL...</span>
+                      <span> </span>
                     </div>
                   </td>
                 </tr>
@@ -2545,7 +3247,7 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
                   </td>
                 </tr>
               ) : (
-                blogs.map((b) => (
+                paginatedBlogs.map((b) => (
                   <tr key={b.id} className="hover:bg-amber-50/40 transition-colors group">
                     <td className="px-6 py-4">
                       <p className="font-semibold text-stone-800">{b.title}</p>
@@ -2554,11 +3256,10 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
                     <td className="px-6 py-4 text-stone-600">{b.category || 'General'}</td>
                     <td className="px-6 py-4">
                       <span
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
-                          b.status === 'Published'
-                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-600 border border-amber-200'
-                        }`}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold ${b.status === 'Published'
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          : 'bg-amber-50 text-amber-600 border border-amber-200'
+                          }`}
                       >
                         {b.status}
                       </span>
@@ -2566,6 +3267,7 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
                     <td className="px-6 py-4 text-stone-500 text-xs">{b.date}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {/* Edit Button - Blue Background */}
                         <button
                           type="button"
                           onClick={(event) => {
@@ -2574,18 +3276,21 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
                             handleEditBlog(b);
                           }}
                           title="Edit Blog"
-                          className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors cursor-pointer"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
+
+                        {/* Delete Button - Red/Rose Background */}
                         <button
-                          onClick={() => handleDeleteBlog(b.id)}
+                          type="button"
+                          onClick={() => promptDeleteBlog(b)}
                           disabled={deletingId === b.id}
                           title="Delete Blog"
-                          className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                          className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                         >
                           {deletingId === b.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
+                            <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
                           ) : (
                             <Trash2 className="w-4 h-4" />
                           )}
@@ -2598,14 +3303,105 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Section */}
+        {blogs.length > 0 && (
+          <div className="px-6 py-3.5 border-t border-stone-100 bg-stone-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <span className="text-stone-500 font-medium">
+              Showing <span className="font-bold text-stone-800">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+              <span className="font-bold text-stone-800">{Math.min(currentPage * pageSize, blogs.length)}</span> of{' '}
+              <span className="font-bold text-stone-800">{blogs.length}</span> blogs
+            </span>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 font-semibold hover:bg-stone-50 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Prev</span>
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${currentPage === pageNum
+                        ? 'bg-stone-900 text-white shadow-xs'
+                        : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 font-semibold hover:bg-stone-50 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
+      {/* Delete Confirmation Modal */}
+      {blogToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-stone-100 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center mb-4">
+                <Trash2 className="w-6 h-6 text-rose-400" />
+              </div>
+              <h3 className="text-lg font-bold text-stone-900 mb-1">Delete Blog Post?</h3>
+              <p className="text-xs text-stone-500 font-medium mb-5">
+                Are you sure you want to delete <span className="font-semibold text-stone-800">"{blogToDelete.title}"</span>? This action cannot be undone.
+              </p>
+              <div className="flex items-center gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => setBlogToDelete(null)}
+                  disabled={deletingId !== null}
+                  className="flex-1 py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteDelete}
+                  disabled={deletingId !== null}
+                  className="flex-1 py-2.5 px-4 bg-rose-400 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                >
+                  {deletingId !== null ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <span>Delete</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 // ─────────────────────────────────────────────────────────────
-// Add Blog View
+// Add Blog View (Verified Icons, Proper Div Structure & Colors)
 // ─────────────────────────────────────────────────────────────
 const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setActiveView }) => {
   const [title, setTitle] = useState('');
@@ -2631,7 +3427,7 @@ const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setA
           setCategories(prev => Array.from(new Set([...names, ...prev])));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleSave = async (status: 'Published' | 'Draft') => {
@@ -2647,6 +3443,7 @@ const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setA
         title: title.trim(),
         category,
         author: author.trim() || 'Admin User',
+        content,
         status,
         date: new Date().toISOString().slice(0, 10),
       });
@@ -2654,9 +3451,9 @@ const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setA
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||
-          err?.response?.data?.error?.message ||
-          err?.message ||
-          'Failed to create blog'
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Failed to create blog'
       );
     } finally {
       setSubmitting(false);
@@ -2668,6 +3465,7 @@ const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setA
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => setActiveView('manage-blogs' as AdminView)}
             className="p-2 hover:bg-stone-100 rounded-xl transition-colors text-stone-500 cursor-pointer"
           >
@@ -2680,6 +3478,7 @@ const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setA
         </div>
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => handleSave('Draft')}
             disabled={submitting}
             className="px-4 py-2 rounded-xl text-sm font-semibold text-stone-600 hover:bg-stone-100 border border-stone-200 transition-all cursor-pointer disabled:opacity-50"
@@ -2687,6 +3486,7 @@ const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setA
             {submitting ? 'Saving...' : 'Save as Draft'}
           </button>
           <button
+            type="button"
             onClick={() => handleSave('Published')}
             disabled={submitting}
             className="flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-50 active:scale-95"
@@ -2744,32 +3544,72 @@ const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setA
         <div>
           <label className="block text-sm font-bold text-stone-700 mb-2">Content</label>
           <Suspense fallback={<div className="h-80 flex items-center justify-center text-sm text-stone-500">Loading editor...</div>}>
-              <JoditEditor
-                key="add-blog-editor"
-                value={content}
-                onChange={(value: string) => setContent(value)}
-                config={BLOG_CONTENT_EDITOR_CONFIG}
-              />
+            <JoditEditor
+              key="add-blog-editor"
+              value={content}
+              onChange={(value: string) => setContent(value)}
+              config={BLOG_CONTENT_EDITOR_CONFIG}
+            />
           </Suspense>
         </div>
       </div>
     </div>
   );
 };
-
 // ─────────────────────────────────────────────────────────────
-// Category View
+// Category View (With Minimalist Delete Modal)
 // ─────────────────────────────────────────────────────────────
 const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
-  const categories = [
-    { name: 'Education', count: 24, status: 'Active' },
-    { name: 'Technology', count: 18, status: 'Active' },
-    { name: 'Parenting', count: 12, status: 'Active' },
-    { name: 'Platform News', count: 5, status: 'Active' },
-    { name: 'Engineering', count: 9, status: 'Active' },
-  ];
+  const [categories, setCategories] = useState([
+    { id: 1, name: 'Education', count: 24, status: 'Active' },
+    { id: 2, name: 'Technology', count: 18, status: 'Active' },
+    { id: 3, name: 'Parenting', count: 12, status: 'Active' },
+    { id: 4, name: 'Platform News', count: 5, status: 'Active' },
+    { id: 5, name: 'Engineering', count: 9, status: 'Active' },
+  ]);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+
+  // Custom Delete Modal State
+  const [categoryToDelete, setCategoryToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Open Delete Confirmation Modal
+  const promptDeleteCategory = (cat: { id: number; name: string }) => {
+    setCategoryToDelete(cat);
+  };
+
+  // Execute Deletion
+  const handleExecuteDelete = async () => {
+    if (!categoryToDelete) return;
+    setIsDeleting(true);
+
+    setTimeout(() => {
+      setCategories((prev) => prev.filter((c) => c.id !== categoryToDelete.id));
+      setToast(`Category deleted successfully`);
+      setIsDeleting(false);
+      setCategoryToDelete(null);
+
+      setTimeout(() => setToast(null), 3500);
+    }, 400);
+  };
+
+  const filteredCategories = categories.filter((c) =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold shadow-xs animate-in fade-in duration-300">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+          <span>{toast}</span>
+        </div>
+      )}
+
+      {/* Top Header Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-stone-900">Categories</h1>
@@ -2778,13 +3618,21 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
         <div className="flex items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-            <input type="text" placeholder="Search categories..." className="w-full sm:w-64 pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search categories..."
+              className="w-full sm:w-64 pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all"
+            />
           </div>
-          <button className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all whitespace-nowrap">
-            <Plus className="w-4 h-4" />Add Category
+          <button className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-xs transition-all whitespace-nowrap cursor-pointer active:scale-95">
+            <Plus className="w-4 h-4" /> Add Category
           </button>
         </div>
       </div>
+
+      {/* Categories Table Card */}
       <div className="admin-card overflow-hidden !p-0">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -2797,29 +3645,112 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-50">
-              {categories.map((c, i) => (
-                <tr key={i} className="hover:bg-amber-50/40 transition-colors">
-                  <td className="px-6 py-4 font-semibold text-stone-800">{c.name}</td>
-                  <td className="px-6 py-4 text-stone-600 font-medium">{c.count}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-600">{c.status}</span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="p-1.5 text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><Edit className="w-4 h-4" /></button>
-                      <button className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
-                    </div>
+              {filteredCategories.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-10 text-center text-stone-400 font-medium">
+                    No categories found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredCategories.map((c) => (
+                  <tr key={c.id} className="hover:bg-amber-50/40 transition-colors group">
+                    <td className="px-6 py-4 font-semibold text-stone-800">{c.name}</td>
+                    <td className="px-6 py-4 text-stone-600 font-medium">{c.count}</td>
+                    <td className="px-6 py-4">
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+                        {c.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Soft Blue Edit Button */}
+                        <button
+                          type="button"
+                          title="Edit Category"
+                          className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100/80 hover:text-blue-700 rounded-xl transition-all cursor-pointer active:scale-95"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        {/* Soft Red Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => promptDeleteCategory(c)}
+                          title="Delete Category"
+                          className="p-2 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-xl transition-all cursor-pointer active:scale-95"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Footer Pagination Bar */}
+        <div className="px-6 py-4 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
+          <span>Showing 1 to {filteredCategories.length} of {filteredCategories.length} categories</span>
+          <div className="flex items-center gap-1">
+            <button disabled className="px-3 py-1.5 rounded-lg border border-stone-200 text-stone-400 cursor-not-allowed opacity-60">
+              Previous
+            </button>
+            <button className="px-3 py-1.5 rounded-lg bg-stone-900 text-white font-semibold shadow-xs">
+              1
+            </button>
+            <button disabled className="px-3 py-1.5 rounded-lg border border-stone-200 text-stone-400 cursor-not-allowed opacity-60">
+              Next
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {categoryToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-stone-100 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center mb-4">
+                <Trash2 className="w-6 h-6 text-rose-400" />
+              </div>
+              <h3 className="text-lg font-bold text-stone-900 mb-1">Delete Category?</h3>
+              <p className="text-xs text-stone-500 font-medium mb-5">
+                Are you sure you want to delete <span className="font-semibold text-stone-800">"{categoryToDelete.name}"</span>? This action cannot be undone.
+              </p>
+              <div className="flex items-center gap-3 w-full">
+                <button
+                  type="button"
+                  onClick={() => setCategoryToDelete(null)}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteDelete}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 px-4 bg-rose-400 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <span>Delete</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
 // ─────────────────────────────────────────────────────────────
 // Admin Dashboard Shell
 // ─────────────────────────────────────────────────────────────
@@ -2830,7 +3761,25 @@ interface AdminDashboardProps {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('acugrade_admin_sidebar_collapsed');
+      if (stored !== null) return stored === 'true';
+      return true; // Default to collapsed for Admin persona
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleCollapsed = () => {
+    setCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('acugrade_admin_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   // navigate-based replacement for setActiveView — child views use this to navigate between pages
   const navigate = useNavigate();
@@ -2935,7 +3884,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
             {!collapsed && (
               <div className="min-w-0">
                 <span className="text-lg font-bold text-stone-900 tracking-tight transition-all">
-                  SahajPath<span className="text-yellow-500">.</span>
+                  Sahaj<span className="text-yellow-500">Path</span>
                 </span>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-yellow-600 mt-0.5 leading-none">Admin Console</p>
               </div>
@@ -2944,7 +3893,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
           {/* Desktop collapse toggle */}
           <button
             id="admin-sidebar-collapse"
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={toggleCollapsed}
             className={`hidden lg:flex p-1.5 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 bg-stone-50 border border-stone-100 rounded-lg transition-colors ${collapsed ? '' : 'ml-auto'}`}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -3080,17 +4029,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
           {(() => {
             // Dynamic view registry — add new pages here as backend adds them
             const VIEW_MAP: Record<string, React.ReactNode> = {
-              dashboard:      <DashboardView />,
-              users:          <UsersView />,
-              academics:      <CoursesView />,
-              courses:        <CoursesView />,
-              analytics:      <ReportsView />,
-              reports:        <ReportsView />,
-              blogs:          <ManageBlogsView setActiveView={(v) => navigate('/' + v)} />,
+              dashboard: <DashboardView />,
+              users: <UsersView />,
+              academics: <CoursesView />,
+              courses: <CoursesView />,
+              analytics: <ReportsView />,
+              reports: <ReportsView />,
+              blogs: <ManageBlogsView setActiveView={(v) => navigate('/' + v)} />,
               'manage-blogs': <ManageBlogsView setActiveView={(v) => navigate('/' + v)} />,
-              'add-blogs':    <BlogFormModal isOpen fullPage initialBlog={null} onClose={() => navigate('/manage-blogs')} onSuccess={() => navigate('/manage-blogs')} />,
-              'edit-blog':   <BlogEditPage blogId={editBlogId} onBack={() => navigate('/manage-blogs')} onSaved={() => {}} />,
-              category:       <CategoryView setActiveView={(v) => navigate('/' + v)} />,
+              'add-blogs': <BlogFormModal isOpen fullPage initialBlog={null} onClose={() => navigate('/manage-blogs')} onSuccess={() => navigate('/manage-blogs')} />,
+              'edit-blog': <BlogEditPage blogId={editBlogId} onBack={() => navigate('/manage-blogs')} onSaved={() => { }} />,
+              category: <CategoryView setActiveView={(v) => navigate('/' + v)} />,
             };
 
             return VIEW_MAP[activeView] ?? (

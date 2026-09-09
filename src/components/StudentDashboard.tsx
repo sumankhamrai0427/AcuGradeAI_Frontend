@@ -358,9 +358,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       {/* ── MIDDLE GRID: 2 ACTION CARDS (LEFT 2 COLS) + SUBJECT PIE CHART (RIGHT 1 COL) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* Left 2 Cols: Quick Launch & Adaptive Learning Path Quest */}
-        <div className="lg:col-span-2 space-y-6 flex flex-col justify-between">
+        <div className="lg:col-span-2 flex flex-col gap-5">
           {/* Active Diagnostic Launch Card */}
-          <div className="rounded-3xl border border-stone-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex-1 rounded-3xl border border-stone-200 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 font-black text-sm">
@@ -384,7 +384,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </span>
             </div>
 
-            <div className="rounded-2xl bg-stone-50 border border-stone-200/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1 rounded-2xl bg-stone-50 border border-stone-200/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="text-xs font-bold text-stone-500 uppercase tracking-wider">Configured Target:</div>
                 <div className="font-black text-stone-900 text-sm">
@@ -404,7 +404,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
 
           {/* Adaptive Learning Path Quest */}
-          <div className="rounded-3xl border border-stone-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex-1 rounded-3xl border border-stone-200 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-sky-100 flex items-center justify-center text-sky-700 font-black text-sm">
@@ -424,7 +424,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
 
             {nextRecommendedTopic ? (
-              <div className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/60 via-white to-amber-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex-1 rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/60 via-white to-amber-50/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-black uppercase">
                     <span>{nextRecommendedTopic.subject}</span> &bull; <span>Node {nextRecommendedTopic.nodeId}</span>
@@ -440,7 +440,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="rounded-2xl bg-stone-50 p-6 text-center text-xs text-stone-500">
+              <div className="flex-1 rounded-2xl bg-stone-50 border border-stone-200/60 p-4 sm:p-5 flex items-center justify-center text-center text-xs text-stone-500">
                 <p>No active learning nodes yet. Take your first diagnostic exam to generate your personalized learning path!</p>
               </div>
             )}

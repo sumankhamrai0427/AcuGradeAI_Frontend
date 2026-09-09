@@ -257,6 +257,8 @@ class ApiServices {
     const params = filters ? new URLSearchParams(filters).toString() : '';
     return this.get(GET_APIS.adminUsers(params));
   }
+  updateAdminUser(id: string | number, body: any) { return this.put(PUT_APIS.updateAdminUser(id), body); }
+  deleteAdminUser(id: string | number) { return this.del(DELETE_APIS.deleteAdminUser(id)); }
   adminAuditLogs(filters?: any) {
     const params = filters ? new URLSearchParams(filters).toString() : '';
     return this.get(GET_APIS.adminAuditLogs(params));

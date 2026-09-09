@@ -216,14 +216,103 @@ export default function App() {
 
     if (notif.type === 'EXAM_ASSIGNED') {
       setActiveTab('arena');
-    } else if (notif.type === 'EXAM_SUBMITTED') {
-      if (notif.metadata?.submissionId) {
-        // If we have submission metadata, switch to reports or open submission
-        setActiveTab('schedule-exam');
-      } else {
-        setActiveTab('reports');
+      return;
+    }
+
+    if (notif.type === 'EXAM_SUBMITTED' || notif.metadata?.submissionId || notif.metadata?.examId) {
+      // 1. If child specified, activate that child
+      if (notif.metadata?.studentId) {
+        setActiveChildId(String(notif.metadata.studentId));
       }
-    } else if (notif.actionUrl) {
+
+      // 2. Refresh parent data in background to ensure latest examHistory is up to date
+      if (authRole === 'parent') {
+        loadParentAndChildren().catch(() => {});
+      }
+
+      // 3. Search in examHistory
+      let found: ExamSubmission | null = null;
+      if (examHistory && examHistory.length > 0) {
+        found = examHistory.find(e =>
+          (notif.metadata?.submissionId && (e.id === notif.metadata.submissionId || e.id === String(notif.metadata.submissionId))) ||
+          (notif.metadata?.examId && (e.examId === notif.metadata.examId || e.id === notif.metadata.examId)) ||
+          (e.subject === notif.metadata?.subject && String(e.studentId) === String(notif.metadata?.studentId))
+        ) || null;
+      }
+
+      // 4. Search in parentAccount.children.recentExams
+      if (!found && parentAccount?.children) {
+        for (const child of parentAccount.children) {
+          if (child.recentExams) {
+            const m = child.recentExams.find((e: any) =>
+              (notif.metadata?.submissionId && (e.id === notif.metadata.submissionId || e.id === String(notif.metadata.submissionId))) ||
+              (notif.metadata?.examId && (e.examId === notif.metadata.examId || e.id === notif.metadata.examId)) ||
+              (e.subject === notif.metadata?.subject && String(e.studentId) === String(notif.metadata?.studentId))
+            );
+            if (m) {
+              found = m;
+              break;
+            }
+          }
+        }
+      }
+
+      // 5. Construct complete fallback submission if metadata exists
+      if (!found && notif.metadata) {
+        const meta = notif.metadata;
+        const marksObtained = meta.marksObtained !== undefined ? Number(meta.marksObtained) : 0;
+        const totalMarks = meta.totalMarks !== undefined ? Number(meta.totalMarks) : 10;
+        const accuracy = meta.accuracy !== undefined ? Number(meta.accuracy) : Math.round((marksObtained / (totalMarks || 1)) * 100);
+        const studentName = meta.studentName || 'Student';
+        const subjectName = meta.subject || 'Science';
+
+        const matchingChild = parentAccount?.children.find(c => String(c.id) === String(meta.studentId));
+
+        found = {
+          id: meta.submissionId || `sub-${notif.id}`,
+          examId: meta.examId || `exam-${notif.id}`,
+          examTitle: `${studentName}'s ${subjectName} Assessment`,
+          studentId: String(meta.studentId || ''),
+          studentName: studentName,
+          board: (matchingChild?.targetBoard as any) || 'CBSE',
+          classGrade: (matchingChild?.classGrade as any) || 'Class 8',
+          subject: subjectName as any,
+          difficulty: 'medium' as any,
+          answers: {},
+          marksObtained,
+          totalMarks,
+          accuracyPercentage: accuracy,
+          timeTakenSeconds: 600,
+          submittedAt: notif.createdAt || new Date().toISOString(),
+          evaluations: [],
+          analysis: {
+            overallBand: accuracy >= 80 ? 'Master' : accuracy >= 60 ? 'Proficient' : 'Developing',
+            masteryScorePercentage: accuracy,
+            strengths: [`Consistent conceptual understanding in ${subjectName} curriculum topics.`],
+            areasToImprove: ['Timed speed and confidence on high-order questions.'],
+            kGraphInsights: [],
+            evolutionaryRoadmap: `Continue personalized practice in ${subjectName} to reinforce mastery.`,
+            encouragementNote: `Exam completed with ${accuracy}% score!`,
+            recommendedNextExam: {
+              board: (matchingChild?.targetBoard as any) || 'CBSE',
+              classGrade: (matchingChild?.classGrade as any) || 'Class 8',
+              subject: subjectName as any,
+              difficulty: 'medium' as any,
+              reason: 'Diagnostic continuity.',
+            },
+            curatedStudyLinks: []
+          }
+        };
+      }
+
+      if (found) {
+        setActiveSubmissionReport(found);
+      }
+      setActiveTab('reports');
+      return;
+    }
+
+    if (notif.actionUrl) {
       const cleanUrl = notif.actionUrl.startsWith('/') ? notif.actionUrl.substring(1) : notif.actionUrl;
       setActiveTab(cleanUrl);
     }
@@ -264,9 +353,11 @@ export default function App() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('acugrade_sidebar_collapsed') === 'true';
+      const stored = localStorage.getItem('acugrade_sidebar_collapsed');
+      if (stored !== null) return stored === 'true';
+      return true; // Default to collapsed for all personas
     } catch {
-      return false;
+      return true;
     }
   });
 

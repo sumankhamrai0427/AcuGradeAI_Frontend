@@ -105,6 +105,7 @@ export const POST_APIS = {
 };
 
 export const PUT_APIS = {
+  updateAdminUser: (id: string | number) => `${API_V1}/admin/users/${id}`,
   updateChild: (id: string | number) => `${API_V1}/parents/me/children/${id}`,
   updateRunbook: (id: string) => `${API_V1}/runbooks/${id}`,
   updateBlog: (id: string | number) => `${API_V1}/blogs/${id}`,
@@ -114,6 +115,7 @@ export const PUT_APIS = {
 };
 
 export const DELETE_APIS = {
+  deleteAdminUser: (id: string | number) => `${API_V1}/admin/users/${id}`,
   deleteChild: (id: string | number) => `${API_V1}/parents/me/children/${id}`,
   deleteScheduledExam: (id: string) => `${API_V1}/parents/scheduled-exams/${id}`,
   deleteRunbook: (id: string) => `${API_V1}/runbooks/${id}`,
