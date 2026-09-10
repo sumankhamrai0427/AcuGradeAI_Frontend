@@ -131,16 +131,28 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     return null;
   }, [learningNodes]);
 
-  // Strongest topics and topics needing attention (safe cast to number)
-  const topicMasteryEntries = Object.entries(activeChild.topicMastery || {});
-  const strongTopics = topicMasteryEntries
-    .map(([topic, score]) => [topic, Number(score)] as [string, number])
-    .filter(([_, score]) => score >= 75)
-    .slice(0, 3);
-  const weakTopics = topicMasteryEntries
-    .map(([topic, score]) => [topic, Number(score)] as [string, number])
-    .filter(([_, score]) => score < 70)
-    .slice(0, 3);
+  // Real Application Topic Mastery Calculation (Safe normalization & sorting)
+  const topicMasteryEntries = useMemo(() => {
+    return Object.entries(activeChild.topicMastery || {}).map(([topic, rawScore]) => {
+      let score = Number(rawScore) || 0;
+      if (score <= 5 && score > 0) score = score * 20;
+      return { topic, score: Math.min(100, Math.max(0, Math.round(score))) };
+    });
+  }, [activeChild.topicMastery]);
+
+  const strongTopics = useMemo(() => {
+    return topicMasteryEntries
+      .filter((t) => t.score >= 70)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+  }, [topicMasteryEntries]);
+
+  const weakTopics = useMemo(() => {
+    return topicMasteryEntries
+      .filter((t) => t.score < 70)
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 3);
+  }, [topicMasteryEntries]);
 
   // Dynamic Subject-wise Marks & Score distribution calculated directly from database records
   const subjectMarksChartData = useMemo(() => {
@@ -611,50 +623,77 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
 
         {/* Right 1 Col: Topic Mastery Diagnostics */}
-        <div className="space-y-6">
-          <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-xs space-y-4">
-            <h3 className="font-black text-stone-900 text-base flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              Topic Diagnostics
-            </h3>
-
-            {/* Strongest */}
-            <div className="space-y-2">
-              <div className="text-[11px] font-black text-emerald-700 uppercase tracking-wider flex items-center gap-1">
-                <span>⭐</span> Strong Topics ({strongTopics.length})
+        <div className="h-full">
+          <div className="h-full rounded-3xl border border-stone-200 bg-white p-6 shadow-xs flex flex-col justify-between space-y-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-black text-stone-900 text-base flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  Topic Diagnostics
+                </h3>
+                <span className="text-[10px] font-bold text-stone-400 bg-stone-50 border border-stone-100 px-2 py-0.5 rounded-lg">
+                  K-Graph
+                </span>
               </div>
-              {strongTopics.length > 0 ? (
-                <div className="space-y-1.5">
-                  {strongTopics.map(([topic, score]) => (
-                    <div key={topic} className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 text-xs">
-                      <span className="font-bold text-stone-800 truncate max-w-[160px]">{topic}</span>
-                      <span className="font-black text-emerald-700 shrink-0">{score}%</span>
-                    </div>
-                  ))}
+
+              {/* Strongest */}
+              <div className="space-y-2">
+                <div className="text-[11px] font-black text-emerald-700 uppercase tracking-wider flex items-center gap-1">
+                  <span>⭐</span> Strong Topics ({strongTopics.length})
                 </div>
-              ) : (
-                <p className="text-xs text-stone-400 italic">Take more tests to reveal your strongest topics.</p>
-              )}
+                {strongTopics.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {strongTopics.map(({ topic, score }) => (
+                      <div key={topic} className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 text-xs">
+                        <span className="font-bold text-stone-800 truncate max-w-[160px]" title={topic}>{topic}</span>
+                        <span className="font-black text-emerald-700 shrink-0">{score}%</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-stone-400 italic">Take more tests to reveal your strongest topics.</p>
+                )}
+              </div>
+
+              {/* Needs Attention */}
+              <div className="space-y-2 pt-2 border-t border-stone-100">
+                <div className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
+                  <span>📌</span> Needs Revision ({weakTopics.length})
+                </div>
+                {weakTopics.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {weakTopics.map(({ topic, score }) => (
+                      <div key={topic} className="flex items-center justify-between p-2.5 rounded-xl bg-rose-50/60 border border-rose-100 text-xs">
+                        <span className="font-bold text-stone-800 truncate max-w-[160px]" title={topic}>{topic}</span>
+                        <span className="font-black text-rose-600 shrink-0">{score}%</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : strongTopics.length > 0 ? (
+                  <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 text-xs text-emerald-800 font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>All tested topics mastered! Keep it up!</span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-stone-400 italic">No major weak topics identified! Keep it up!</p>
+                )}
+              </div>
             </div>
 
-            {/* Needs Attention */}
-            <div className="space-y-2 pt-2 border-t border-stone-100">
-              <div className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
-                <span>📌</span> Needs Revision ({weakTopics.length})
-              </div>
+            <button
+              onClick={onNavigateToArena}
+              className="w-full mt-3 py-3 bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-bold rounded-2xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+            >
               {weakTopics.length > 0 ? (
-                <div className="space-y-1.5">
-                  {weakTopics.map(([topic, score]) => (
-                    <div key={topic} className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50/60 border border-amber-100 text-xs">
-                      <span className="font-bold text-stone-800 truncate max-w-[160px]">{topic}</span>
-                      <span className="font-black text-amber-700 shrink-0">{score}%</span>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <Target className="w-4 h-4 text-rose-400" /> Improve Weak Areas
+                </>
               ) : (
-                <p className="text-xs text-stone-400 italic">No major weak topics identified! Keep it up!</p>
+                <>
+                  <Sparkles className="w-4 h-4 text-yellow-400" /> Practice Next Challenge
+                </>
               )}
-            </div>
+            </button>
           </div>
         </div>
       </div>

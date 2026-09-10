@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { ParentAccount, ExamSubmission } from '../types';
-import { Trophy, TrendingUp, Target, Flame, BrainCircuit } from 'lucide-react';
+import { Trophy, TrendingUp, Target, Flame, BrainCircuit, Sparkles, CheckCircle2 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 interface ChildrenPageProps {
@@ -114,9 +114,30 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
     );
   }
 
-  const topicMasteryEntries = Object.entries(activeChild.topicMastery || {}).sort((a, b) => Number(b[1]) - Number(a[1]));
-  const strongestTopics = topicMasteryEntries.slice(0, 3);
-  const weakestTopics = topicMasteryEntries.slice(-3).reverse();
+  // Real Application Topic Mastery Calculation
+  const topicMasteryEntries = useMemo(() => {
+    return Object.entries(activeChild.topicMastery || {}).map(([topic, rawScore]) => {
+      let score = Number(rawScore) || 0;
+      if (score <= 5 && score > 0) score = score * 20; // normalize 1-5 scale if any
+      return { topic, score: Math.min(100, Math.max(0, Math.round(score))) };
+    });
+  }, [activeChild.topicMastery]);
+
+  // Strongest topics: Score >= 70%, sorted highest first (top 3)
+  const strongestTopics = useMemo(() => {
+    return topicMasteryEntries
+      .filter((t) => t.score >= 70)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+  }, [topicMasteryEntries]);
+
+  // Needs Attention: Score < 70%, sorted lowest first (most urgent weak topics top 3)
+  const weakestTopics = useMemo(() => {
+    return topicMasteryEntries
+      .filter((t) => t.score < 70)
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 3);
+  }, [topicMasteryEntries]);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20 fade-in">
@@ -244,57 +265,93 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
         <div className="space-y-6">
           {/* Topic Mastery */}
           <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs">
-            <div className="flex items-center gap-2 mb-6">
-              <BrainCircuit className="w-5 h-5 text-indigo-500" />
-              <h3 className="text-lg font-bold text-stone-900">Topic Mastery</h3>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <BrainCircuit className="w-5 h-5 text-indigo-500" />
+                <h3 className="text-lg font-bold text-stone-900">Topic Mastery</h3>
+              </div>
+              <span className="text-[11px] font-bold text-stone-400 bg-stone-50 border border-stone-100 px-2 py-0.5 rounded-lg">
+                K-Graph Diagnostics
+              </span>
             </div>
 
             <div className="space-y-6">
+              {/* Strongest Areas (Score >= 70%) */}
               <div>
-                <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-3">Strongest Areas</p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] uppercase font-black text-stone-400 tracking-wider">Strongest Areas</p>
+                  {strongestTopics.length > 0 && (
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                      ≥70% Mastery
+                    </span>
+                  )}
+                </div>
                 <div className="space-y-3">
-                  {strongestTopics.length > 0 ? strongestTopics.map(([topic, level], idx) => (
-                    <div key={idx} className="flex flex-col gap-1.5">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-stone-700 truncate">{topic}</span>
-                        <span className="font-black text-emerald-600">Lvl {level}</span>
+                  {strongestTopics.length > 0 ? (
+                    strongestTopics.map(({ topic, score }, idx) => (
+                      <div key={idx} className="flex flex-col gap-1.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-bold text-stone-700 truncate max-w-[200px]" title={topic}>{topic}</span>
+                          <span className="font-black text-emerald-600">{score}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.max(5, score)}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, (Number(level) / 5) * 100)}%` }}></div>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 bg-stone-50 rounded-2xl border border-stone-100 text-center">
+                      <p className="text-xs text-stone-500 font-medium">Practice diagnostic tests to build top strength areas (≥70%).</p>
                     </div>
-                  )) : (
-                    <p className="text-xs text-stone-500">No data available yet.</p>
                   )}
                 </div>
               </div>
 
+              {/* Needs Attention (Score < 70%) */}
               <div>
-                <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider mb-3">Needs Attention</p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] uppercase font-black text-stone-400 tracking-wider">Needs Attention</p>
+                  {weakestTopics.length > 0 && (
+                    <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
+                      &lt;70% Focus
+                    </span>
+                  )}
+                </div>
                 <div className="space-y-3">
-                  {weakestTopics.length > 0 ? weakestTopics.map(([topic, level], idx) => (
-                    <div key={idx} className="flex flex-col gap-1.5">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-stone-700 truncate">{topic}</span>
-                        <span className="font-black text-rose-500">Lvl {level}</span>
+                  {weakestTopics.length > 0 ? (
+                    weakestTopics.map(({ topic, score }, idx) => (
+                      <div key={idx} className="flex flex-col gap-1.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-bold text-stone-700 truncate max-w-[200px]" title={topic}>{topic}</span>
+                          <span className="font-black text-rose-500">{score}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-rose-400 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.max(8, score)}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-rose-400 rounded-full" style={{ width: `${Math.min(100, (Number(level) / 5) * 100)}%` }}></div>
+                    ))
+                  ) : strongestTopics.length > 0 ? (
+                    <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl flex items-start gap-2.5">
+                      <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold text-emerald-900">All Topics Mastered!</p>
+                        <p className="text-[11px] text-emerald-700 mt-0.5">No weak areas identified. All tested topics have achieved strong mastery (≥70%).</p>
                       </div>
                     </div>
-                  )) : (
-                    <p className="text-xs text-stone-500">No data available yet.</p>
+                  ) : (
+                    <div className="p-3 bg-stone-50 rounded-2xl border border-stone-100 text-center">
+                      <p className="text-xs text-stone-500 font-medium">No critical weak areas detected yet.</p>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
-
-            <button
-              onClick={onNavigateToArena}
-              className="w-full mt-6 py-3 bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-            >
-              <Target className="w-4 h-4" /> Improve Weak Areas
-            </button>
           </div>
         </div>
       </div>

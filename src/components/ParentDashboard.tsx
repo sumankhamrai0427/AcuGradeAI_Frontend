@@ -610,9 +610,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             </div>
           ) : parentAccount.children.map((child) => {
             const isChildActive = activeChildId === child.id;
-            const childMasteryEntries = Object.entries(child.topicMastery || {}).sort((a, b) => Number(b[1]) - Number(a[1]));
-            const strongestTopic = childMasteryEntries.length > 0 ? childMasteryEntries[0][0] : '—';
-            const weakestTopic = childMasteryEntries.length > 0 ? childMasteryEntries[childMasteryEntries.length - 1][0] : '—';
+            const childMasteryEntries = Object.entries(child.topicMastery || {}).map(([t, v]) => ({ topic: t, score: Number(v) || 0 }));
+            const strongList = childMasteryEntries.filter(m => m.score >= 70).sort((a, b) => b.score - a.score);
+            const weakList = childMasteryEntries.filter(m => m.score < 70).sort((a, b) => a.score - b.score);
+            const strongestTopic = strongList.length > 0 ? strongList[0].topic : (childMasteryEntries.length > 0 ? childMasteryEntries[0].topic : '—');
+            const weakestTopic = weakList.length > 0 ? weakList[0].topic : (childMasteryEntries.length > 0 ? 'None (All Mastered)' : '—');
 
             return (
               <div
@@ -634,11 +636,6 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                       <p className="text-xs text-stone-500 font-medium mb-1">{child.classGrade} • {child.targetBoard}</p>
                     </div>
                   </div>
-                  {isChildActive && (
-                    <span className="text-[10px] bg-yellow-100 text-yellow-700 font-bold px-2 py-1 rounded-lg">
-                      ACTIVE
-                    </span>
-                  )}
                 </div>
 
                 {/* Progress Indicators */}
@@ -944,8 +941,14 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
       {/* 4. STUDENT-WISE PROGRESS / READINESS MODAL */}
       {activeModalMetric && (
-        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]">
+        <div 
+          className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setActiveModalMetric(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-150 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
 
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
@@ -979,7 +982,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             </div>
 
             {/* Modal Body: Student List (Clicking student item directly navigates) */}
-            <div className="overflow-y-auto custom-scrollbar my-4 space-y-3 flex-1 pr-1">
+            <div className="overflow-y-auto hide-scrollbar my-4 space-y-3 max-h-[60vh]">
               {childrenMetrics.length === 0 ? (
                 <div className="p-8 text-center text-stone-500 text-xs font-medium">
                   No children profiles found.
@@ -1019,11 +1022,6 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                               <h4 className="font-bold text-sm text-stone-900 group-hover:text-yellow-700 transition-colors truncate">
                                 {child.name}
                               </h4>
-                              {isSelected && (
-                                <span className="text-[9px] font-bold bg-yellow-400 text-stone-900 px-1.5 py-0.5 rounded-md">
-                                  ACTIVE
-                                </span>
-                              )}
                             </div>
                             <p className="text-xs text-stone-500 font-medium">
                               {child.classGrade} • {child.targetBoard}
