@@ -50,8 +50,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className={`h-16 w-full flex items-center justify-between ${isSidebarCollapsed ? 'lg:justify-center px-4' : 'px-6'} border-b border-stone-100 flex-shrink-0 transition-all`}>
         <div className="flex items-center gap-2">
           <Icons.GraduationCap className="w-6 h-6 text-yellow-500 flex-shrink-0" />
-          <span className={`text-lg font-bold text-stone-900 tracking-tight transition-all ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
-            SahajPath<span className="text-yellow-500">.</span>
+          <span className={`text-lg font-black tracking-tight transition-all ${isSidebarCollapsed ? 'lg:hidden' : ''}`}>
+            <span className="text-stone-900">Sahaj</span><span className="text-yellow-500">Path</span>
           </span>
         </div>
 

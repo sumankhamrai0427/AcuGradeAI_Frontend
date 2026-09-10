@@ -1,5 +1,4 @@
-// src/types/index.ts
-// Global TypeScript interfaces and types for the AcuGrade application.
+// Global TypeScript interfaces and types for the SahajPath application.
 
 export interface AuthTokens {
   accessToken: string;

@@ -74,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-lg text-stone-900 tracking-tight">SahajPath<span className="text-yellow-600">.AI</span></span>
+                <span className="font-extrabold text-lg tracking-tight"><span className="text-stone-900">Sahaj</span><span className="text-yellow-500">Path</span></span>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-300">
                   RAG K-Graph
                 </span>

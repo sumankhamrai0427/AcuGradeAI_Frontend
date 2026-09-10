@@ -17,7 +17,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild }) => {
 
   useEffect(() => {
     setMessages([
-      { id: 1, text: `Hello! I'm AcuGrade Teacher Support. Do you have any questions about ${childName}'s learning journey${childGrade}?`, isBot: true }
+      { id: 1, text: `Hello! I'm SahajPath Teacher Support. Do you have any questions about ${childName}'s learning journey${childGrade}?`, isBot: true }
     ]);
   }, [activeChild]);
 
@@ -31,7 +31,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild }) => {
         "Explain the latest exam result to me"
       ]
     : [
-        "How do I get started with AcuGrade?",
+        "How do I get started with SahajPath?",
         `What is the best way to build a daily study routine for ${childName}?`,
         "Can you suggest some fun learning activities?",
         `How can I assess ${childName}'s current knowledge level?`

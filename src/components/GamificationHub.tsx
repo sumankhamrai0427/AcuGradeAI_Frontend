@@ -123,7 +123,7 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
           <div className="flex items-center justify-between text-xs mb-1.5">
             <span className="font-bold text-stone-700 flex items-center gap-1">
               <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-              <span>{childXP} AcuPoints (XP)</span>
+              <span>{childXP} SahajPoints (XP)</span>
             </span>
             <span className="text-[11px] text-stone-400 font-semibold">
               Next Level: {nextLevelXP} XP
@@ -384,7 +384,7 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
           <div className="bg-white border border-stone-200 rounded-xl p-4 shadow-xs">
             <h3 className="font-bold text-xs text-stone-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>How to Earn AcuPoints (XP) & Climb the Ranks</span>
+              <span>How to Earn SahajPoints (XP) & Climb the Ranks</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">

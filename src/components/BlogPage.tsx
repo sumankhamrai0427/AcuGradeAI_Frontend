@@ -64,7 +64,7 @@ const CoverImg: React.FC<{ post: BlogPostData }> = ({ post }) => (
     ) : (
       <div className="w-full h-full bg-gradient-to-br from-amber-100 via-stone-100 to-emerald-100 p-6 flex flex-col justify-end">
         <BookOpen className="w-8 h-8 text-stone-700/40 mb-3" />
-        <p className="max-w-xs text-xl font-black leading-tight text-stone-800/80">AcuGrade Journal</p>
+        <p className="max-w-xs text-xl font-black leading-tight text-stone-800/80">SahajPath Journal</p>
       </div>
     )}
     <div className="absolute inset-0 bg-black/10" />
@@ -321,7 +321,7 @@ export const BlogPage: React.FC = () => {
               introduction: blog.introduction || "",
               slug: blog.slug || `blog-${blog.id}`,
               author: blog.author || "Admin User",
-              authorRole: "AcuGrade AI",
+              authorRole: "SahajPath",
               authorAvatar: "",
               readTime: "5 min read",
               publishedDate: blog.isoDate || blog.date || new Date().toISOString(),
@@ -331,10 +331,10 @@ export const BlogPage: React.FC = () => {
               board: "All boards",
               coverGradient: "",
               coverEmoji: "",
-              summary: blog.introduction || blog.content || "Read the latest learning update from AcuGrade AI.",
+              summary: blog.introduction || blog.content || "Read the latest learning update from SahajPath.",
               content: Array.isArray(blog.content) && blog.content.length > 0
                 ? blog.content
-                : (blog.content || "Read the latest learning update from AcuGrade AI.").split(/\n\s*\n/),
+                : (blog.content || "Read the latest learning update from SahajPath.").split(/\n\s*\n/),
               tags: Array.isArray(blog.tags) ? blog.tags : [],
               featured: false,
               image: blog.imageUrl || blog.image || "",
@@ -423,7 +423,7 @@ export const BlogPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
             {/* Left: title + subtitle */}
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-amber-700 mb-3">AcuGrade Journal</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-amber-700 mb-3">SahajPath Journal</p>
               <h1 className="text-4xl sm:text-5xl font-black text-stone-900 leading-[0.95]">Blogs &amp; Stories</h1>
               <p className="text-sm text-stone-500 mt-1 max-w-md">
                 Deep dives into learning, exam strategy, and the small practices that help students grow with confidence.

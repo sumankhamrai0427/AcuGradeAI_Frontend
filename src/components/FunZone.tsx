@@ -174,7 +174,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
         // Award small fun exploration XP first time
         if (!prev[id]) {
           onAwardXP?.(5, 'Brain Break Smile XP');
-          showRewardToast('+5 AcuPoints (XP) for expanding your science wisdom! ✨');
+          showRewardToast('+5 SahajPoints (XP) for expanding your science wisdom! ✨');
         }
       }
       return { ...prev, [id]: nextState };
@@ -223,7 +223,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
       }
       const earnedXP = mathScore * 5 + (mathScore >= 8 ? 30 : 10);
       onAwardXP?.(earnedXP, 'Speed Math Duel XP');
-      showRewardToast(`⚡ Sprint complete! You earned +${earnedXP} AcuPoints (XP)!`);
+      showRewardToast(`⚡ Sprint complete! You earned +${earnedXP} SahajPoints (XP)!`);
     }
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -338,7 +338,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
           triggerSound('win');
           const bonusXP = 40;
           onAwardXP?.(bonusXP, 'Memory Matcher Mastery');
-          showRewardToast(`🏆 Perfect match! +${bonusXP} AcuPoints (XP) awarded!`);
+          showRewardToast(`🏆 Perfect match! +${bonusXP} SahajPoints (XP) awarded!`);
         }
       } else {
         // No match, flip back
@@ -389,7 +389,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
         triggerSound('win');
         setScrambleTotalSolvedCount(prev => prev + 1);
         onAwardXP?.(25, 'Science Word Scramble Solver');
-        showRewardToast(`🎉 Decoded! +25 AcuPoints (XP) for uncovering ${currentScramble.solution}!`);
+        showRewardToast(`🎉 Decoded! +25 SahajPoints (XP) for uncovering ${currentScramble.solution}!`);
       } else {
         triggerSound('wrong');
       }
@@ -514,7 +514,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
           </div>
           <div className="flex items-center gap-1.5">
             <Zap className="w-4 h-4 text-yellow-300" />
-            <span>AcuPoints (XP): {activeChild?.xp || 1420}</span>
+            <span>SahajPoints (XP): {activeChild?.xp || 1420}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Brain className="w-4 h-4 text-pink-200" />
@@ -959,7 +959,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
               </div>
 
               <div className="p-4 bg-yellow-50 rounded-2xl border border-yellow-200 text-xs text-yellow-900 font-medium">
-                ⚡ +40 AcuPoints (XP) added to your knowledge score!
+                ⚡ +40 SahajPoints (XP) added to your knowledge score!
               </div>
 
               <button

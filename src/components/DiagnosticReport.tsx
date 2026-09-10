@@ -155,7 +155,9 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
       <div className="hidden print:block pb-3 mb-4 border-b-2 border-stone-800">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-black text-stone-900 tracking-tight">AcuGrade AI • Student Assessment Dossier</h1>
+            <h1 className="text-xl font-black text-stone-900 tracking-tight">
+              <span className="text-stone-900">Sahaj</span><span className="text-yellow-500">Path</span> • Student Assessment Dossier
+            </h1>
             <p className="text-xs text-stone-600 font-semibold">Diagnostic & Formative Academic Performance Summary</p>
           </div>
           <div className="text-right text-xs text-stone-600">
@@ -176,7 +178,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
               {isKid ? 'Kids Adventure Rewards Unlocked! 🌟' : 'Diagnostic Sprint Rewards Unlocked!'}
             </h3>
             <p className="text-xs text-amber-100">
-              +{totalExamXP} AcuPoints (XP) awarded to candidate's global knowledge rank.
+              +{totalExamXP} SahajPoints (XP) awarded to candidate's global knowledge rank.
             </p>
           </div>
         </div>

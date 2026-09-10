@@ -361,7 +361,7 @@ export default function App() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem('acugrade_sidebar_collapsed');
+      const stored = localStorage.getItem('sahajpath_sidebar_collapsed') || localStorage.getItem('acugrade_sidebar_collapsed');
       if (stored !== null) return stored === 'true';
       return true; // Default to collapsed for all personas
     } catch {
@@ -373,7 +373,7 @@ export default function App() {
     setIsSidebarCollapsed((prev) => {
       const next = !prev;
       try {
-        localStorage.setItem('acugrade_sidebar_collapsed', String(next));
+        localStorage.setItem('sahajpath_sidebar_collapsed', String(next));
       } catch { }
       return next;
     });

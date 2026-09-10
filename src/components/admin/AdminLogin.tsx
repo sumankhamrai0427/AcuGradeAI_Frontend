@@ -3763,7 +3763,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem('acugrade_admin_sidebar_collapsed');
+      const stored = localStorage.getItem('sahajpath_admin_sidebar_collapsed') || localStorage.getItem('acugrade_admin_sidebar_collapsed');
       if (stored !== null) return stored === 'true';
       return true; // Default to collapsed for Admin persona
     } catch {
@@ -3775,7 +3775,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
     setCollapsed(prev => {
       const next = !prev;
       try {
-        localStorage.setItem('acugrade_admin_sidebar_collapsed', String(next));
+        localStorage.setItem('sahajpath_admin_sidebar_collapsed', String(next));
       } catch {}
       return next;
     });
@@ -3811,7 +3811,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
   }, [profileMenuOpen]);
 
   const [pageAccess, setPageAccess] = useState<any[]>(() => {
-    const stored = sessionStorage.getItem('acugrade_admin_page_access') || localStorage.getItem('acugrade_admin_page_access');
+    const stored = sessionStorage.getItem('sahajpath_admin_page_access') || localStorage.getItem('sahajpath_admin_page_access') || sessionStorage.getItem('acugrade_admin_page_access') || localStorage.getItem('acugrade_admin_page_access');
     if (stored) {
       try {
         return JSON.parse(stored);
@@ -4088,7 +4088,7 @@ const AdminLogin: React.FC = () => {
   });
 
   const [adminUser, setAdminUser] = useState<any>(() => {
-    const stored = sessionStorage.getItem('acugrade_admin_user') || localStorage.getItem('acugrade_admin_user');
+    const stored = sessionStorage.getItem('sahajpath_admin_user') || localStorage.getItem('sahajpath_admin_user') || sessionStorage.getItem('acugrade_admin_user') || localStorage.getItem('acugrade_admin_user');
     if (stored) {
       try {
         return JSON.parse(stored);
@@ -4177,6 +4177,7 @@ const AdminLogin: React.FC = () => {
 
       if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
         clearTokens();
+        sessionStorage.removeItem('sahajpath_admin_user');
         sessionStorage.removeItem('acugrade_admin_user');
         setErrorMessage('Access denied. This portal is restricted to admin accounts only.');
         return;
@@ -4189,8 +4190,8 @@ const AdminLogin: React.FC = () => {
         roleName: userRole,
       };
 
-      sessionStorage.setItem('acugrade_admin_user', JSON.stringify(userData));
-      sessionStorage.setItem('acugrade_admin_page_access', JSON.stringify(result.pageAccess || []));
+      sessionStorage.setItem('sahajpath_admin_user', JSON.stringify(userData));
+      sessionStorage.setItem('sahajpath_admin_page_access', JSON.stringify(result.pageAccess || []));
       setAdminUser(userData);
 
       setLoginSuccess(true);
@@ -4264,7 +4265,9 @@ const AdminLogin: React.FC = () => {
       /* best-effort */
     }
     clearTokens();
+    sessionStorage.removeItem('sahajpath_admin_user');
     sessionStorage.removeItem('acugrade_admin_user');
+    localStorage.removeItem('sahajpath_admin_user');
     localStorage.removeItem('acugrade_admin_user');
     setAdminUser(null);
     setIsAuthenticated(false);
@@ -4289,7 +4292,9 @@ const AdminLogin: React.FC = () => {
           <div className="w-12 h-12 rounded-2xl bg-yellow-400 text-stone-900 flex items-center justify-center shadow-lg shadow-yellow-200 mb-3">
             <GraduationCap className="w-6 h-6" />
           </div>
-          <div className="font-black text-xl tracking-tight text-stone-900">SahajPath</div>
+          <div className="font-black text-xl tracking-tight">
+            <span className="text-stone-900">Sahaj</span><span className="text-yellow-500">Path</span>
+          </div>
           <h1 className="text-2xl font-black text-stone-900 tracking-tight mt-4">
             {view === 'login' ? 'Admin Sign In' : 'Create New Password'}
           </h1>

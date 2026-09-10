@@ -5,12 +5,12 @@ import { AuthTokens, ApiError } from '../types/api';
 // ─────────────────────────────────────────────
 // Token Storage Utilities
 // ─────────────────────────────────────────────
-const ACCESS_TOKEN_KEY = 'acugrade_access_token';
-const REFRESH_TOKEN_KEY = 'acugrade_refresh_token';
+const ACCESS_TOKEN_KEY = 'sahajpath_access_token';
+const REFRESH_TOKEN_KEY = 'sahajpath_refresh_token';
 
 export function getStoredTokens(): AuthTokens | null {
-  const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY);
-  const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_KEY) || localStorage.getItem(REFRESH_TOKEN_KEY);
+  const accessToken = sessionStorage.getItem(ACCESS_TOKEN_KEY) || localStorage.getItem(ACCESS_TOKEN_KEY) || sessionStorage.getItem('acugrade_access_token') || localStorage.getItem('acugrade_access_token');
+  const refreshToken = sessionStorage.getItem(REFRESH_TOKEN_KEY) || localStorage.getItem(REFRESH_TOKEN_KEY) || sessionStorage.getItem('acugrade_refresh_token') || localStorage.getItem('acugrade_refresh_token');
   if (
     !accessToken || !refreshToken ||
     accessToken === 'undefined' || refreshToken === 'undefined' ||
@@ -168,6 +168,7 @@ class ApiServices {
   login(body: any) { return apiClient.post(POST_APIS.login, body); }
   googleLogin(body: any) { return apiClient.post(POST_APIS.googleLogin, body); }
   register(body: any) { return this.post(POST_APIS.register, body); }
+  resetPassword(body: { identifier: string; newPassword: string }) { return this.post(POST_APIS.resetPassword, body); }
   checkUsername(username: string) { return this.get(GET_APIS.checkUsername(username)); }
   getRoles() { return this.get(GET_APIS.roles); }
   verifySession() { return this.get(GET_APIS.verifySession); }

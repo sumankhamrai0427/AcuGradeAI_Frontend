@@ -63,6 +63,7 @@ export const POST_APIS = {
   googleLogin: `${API_V1}/auth/google`,
   register: `${API_V1}/auth/register`,
   childLogin: `${API_V1}/auth/child-login`,
+  resetPassword: `${API_V1}/auth/reset-password`,
   logout: `${API_V1}/auth/logout`,
   refreshToken: `${API_V1}/auth/refresh`,
 
