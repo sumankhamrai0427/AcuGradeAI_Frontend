@@ -41,19 +41,31 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
 
   // Real Average Score % and Readiness % from live exams
   const avgScorePct = useMemo(() => {
-    if (!activeChild) return 75;
+    if (!activeChild) return 0;
     if (childExams.length > 0) {
       const totalObt = childExams.reduce((sum, e) => sum + (e.marksObtained || 0), 0);
       const totalPoss = childExams.reduce((sum, e) => sum + (e.totalMarks || defaultTotalMarks), 0);
-      return totalPoss > 0 ? Math.round((totalObt / totalPoss) * 100) : 75;
+      return totalPoss > 0 ? Math.round((totalObt / totalPoss) * 100) : 0;
     }
-    const score = activeChild.averageScore;
-    return score > 10 ? Math.min(100, Math.round(score)) : Math.min(100, Math.round(score * 10 || 75));
+    const score = Number(activeChild.averageScore) || 0;
+    return score > 10 ? Math.min(100, Math.round(score)) : Math.min(100, Math.round(score * 10));
   }, [childExams, activeChild, defaultTotalMarks]);
 
+  // 100% Dynamic Exam Readiness based on live exam performance and topic mastery
   const readinessPct = useMemo(() => {
-    return Math.min(100, Math.max(0, avgScorePct > 10 ? avgScorePct - 2 : avgScorePct));
-  }, [avgScorePct]);
+    if (!activeChild || (childExams.length === 0 && avgScorePct === 0)) return 0;
+
+    const masteryValues = Object.values(activeChild.topicMastery || {}).map((v) => Number(v) || 0);
+    if (masteryValues.length > 0) {
+      const avgMastery = masteryValues.reduce((a, b) => a + b, 0) / masteryValues.length;
+      const masteryPct = avgMastery > 10 ? avgMastery : avgMastery * 10;
+      // Weighted blend: 60% live exam accuracy + 40% curriculum topic mastery
+      return Math.min(100, Math.max(0, Math.round(0.6 * avgScorePct + 0.4 * masteryPct)));
+    }
+
+    // Direct dynamic readiness from completed exam accuracy
+    return Math.min(100, Math.max(0, avgScorePct));
+  }, [avgScorePct, activeChild, childExams]);
 
   const childLevel = activeChild
     ? activeChild.level || Math.floor((activeChild.xp || 0) / 100) + 1
