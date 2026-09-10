@@ -96,9 +96,18 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
       ? (childTotalObtained / childTotalPossible) * 100
       : (child.averageScore > 10 ? child.averageScore : (child.averageScore * 10));
 
+    // Unified Dynamic Exam Readiness (60% Exam Score + 40% Topic Mastery if available)
+    const masteryValues = Object.values(child.topicMastery || {}).map((v) => Number(v) || 0);
+    let readinessScore = Math.round(scorePct);
+    if (masteryValues.length > 0 && (childExams.length > 0 || child.averageScore > 0)) {
+      const avgMastery = masteryValues.reduce((a, b) => a + b, 0) / masteryValues.length;
+      const masteryPct = avgMastery > 10 ? avgMastery : avgMastery * 10;
+      readinessScore = Math.min(100, Math.max(0, Math.round(0.6 * scorePct + 0.4 * masteryPct)));
+    }
+
     return {
       scorePct: Math.round(scorePct),
-      readinessScore: Math.round(scorePct),
+      readinessScore,
       streak: child.streakDays || 0,
       totalExams: childExams.length || child.totalExamsTaken || 0,
       latestExam: childExams[0],
@@ -555,11 +564,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                 return (
                   <span
                     key={day}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      isActive
+                    className={`w-2 h-2 rounded-full transition-all ${isActive
                         ? 'bg-rose-500 shadow-2xs scale-110'
                         : 'bg-rose-200/80'
-                    }`}
+                      }`}
                     title={`Day ${day}`}
                   />
                 );
@@ -997,8 +1005,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                         }
                       }}
                       className={`p-4 rounded-2xl border transition-all cursor-pointer group hover:scale-[1.01] hover:shadow-md ${isSelected
-                          ? 'border-yellow-400 bg-yellow-50/40'
-                          : 'border-stone-200 bg-stone-50/70 hover:border-yellow-300 hover:bg-white'
+                        ? 'border-yellow-400 bg-yellow-50/40'
+                        : 'border-stone-200 bg-stone-50/70 hover:border-yellow-300 hover:bg-white'
                         }`}
                     >
                       <div className="flex items-center justify-between gap-3 mb-2.5">
@@ -1021,7 +1029,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                               {child.classGrade} • {child.targetBoard}
                             </p>
                             <p className="text-[10px] text-stone-400 font-medium mt-0.5">
-                              Login Username: <strong className="text-stone-700">@{child.username || child.name.toLowerCase().replace(/\s+/g, '')}</strong>
+                              Login Username: <strong className="text-stone-700">{child.username || child.name.toLowerCase().replace(/\s+/g, '')}</strong>
                             </p>
                           </div>
                         </div>

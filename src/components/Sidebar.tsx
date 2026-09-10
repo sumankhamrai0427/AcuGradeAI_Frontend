@@ -18,6 +18,7 @@ interface SidebarProps {
   setMobileSidebarOpen?: (open: boolean) => void;
   onToggleSidebar?: () => void;
   onLogout: () => void;
+  onNavigate?: () => void;
   activePersona?: string;
   activeChildName?: string;
 }
@@ -34,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setMobileSidebarOpen,
   onToggleSidebar,
   onLogout,
+  onNavigate,
   activePersona,
   activeChildName
 }) => {
@@ -80,7 +82,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <NavLink
                 key={page.id}
                 to={page.pageRoute}
-                onClick={() => setMobileSidebarOpen?.(false)}
+                onClick={() => {
+                  setMobileSidebarOpen?.(false);
+                  onNavigate?.();
+                }}
                 className={({ isActive }) => `
                   group w-full flex items-center py-2.5 rounded-xl text-sm transition-all relative overflow-hidden
                   ${isSidebarCollapsed ? 'lg:justify-center lg:px-0 px-3 gap-3' : 'gap-3 px-3'}

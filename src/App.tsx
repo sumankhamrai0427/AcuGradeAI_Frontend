@@ -139,7 +139,10 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const activeTab = location.pathname.substring(1).split('/')[0] || 'dashboard';
-  const setActiveTab = (tab: string) => navigate('/' + tab);
+  const setActiveTab = (tab: string) => {
+    setActiveSubmissionReport(null);
+    navigate('/' + tab);
+  };
   const [activePersona, setActivePersona] = useState<AppPersona>('parent');
   const [activeChildId, setActiveChildId] = useState<string | null>(null);
   const [showChildAddedSuccess, setShowChildAddedSuccess] = useState(false);
@@ -148,6 +151,11 @@ export default function App() {
   const [parentAccount, setParentAccount] = useState<ParentAccount | null>(null);
   const [examHistory, setExamHistory] = useState<ExamSubmission[]>([]);
   const [activeSubmissionReport, setActiveSubmissionReport] = useState<ExamSubmission | null>(null);
+
+  // Automatically dismiss active report view whenever the route path changes via sidebar or navigation
+  useEffect(() => {
+    setActiveSubmissionReport(null);
+  }, [location.pathname]);
 
   // Adaptive Learning, Gamification & PTC State
   const [learningNodes, setLearningNodes] = useState<LearningPathNode[]>([]);
@@ -906,7 +914,16 @@ export default function App() {
 
       {/* Left Sidebar (High Density Theme with Global Collapse / Expand) */}
       <div className={`fixed inset-y-0 left-0 z-50 flex flex-col transform transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'} ${mobileSidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full'} print:hidden`}>
-        <Sidebar pageAccess={pageAccess} isSidebarCollapsed={isSidebarCollapsed} setMobileSidebarOpen={setMobileSidebarOpen} onToggleSidebar={toggleSidebar} onLogout={handleLogout} activePersona={activePersona} activeChildName={activeChild?.name} />
+        <Sidebar
+          pageAccess={pageAccess}
+          isSidebarCollapsed={isSidebarCollapsed}
+          setMobileSidebarOpen={setMobileSidebarOpen}
+          onToggleSidebar={toggleSidebar}
+          onLogout={handleLogout}
+          onNavigate={() => setActiveSubmissionReport(null)}
+          activePersona={activePersona}
+          activeChildName={activeChild?.name}
+        />
       </div>
 
       {/* Main Workspace Area (High Density Theme) */}
