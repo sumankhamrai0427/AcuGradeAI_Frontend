@@ -742,9 +742,28 @@ const DashboardView: React.FC = () => {
       if (diffHours < 24) return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`;
       const diffDays = Math.floor(diffHours / 24);
       if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-      return date.toLocaleDateString();
+      return date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
     } catch {
       return 'Recently';
+    }
+  };
+
+  const formatIndianDateTime = (isoString?: string, formattedFallback?: string): string => {
+    if (formattedFallback) return formattedFallback;
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+    } catch {
+      return isoString;
     }
   };
 
@@ -1077,7 +1096,12 @@ const DashboardView: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-stone-800 truncate">{display.text}</p>
-                    <p className="text-xs text-stone-400 font-medium mt-0.5">{formatRelativeTime(log.createdAt || log.created_at)}</p>
+                    <div className="flex items-center justify-between gap-2 mt-0.5">
+                      <p className="text-xs text-stone-400 font-medium">{formatRelativeTime(log.createdAt || log.created_at)}</p>
+                      <span className="text-[11px] font-medium text-stone-400">
+                        {log.createdAtFormatted || formatIndianDateTime(log.createdAt || log.created_at)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );

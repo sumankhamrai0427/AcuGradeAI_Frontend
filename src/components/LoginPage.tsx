@@ -359,7 +359,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
     const errs: Record<string, string> = {};
     if (!resetIdentifier.trim()) {
-      errs.identifier = 'Please enter your username or registered email.';
+      errs.identifier = 'Please enter your account username.';
     }
     if (!resetNewPassword) {
       errs.newPassword = 'Please enter a new password.';
@@ -428,7 +428,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </h2>
           <p className="text-stone-500 font-medium text-sm sm:text-base leading-relaxed">
             {mode === 'forgot-password'
-              ? 'Enter your username or registered email to create a new password.'
+              ? 'Enter your account username to create a new password.'
               : mode === 'login'
                 ? 'Sign in with your username & password to access your dashboard.'
                 : 'Register as a Parent to track assessments and empower your kids.'}
@@ -468,7 +468,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 <div>
                   <h3 className="text-lg font-black text-stone-900">Password Updated!</h3>
                   <p className="text-xs text-stone-500 mt-1 max-w-xs mx-auto">
-                    Your password has been changed successfully. A security confirmation email has been dispatched.
+                    Your password has been changed successfully. A security confirmation email has been dispatched to the registered email address.
                   </p>
                 </div>
                 <button
@@ -489,7 +489,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 {/* Identifier Field */}
                 <div>
                   <label className="block text-xs font-bold text-stone-700 mb-1 ml-1">
-                    Username or Email Address <span className="text-red-500">*</span>
+                    Username <span className="text-red-500">*</span>
                   </label>
                   <div className="relative group">
                     <User
@@ -503,7 +503,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                         setResetIdentifier(e.target.value);
                         setResetFieldErrors((prev) => ({ ...prev, identifier: undefined }));
                       }}
-                      placeholder="Username or parent@example.com"
+                      placeholder="e.g. rahul2026"
                       className={`w-full h-11 pl-11 pr-4 bg-white border-2 rounded-xl text-sm font-medium text-stone-900 outline-none transition-all placeholder:text-stone-400 ${resetFieldErrors.identifier
                         ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
                         : 'border-stone-200 focus:border-yellow-400 focus:ring-4 focus:ring-yellow-600/10'
@@ -513,6 +513,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   {resetFieldErrors.identifier && (
                     <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{resetFieldErrors.identifier}</p>
                   )}
+                  <p className="text-[10px] text-stone-400 mt-1 ml-1">
+                    Security notification will be sent to the linked email address.
+                  </p>
                 </div>
 
                 {/* New Password */}
@@ -814,7 +817,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      setResetIdentifier(username || email);
+                      setResetIdentifier(username);
                       setResetSuccess(false);
                       setResetErrorMessage(null);
                       setResetFieldErrors({});
