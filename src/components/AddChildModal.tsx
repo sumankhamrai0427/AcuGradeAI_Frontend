@@ -19,8 +19,8 @@ interface AddChildModalProps {
     classGrade: string;
     targetBoard: string;
     schoolName?: string;
+    schoolEmail?: string;
     password?: string;
-    pin?: string;
   }) => void | Promise<void>;
   parentEmail?: string;
 }
@@ -113,6 +113,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
   const [classGrade, setClassGrade] = useState<string>('');
   const [targetBoard, setTargetBoard] = useState<string>('');
   const [schoolName, setSchoolName] = useState('');
+  const [schoolEmail, setSchoolEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -193,6 +194,10 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
       newErrors.username = "Username can only contain letters, numbers, underscores and hyphens";
     }
 
+    if (schoolEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(schoolEmail.trim())) {
+      newErrors.schoolEmail = "Please enter a valid school email address";
+    }
+
     if (!targetBoard) newErrors.targetBoard = "Curriculum board is required";
     if (!classGrade) newErrors.classGrade = "Class/grade is required";
     if (!password) newErrors.password = "Password is required";
@@ -214,14 +219,15 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
         classGrade,
         targetBoard,
         schoolName: schoolName.trim() || undefined,
+        schoolEmail: schoolEmail.trim() || undefined,
         password: password.trim(),
-        pin: password.trim()
       });
 
       // Reset & close only on success
       setName('');
       setUsername('');
       setSchoolName('');
+      setSchoolEmail('');
       setPassword('');
       setConfirmPassword('');
       onClose();
@@ -387,6 +393,21 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({
               placeholder="e.g. Delhi Public School"
               className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1">School Email (Optional)</label>
+            <input
+              type="email"
+              value={schoolEmail}
+              onChange={(e) => {
+                setSchoolEmail(e.target.value);
+                if (errors.schoolEmail) setErrors({ ...errors, schoolEmail: '' });
+              }}
+              placeholder="e.g. principal@dpsdelhi.edu.in or school@domain.com"
+              className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-hidden ${errors.schoolEmail ? 'border-red-500 bg-red-50' : 'border-stone-300'}`}
+            />
+            {errors.schoolEmail && <p className="text-[10px] text-red-500 mt-1 font-medium">{errors.schoolEmail}</p>}
           </div>
 
           <div className="flex items-center justify-between gap-3 pt-4 border-t border-stone-100">

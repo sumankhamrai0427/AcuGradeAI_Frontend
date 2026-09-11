@@ -1,7 +1,6 @@
 import { 
   BlogPost, 
   ParentAccount, 
-  SubscriptionPlan, 
   ExamSubmission, 
   Badge, 
   LeaderboardEntry, 
@@ -10,8 +9,6 @@ import {
   ParentTeacherMessage, 
   SharedDossier 
 } from '../types';
-
-export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [];
 
 export const INITIAL_PARENT: ParentAccount = {
   id: 'parent-001',

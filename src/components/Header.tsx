@@ -15,7 +15,7 @@ import {
   CheckCircle,
   Plus
 } from 'lucide-react';
-import { ParentAccount, ChildAccount, SubscriptionTier } from '../types';
+import { ParentAccount, ChildAccount } from '../types';
 
 interface HeaderProps {
   currentView: string;
@@ -145,17 +145,7 @@ export const Header: React.FC<HeaderProps> = ({
               Family Hub
             </button>
 
-            <button
-              id="nav-plans-btn"
-              onClick={() => setCurrentView('subscription-plans')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
-                currentView === 'subscription-plans'
-                  ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
-              }`}
-            >
-              Plans
-            </button>
+
 
             <button
               id="nav-admin-btn"
@@ -241,7 +231,6 @@ export const Header: React.FC<HeaderProps> = ({
                           onClick={() => {
                             setActiveChildId(child.id);
                             setShowPersonaMenu(false);
-                            setCurrentView('exam-arena');
                           }}
                           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${
                             isSelected ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
@@ -256,13 +245,7 @@ export const Header: React.FC<HeaderProps> = ({
                               </div>
                             </div>
                           </div>
-                          {isSelected ? (
-                            <CheckCircle className="w-4 h-4 text-yellow-600" />
-                          ) : (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-stone-100 text-stone-600 font-mono">
-                              PIN: {child.pin}
-                            </span>
-                          )}
+                          {isSelected && <CheckCircle className="w-4 h-4 text-yellow-600" />}
                         </button>
                       );
                     })}
@@ -330,15 +313,7 @@ export const Header: React.FC<HeaderProps> = ({
             >
               Parent & Child Portal
             </button>
-            <button
-              onClick={() => {
-                setCurrentView('subscription-plans');
-                setMobileMenuOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
-            >
-              Subscriptions & Upgrades
-            </button>
+
             <button
               onClick={() => {
                 setCurrentView('blog-section');

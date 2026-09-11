@@ -49,7 +49,6 @@ export interface AuthResponseData {
     roleId: number;
     roleName: string;
     role: string;
-    subscriptionTier?: string;
     isActive: number | boolean;
     createdAt?: string;
   };

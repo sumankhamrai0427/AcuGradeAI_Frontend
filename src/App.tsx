@@ -75,7 +75,6 @@ import { ParentTeacherCommunication } from './components/ParentTeacherCommunicat
 import { FunZone } from './components/FunZone';
 import { LoginPage } from './components/LoginPage';
 import { LandingPage } from './components/LandingPage';
-import { ChildPinModal } from './components/ChildPinModal';
 import { PublicDossierView } from './components/PublicDossierView';
 import { ParentExamScheduler } from './components/ParentExamScheduler';
 import { AppNotification } from './types/api';
@@ -379,8 +378,6 @@ export default function App() {
     });
   };
 
-  const [pinModalTargetChild, setPinModalTargetChild] = useState<ChildAccount | null>(null);
-
   const normalizedRole = (authRole || '').toUpperCase();
   const isAdminSession = normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
   const isTeacherSession = normalizedRole === 'TEACHER';
@@ -576,24 +573,8 @@ export default function App() {
   const handleSwitchToChild = (childId: string) => {
     const target = parentAccount?.children.find((c) => c.id === childId);
     if (!target) return;
-
-    // If already in child persona and on same child, simply navigate to arena
-    if (activePersona === 'child' && activeChildId === childId) {
-      setActiveTab('arena');
-      setShowPersonaMenu(false);
-      return;
-    }
-
-    // Intercept with PIN Verification Modal
-    setPinModalTargetChild(target);
-    setShowPersonaMenu(false);
-  };
-
-  const handlePinSuccess = (childId: string) => {
-    setActivePersona('child');
     setActiveChildId(childId);
-    setActiveTab('arena');
-    setPinModalTargetChild(null);
+    setShowPersonaMenu(false);
   };
 
   // Exam submission is now handled server-side by ExamArena's call to
@@ -646,8 +627,8 @@ export default function App() {
       classGrade: string;
       targetBoard: string;
       schoolName?: string;
+      schoolEmail?: string;
       password?: string;
-      pin?: string;
     }
   ) => {
     const created = await ApiServices.addChild({
@@ -657,7 +638,8 @@ export default function App() {
       classGrade: childData.classGrade,
       targetBoard: childData.targetBoard,
       schoolName: childData.schoolName,
-      password: childData.password || childData.pin,
+      schoolEmail: childData.schoolEmail,
+      password: childData.password,
     });
     setParentAccount((prev) => (prev ? { ...prev, children: [...prev.children, { ...created, topicMastery: {} }] } : prev));
     setActiveChildId(created.id);
@@ -672,6 +654,7 @@ export default function App() {
       classGrade: updatedChild.classGrade,
       targetBoard: updatedChild.targetBoard,
       schoolName: updatedChild.schoolName,
+      schoolEmail: updatedChild.schoolEmail,
     });
     setParentAccount((prev) =>
       prev
@@ -895,7 +878,6 @@ export default function App() {
     name: 'Loading...',
     email: '',
     role: 'parent',
-    subscriptionTier: 'free',
     children: [],
     createdAt: new Date().toISOString()
   };
@@ -1136,7 +1118,7 @@ export default function App() {
                               <p className="text-[10px] text-stone-500 font-medium">No children added yet</p>
                             </div>
                           ) : (parentAccount?.children || []).map((child) => {
-                            const isSelected = activePersona === 'child' && activeChildId === child.id;
+                            const isSelected = activeChildId === child.id;
                             return (
                               <button
                                 key={child.id}
@@ -1376,14 +1358,6 @@ export default function App() {
           </div>
         </div>
       </main>
-
-      {/* Child 4-Digit Security PIN Verification Modal */}
-      <ChildPinModal
-        child={pinModalTargetChild}
-        isOpen={!!pinModalTargetChild}
-        onClose={() => setPinModalTargetChild(null)}
-        onSuccess={handlePinSuccess}
-      />
 
       {/* Add Child Sub-Account Modal */}
       <AddChildModal

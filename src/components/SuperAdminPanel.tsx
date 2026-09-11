@@ -174,10 +174,10 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({
               Super Admin Console • Root Authority
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              RAG Knowledge Graph & Subscription Management
+              RAG Knowledge Graph & System Management
             </h1>
             <p className="text-xs sm:text-sm text-stone-300 mt-1 max-w-2xl">
-              Add curriculum runbooks to enhance the RAG K-Graph grounding, manage parent subscriptions, and inspect diagnostic telemetry.
+              Add curriculum runbooks to enhance the RAG K-Graph grounding and inspect diagnostic telemetry.
             </p>
           </div>
 

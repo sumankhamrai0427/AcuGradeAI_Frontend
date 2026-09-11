@@ -191,8 +191,9 @@ export interface ChildAccount {
   classGrade: ClassGrade;
   targetBoard: Board;
   schoolName?: string;
+  schoolEmail?: string;
   email?: string;
-  pin: string;
+  pin?: string;
   dailyExamsTakenToday: number;
   lastExamDate?: string;
   totalExamsTaken: number;
@@ -326,16 +327,12 @@ export interface PTMSchedule {
   createdAt: string;
 }
 
-export type SubscriptionTier = 'free' | 'scholar_pro' | 'genius_competitive';
-
 export interface ParentAccount {
   id: string;
   name: string;
   username?: string;
   email: string;
   role: 'parent';
-  subscriptionTier?: string;
-  subscriptionExpiry?: string;
   children: ChildAccount[];
   createdAt: string;
 }
@@ -364,20 +361,6 @@ export interface RunbookKGraphNode {
     hard: string;
   };
   lastUpdated: string;
-}
-
-export interface SubscriptionPlan {
-  id: SubscriptionTier;
-  name: string;
-  priceMonthly: number;
-  priceYearly: number;
-  currency: string;
-  badge?: string;
-  description: string;
-  features: string[];
-  dailyExamLimit: number | 'unlimited';
-  maxChildren: number | 'unlimited';
-  isPopular?: boolean;
 }
 
 export interface BlogPost {
