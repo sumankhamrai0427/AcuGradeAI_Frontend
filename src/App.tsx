@@ -358,24 +358,15 @@ export default function App() {
   }, [showNotificationMenu]);
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
-    try {
-      const stored = localStorage.getItem('sahajpath_sidebar_collapsed') || localStorage.getItem('acugrade_sidebar_collapsed');
-      if (stored !== null) return stored === 'true';
-      return true; // Default to collapsed for all personas
-    } catch {
-      return true;
-    }
-  });
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
+
+  // Enforce collapsed sidebar by default on persona/role changes
+  useEffect(() => {
+    setIsSidebarCollapsed(true);
+  }, [authRole, activePersona]);
 
   const toggleSidebar = () => {
-    setIsSidebarCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('sahajpath_sidebar_collapsed', String(next));
-      } catch { }
-      return next;
-    });
+    setIsSidebarCollapsed((prev) => !prev);
   };
 
   const normalizedRole = (authRole || '').toUpperCase();
@@ -534,6 +525,7 @@ export default function App() {
     const upperRole = role.toUpperCase();
     setAuthRole(upperRole);
     setAuthModalMode(null);
+    setIsSidebarCollapsed(true);
     if (upperRole === 'PARENT') {
       navigate('/dashboard', { replace: true });
     } else if (upperRole === 'STUDENT') {
@@ -1077,7 +1069,7 @@ export default function App() {
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-bold text-stone-900 truncate">{activeChild?.name}</p>
                             <p className="text-[10px] text-stone-500 truncate">{activeChild?.classGrade} • {activeChild?.targetBoard}</p>
-                            <p className="text-[10px] text-amber-700 font-semibold truncate">@{activeChild?.username || activeChild?.name.toLowerCase().replace(/\s+/g, '')}</p>
+                            <p className="text-[10px] text-amber-700 font-semibold truncate">{activeChild?.username || activeChild?.name.toLowerCase().replace(/\s+/g, '')}</p>
                           </div>
                         </div>
                         <div className="my-1 border-t border-stone-100" />
@@ -1131,7 +1123,7 @@ export default function App() {
                                   <div>
                                     <div className="font-medium text-stone-900">{child.name}</div>
                                     <div className="text-[10px] text-stone-500">
-                                      {child.classGrade} • {child.targetBoard} • Avg {child.averageScore}/10
+                                      {child.classGrade} • {child.targetBoard} • Avg {Math.round(Number(child.averageScore || 0))}%
                                     </div>
                                   </div>
                                 </div>
@@ -1243,6 +1235,7 @@ export default function App() {
                   <ReportsPage
                     examHistory={examHistory}
                     parentAccount={parentAccount}
+                    isStudent={!isParentActive}
                     onViewSubmissionReport={(submission) => setActiveSubmissionReport(submission)}
                   />
                 )}

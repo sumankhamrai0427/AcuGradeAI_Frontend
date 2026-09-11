@@ -167,11 +167,11 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
 
         <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
           <div className="flex items-center justify-between text-stone-400 mb-1">
-            <span className="text-xs font-semibold">Average Sprint Score</span>
+            <span className="text-xs font-semibold">Average Accuracy</span>
             <Target className="w-4 h-4 text-yellow-500" />
           </div>
-          <p className="text-2xl font-bold text-yellow-600">{activeChild.averageScore}/10</p>
-          <span className="text-[10px] text-yellow-600 font-semibold">Across {activeChild.totalExamsTaken} Sprints</span>
+          <p className="text-2xl font-bold text-yellow-600">{Math.round(Number(activeChild.averageScore || 0))}%</p>
+          <span className="text-[10px] text-yellow-600 font-semibold">Across {activeChild.totalExamsTaken || 0} {activeChild.totalExamsTaken === 1 ? 'Sprint' : 'Sprints'}</span>
         </div>
 
         <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-xs">
@@ -362,7 +362,7 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
                     {/* Stats & XP Pill */}
                     <div className="flex items-center gap-4 self-end sm:self-center shrink-0">
                       <div className="text-right hidden sm:block">
-                        <span className="text-xs font-bold text-stone-800 block">{entry.averageScore}/10 Avg</span>
+                        <span className="text-xs font-bold text-stone-800 block">{Math.round(Number(entry.averageScore || 0))}% Avg</span>
                         <span className="text-[10px] text-stone-400 font-medium">{entry.examsCompleted} sprints • {entry.streakDays}d streak</span>
                       </div>
 

@@ -6,12 +6,14 @@ interface ReportsPageProps {
   examHistory: ExamSubmission[];
   parentAccount: ParentAccount;
   onViewSubmissionReport: (submission: ExamSubmission) => void;
+  isStudent?: boolean;
 }
 
 export const ReportsPage: React.FC<ReportsPageProps> = ({
   examHistory,
   parentAccount,
-  onViewSubmissionReport
+  onViewSubmissionReport,
+  isStudent = false
 }) => {
   const [selectedChildFilter, setSelectedChildFilter] = useState<string>('all');
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('all');
@@ -19,7 +21,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
   const subjects = Array.from(new Set(examHistory.map(e => e.subject).filter(Boolean)));
 
   const filteredHistory = examHistory.filter(exam => {
-    if (selectedChildFilter !== 'all') {
+    if (!isStudent && selectedChildFilter !== 'all') {
       const matchId = String(exam.studentId) === String(selectedChildFilter);
       const childObj = parentAccount.children.find(c => String(c.id) === String(selectedChildFilter));
       const matchName = childObj && exam.studentName && childObj.name.toLowerCase() === exam.studentName.toLowerCase();
@@ -37,7 +39,11 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-stone-900 tracking-tight">Exam Reports</h1>
-          <p className="text-sm font-medium text-stone-500 mt-1">Review historical diagnostic performance across your family.</p>
+          <p className="text-sm font-medium text-stone-500 mt-1">
+            {isStudent
+              ? 'Review your historical diagnostic performance and detailed question solutions.'
+              : 'Review historical diagnostic performance across your family.'}
+          </p>
         </div>
       </div>
 
@@ -47,16 +53,19 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
           <Filter className="w-4 h-4" /> Filters:
         </div>
         
-        <select 
-          value={selectedChildFilter}
-          onChange={(e) => setSelectedChildFilter(e.target.value)}
-          className="bg-stone-50 border border-stone-200 text-stone-700 text-sm font-bold rounded-xl px-4 py-2 outline-none focus:border-yellow-400 focus:ring-4 focus:ring-yellow-50 transition-all cursor-pointer"
-        >
-          <option value="all">All Children</option>
-          {parentAccount.children.map(child => (
-            <option key={child.id} value={child.id}>{child.name}</option>
-          ))}
-        </select>
+        {/* Child Selector (Parent persona only) */}
+        {!isStudent && parentAccount.children.length > 1 && (
+          <select 
+            value={selectedChildFilter}
+            onChange={(e) => setSelectedChildFilter(e.target.value)}
+            className="bg-stone-50 border border-stone-200 text-stone-700 text-sm font-bold rounded-xl px-4 py-2 outline-none focus:border-yellow-400 focus:ring-4 focus:ring-yellow-50 transition-all cursor-pointer"
+          >
+            <option value="all">All Children</option>
+            {parentAccount.children.map(child => (
+              <option key={child.id} value={child.id}>{child.name}</option>
+            ))}
+          </select>
+        )}
 
         <select 
           value={selectedSubjectFilter}
@@ -77,7 +86,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
             <thead>
               <tr className="bg-stone-50 border-b border-stone-200">
                 <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Child</th>
+                {!isStudent && <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Child</th>}
                 <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Subject & Topic</th>
                 <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Score</th>
                 <th className="px-6 py-4 text-xs font-bold text-stone-500 uppercase tracking-wider">Status</th>
@@ -105,14 +114,16 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center text-sm border border-stone-200">
-                          {child?.avatar || '👤'}
+                    {!isStudent && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center text-sm border border-stone-200">
+                            {child?.avatar || '👤'}
+                          </div>
+                          <span className="text-sm font-bold text-stone-900">{child?.name || exam.studentName || 'Student'}</span>
                         </div>
-                        <span className="text-sm font-bold text-stone-900">{child?.name || exam.studentName || 'Student'}</span>
-                      </div>
-                    </td>
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <BookOpen className="w-4 h-4 text-indigo-400 shrink-0" />
@@ -157,7 +168,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
                 );
               }) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={isStudent ? 5 : 6} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <FileText className="w-12 h-12 text-stone-300 mb-4" />
                       <p className="text-sm font-bold text-stone-700">No reports found</p>

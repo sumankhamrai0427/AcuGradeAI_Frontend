@@ -241,7 +241,7 @@ export const Header: React.FC<HeaderProps> = ({
                             <div>
                               <div className="font-medium text-stone-900">{child.name}</div>
                               <div className="text-[10px] text-stone-500">
-                                {child.classGrade} • {child.targetBoard} • Avg {child.averageScore}/10
+                                {child.classGrade} • {child.targetBoard} • Avg {Math.round(Number(child.averageScore || 0))}%
                               </div>
                             </div>
                           </div>

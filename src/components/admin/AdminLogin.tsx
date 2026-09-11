@@ -1876,7 +1876,7 @@ const UsersView: React.FC = () => {
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-stone-800 truncate">{u.name || u.username}</p>
-                            <p className="text-xs text-stone-400 truncate">{u.email || `@${u.username}`}</p>
+                            <p className="text-xs text-stone-400 truncate">{u.email || u.username}</p>
                           </div>
                         </div>
                       </td>

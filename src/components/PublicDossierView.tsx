@@ -185,8 +185,8 @@ export const PublicDossierView: React.FC<PublicDossierViewProps> = ({ shareToken
             {/* Quick Metrics */}
             <div className="grid grid-cols-2 gap-3 sm:w-60">
               <div className="p-3 bg-stone-50 rounded-xl border border-stone-100 text-center">
-                <span className="text-[10px] text-stone-400 uppercase font-bold block">Avg. Score</span>
-                <span className="text-lg font-black text-yellow-600">{student.averageScore}/10</span>
+                <span className="text-[10px] text-stone-400 uppercase font-bold block">Avg. Accuracy</span>
+                <span className="text-lg font-black text-yellow-600">{Math.round(Number(student.averageScore || 0))}%</span>
               </div>
               <div className="p-3 bg-stone-50 rounded-xl border border-stone-100 text-center">
                 <span className="text-[10px] text-stone-400 uppercase font-bold block">Tests Completed</span>

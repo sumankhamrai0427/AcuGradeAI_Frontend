@@ -108,11 +108,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     return 'Novice Explorer';
   };
 
-  // Accuracy calculation
-  const totalMarksObtained = studentExams.reduce((sum, e) => sum + (e.marksObtained || 0), 0);
-  const totalMarksPossible = studentExams.reduce((sum, e) => sum + (e.totalMarks || defaultTotalMarks), 0);
-  const accuracyPct = totalMarksPossible > 0
-    ? Math.round((totalMarksObtained / totalMarksPossible) * 100)
+  // Accuracy calculation (Average across exams, matching database average_score)
+  const accuracyPct = studentExams.length > 0
+    ? Math.round(
+        studentExams.reduce(
+          (sum, e) => sum + (e.accuracyPercentage != null ? Number(e.accuracyPercentage) : ((e.marksObtained / (e.totalMarks || defaultTotalMarks)) * 100)),
+          0
+        ) / studentExams.length
+      )
     : Math.round(activeChild.averageScore > 10 ? activeChild.averageScore : (activeChild.averageScore * 10 || 0));
 
   const streakDays = activeChild.streakDays || 0;
@@ -288,58 +291,72 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
       )}
 
-      {/* ── 4 TOP METRIC CARDS (FULL WIDTH ROW) ─────────────────────────────── */}
+      {/* ── 4 TOP METRIC CARDS (COMPACT PARENT-DASHBOARD MATCHING SIZE) ───── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: XP & Level */}
+        {/* Card 1: XP & Level (Amber/Yellow) */}
         <div
           onClick={onNavigateToGamification}
-          className="group rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-white border border-amber-200/80 p-5 shadow-xs transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer flex flex-col justify-between"
+          className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-2xl border border-amber-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md hover:border-amber-400 hover:scale-[1.01] transition-all cursor-pointer"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-amber-700">Level {currentLevel}</span>
-            <div className="h-9 w-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 group-hover:scale-110 transition-transform">
-              <Zap className="h-5 w-5 fill-current" />
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="flex items-center justify-between mb-1 relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-white shadow-xs flex items-center justify-center">
+                <Zap className="w-3.5 h-3.5 text-amber-600 fill-current" />
+              </div>
+              <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">Level {currentLevel}</span>
             </div>
+            <span className="text-[10px] font-bold bg-amber-200/70 text-amber-900 px-2 py-0.5 rounded-full border border-amber-300/60 shadow-2xs">
+              {getTierTitle(currentLevel)}
+            </span>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-stone-900">{xp} <span className="text-sm font-bold text-stone-500">XP</span></div>
-            <div className="mt-2 w-full bg-amber-100 rounded-full h-1.5 overflow-hidden">
+          <div className="relative z-10 mt-1">
+            <p className="text-xl sm:text-2xl font-black text-stone-900">{xp} <span className="text-xs font-bold text-stone-500">XP</span></p>
+            <div className="mt-1.5 w-full bg-amber-200/70 rounded-full h-1.5 overflow-hidden">
               <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${xpProgress}%` }} />
             </div>
-            <p className="text-[10px] font-bold text-stone-500 mt-1.5 flex justify-between">
-              <span>{getTierTitle(currentLevel)}</span>
+            <p className="text-[10px] font-semibold text-amber-800 mt-1 flex justify-between">
               <span>{Math.round(xpProgress)}% to Lvl {currentLevel + 1}</span>
             </p>
           </div>
         </div>
 
-        {/* Card 2: Streak */}
-        <div className="group rounded-3xl bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-white border border-rose-200/80 p-5 shadow-xs transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-rose-700">Streak</span>
-            <div className="h-9 w-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform">
-              <Flame className="h-5 w-5 fill-current" />
+        {/* Card 2: Streak (Rose/Pink) */}
+        <div className="bg-gradient-to-br from-rose-50 to-pink-50 p-4 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md hover:border-rose-400 hover:scale-[1.01] transition-all">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-rose-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="flex items-center justify-between mb-1 relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-white shadow-xs flex items-center justify-center">
+                <Flame className="w-3.5 h-3.5 text-rose-500 fill-current" />
+              </div>
+              <span className="text-xs font-bold text-rose-900 uppercase tracking-wider">Streak</span>
             </div>
+            <span className="text-[10px] font-bold bg-rose-200/70 text-rose-900 px-2 py-0.5 rounded-full border border-rose-300/60 shadow-2xs flex items-center gap-1">
+              🔥 Active
+            </span>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-stone-900">{streakDays} <span className="text-sm font-bold text-stone-500">Days</span></div>
-            <p className="text-xs font-semibold text-rose-700 mt-1 flex items-center gap-1">
+          <div className="relative z-10 mt-1">
+            <p className="text-xl sm:text-2xl font-black text-stone-900">{streakDays} <span className="text-xs font-bold text-stone-500">Days</span></p>
+            <p className="text-[10px] text-rose-700 font-semibold mt-1 truncate">
               {streakDays >= 3 ? '🔥 Super active learner!' : streakDays > 0 ? '🔥 On a streak! Keep learning!' : '🚀 Practice daily to build streak!'}
             </p>
           </div>
         </div>
 
-        {/* Card 3: Overall Readiness / Accuracy */}
-        <div className="group rounded-3xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-white border border-emerald-200/80 p-5 shadow-xs transition-all hover:-translate-y-1 hover:shadow-md flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-700">Accuracy</span>
-            <div className="h-9 w-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 group-hover:scale-110 transition-transform">
-              <Target className="h-5 w-5" />
+        {/* Card 3: Overall Readiness / Accuracy (Emerald/Teal) */}
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-2xl border border-emerald-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md hover:border-emerald-400 hover:scale-[1.01] transition-all">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="flex items-center justify-between mb-1 relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-white shadow-xs flex items-center justify-center">
+                <Target className="w-3.5 h-3.5 text-emerald-600" />
+              </div>
+              <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Accuracy</span>
             </div>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-stone-900">{accuracyPct}%</div>
-            <p className="text-xs font-semibold text-stone-500 mt-1">
+          <div className="relative z-10 mt-1">
+            <p className="text-xl sm:text-2xl font-black text-stone-900">{accuracyPct}%</p>
+            <p className="text-[10px] text-emerald-700 font-semibold mt-1 truncate">
               {studentExams.length > 0
                 ? `Based on ${studentExams.length} ${studentExams.length === 1 ? 'challenge' : 'challenges'}`
                 : 'No challenges completed yet'}
@@ -347,21 +364,25 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         </div>
 
-        {/* Card 4: Badges */}
+        {/* Card 4: Badges (Blue/Indigo - Clickable) */}
         <div
           onClick={onNavigateToGamification}
-          className="group rounded-3xl bg-gradient-to-br from-sky-500/10 via-sky-500/5 to-white border border-sky-200/80 p-5 shadow-xs transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer flex flex-col justify-between"
+          className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md hover:border-blue-400 hover:scale-[1.01] transition-all cursor-pointer"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-sky-700">Badges</span>
-            <div className="h-9 w-9 rounded-xl bg-sky-100 flex items-center justify-center text-sky-700 group-hover:scale-110 transition-transform">
-              <Award className="h-5 w-5" />
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+          <div className="flex items-center justify-between mb-1 relative z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-white shadow-xs flex items-center justify-center">
+                <Award className="w-3.5 h-3.5 text-blue-600" />
+              </div>
+              <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">Badges</span>
             </div>
+            <ChevronRight className="w-3.5 h-3.5 text-blue-600/60 group-hover:translate-x-0.5 transition-transform" />
           </div>
-          <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-stone-900">{unlockedBadgesCount} <span className="text-sm font-bold text-stone-500">Unlocked</span></div>
-            <p className="text-xs font-semibold text-sky-700 mt-1 flex items-center gap-1">
-              View Trophy Cabinet <ChevronRight className="w-3.5 h-3.5" />
+          <div className="relative z-10 mt-1">
+            <p className="text-xl sm:text-2xl font-black text-stone-900">{unlockedBadgesCount} <span className="text-xs font-bold text-stone-500">Unlocked</span></p>
+            <p className="text-[10px] text-blue-700 font-semibold mt-1 flex items-center gap-1">
+              View Trophy Cabinet <ChevronRight className="w-3 h-3" />
             </p>
           </div>
         </div>

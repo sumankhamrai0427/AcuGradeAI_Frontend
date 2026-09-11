@@ -1104,8 +1104,8 @@ export const ParentTeacherCommunication: React.FC<ParentTeacherCommunicationProp
 
             <div className="grid grid-cols-2 gap-3 shrink-0 text-center">
               <div className="p-3 bg-white rounded-lg border border-stone-200 min-w-[90px]">
-                <span className="text-[9px] text-stone-500 uppercase font-bold block">Avg. Score</span>
-                <span className="text-lg font-black text-yellow-600">{printableDossierData.student?.averageScore}/10</span>
+                <span className="text-[9px] text-stone-500 uppercase font-bold block">Avg. Accuracy</span>
+                <span className="text-lg font-black text-yellow-600">{Math.round(Number(printableDossierData.student?.averageScore || 0))}%</span>
               </div>
               <div className="p-3 bg-white rounded-lg border border-stone-200 min-w-[90px]">
                 <span className="text-[9px] text-stone-500 uppercase font-bold block">Tests Done</span>

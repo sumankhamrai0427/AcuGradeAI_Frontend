@@ -89,11 +89,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
     const isKids = ['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(c => (child.classGrade || '').includes(c));
     const defaultTotal = isKids ? 5 : 15;
 
-    const childTotalObtained = childExams.reduce((acc, e) => acc + (e.marksObtained || 0), 0);
-    const childTotalPossible = childExams.reduce((acc, e) => acc + (e.totalMarks || defaultTotal), 0);
-
-    const scorePct = childTotalPossible > 0
-      ? (childTotalObtained / childTotalPossible) * 100
+    const scorePct = childExams.length > 0
+      ? (childExams.reduce((acc, e) => acc + (e.accuracyPercentage != null ? Number(e.accuracyPercentage) : ((e.marksObtained / (e.totalMarks || defaultTotal)) * 100)), 0) / childExams.length)
       : (child.averageScore > 10 ? child.averageScore : (child.averageScore * 10));
 
     // Unified Dynamic Exam Readiness (60% Exam Score + 40% Topic Mastery if available)
