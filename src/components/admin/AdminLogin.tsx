@@ -1751,6 +1751,9 @@ const UsersView: React.FC = () => {
   const [userToEdit, setUserToEdit] = useState<any | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [editClassGrade, setEditClassGrade] = useState('Class 10');
+  const [editTargetBoard, setEditTargetBoard] = useState('CBSE');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
   const pageSize = 5;
@@ -1777,7 +1780,10 @@ const UsersView: React.FC = () => {
   const openEditModal = (user: any) => {
     setUserToEdit(user);
     setEditName(user.name || user.username || '');
-    setEditEmail(user.email || '');
+    setEditEmail(user.email && user.email !== '—' ? user.email : '');
+    setEditIsActive(user.isActive !== false);
+    setEditClassGrade(user.classGrade || 'Class 10');
+    setEditTargetBoard(user.targetBoard || 'CBSE');
     setActionError('');
   };
 
@@ -1795,12 +1801,7 @@ const UsersView: React.FC = () => {
     try {
       await ApiServices.deleteAdminUser(userToDelete.id);
       setUserToDelete(null);
-      setTotalCount((count) => Math.max(0, count - 1));
-      if (users.length === 1 && currentPage > 1) {
-        setCurrentPage((page) => page - 1);
-      } else {
-        setUsers((currentUsers) => currentUsers.filter((user) => user.id !== userToDelete.id));
-      }
+      await fetchUsers(currentPage, searchQuery);
     } catch (err: any) {
       setActionError(err?.message || 'Failed to delete user. Please try again.');
     } finally {
@@ -1814,14 +1815,15 @@ const UsersView: React.FC = () => {
     setActionLoading(true);
     setActionError('');
     try {
-      const updatedUser = await ApiServices.updateAdminUser(userToEdit.id, {
+      const isStudent = (userToEdit.roleName || userToEdit.role || '').toUpperCase() === 'STUDENT';
+      await ApiServices.updateAdminUser(userToEdit.id, {
         name: editName.trim(),
         email: editEmail.trim(),
+        isActive: editIsActive,
+        ...(isStudent ? { classGrade: editClassGrade, targetBoard: editTargetBoard } : {})
       });
-      setUsers((currentUsers) => currentUsers.map((user) => (
-        user.id === userToEdit.id ? { ...user, ...updatedUser } : user
-      )));
       setUserToEdit(null);
+      await fetchUsers(currentPage, searchQuery);
     } catch (err: any) {
       setActionError(err?.message || 'Failed to update user. Please try again.');
     } finally {
@@ -1975,7 +1977,7 @@ const UsersView: React.FC = () => {
                         </div>
                       </td>
                     </tr>
-                    {u.linkedStudents?.map((student: { id: string | number; name: string }, index: number) => (
+                    {u.linkedStudents?.map((student: any, index: number) => (
                       <tr key={student.id} className="bg-pink-50/20 hover:bg-pink-50/40 transition-colors">
                         <td className="px-6 py-2.5">
                           <div className="relative flex items-center gap-3 pl-10 sm:pl-12">
@@ -1985,17 +1987,50 @@ const UsersView: React.FC = () => {
                             />
                             <span aria-hidden="true" className="absolute left-3 top-1/2 h-px w-5 bg-pink-200 sm:left-4 sm:w-6" />
                             <div className="w-7 h-7 rounded-lg bg-pink-100 flex items-center justify-center text-pink-700 font-black text-xs shadow-xs flex-shrink-0">
-                              {student.name.charAt(0).toUpperCase()}
+                              {student.avatar || (student.name ? student.name.charAt(0).toUpperCase() : 'S')}
                             </div>
-                            <p className="min-w-0 truncate text-xs font-semibold text-stone-700">{student.name}</p>
+                            <div className="min-w-0">
+                              <p className="min-w-0 truncate text-xs font-semibold text-stone-700">{student.name}</p>
+                              <p className="text-[10px] text-stone-400 truncate">
+                                {student.classGrade ? `${student.classGrade} • ` : ''}{student.targetBoard || student.username || ''}
+                              </p>
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-2.5">
                           <span className="rounded-lg border border-pink-200 bg-pink-100 px-2.5 py-0.5 text-[11px] font-bold text-pink-800">Student</span>
                         </td>
-                        <td className="px-6 py-2.5 text-xs font-medium text-stone-400 hidden sm:table-cell">—</td>
-                        <td className="px-6 py-2.5 text-xs font-medium text-stone-400 hidden md:table-cell">—</td>
-                        <td className="px-6 py-2.5 text-right text-xs font-medium text-stone-400">—</td>
+                        <td className="px-6 py-2.5 hidden sm:table-cell">
+                          <span className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-0.5 rounded-full ${student.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${student.isActive !== false ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                            {student.isActive !== false ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-2.5 text-stone-500 text-xs hidden md:table-cell">
+                          {formatJoinedDate(student.createdAt)}
+                        </td>
+                        <td className="px-6 py-2.5">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal({ ...student, role: 'Student', roleName: 'STUDENT', parentId: u.id })}
+                              title="Edit student"
+                              aria-label="Edit student"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setUserToDelete({ ...student, role: 'Student', roleName: 'STUDENT', parentId: u.id }); setActionError(''); }}
+                              title="Delete student"
+                              aria-label="Delete student"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </React.Fragment>
@@ -2068,7 +2103,9 @@ const UsersView: React.FC = () => {
       {userToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 px-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="text-lg font-black text-stone-900">Delete User</h2>
+            <h2 className="text-lg font-black text-stone-900">
+              Delete {(userToDelete.roleName || userToDelete.role || '').toUpperCase() === 'STUDENT' ? 'Student' : 'User'}
+            </h2>
             <p className="mt-3 text-sm font-medium text-stone-600">
               Are you sure you want to delete <span className="font-bold text-stone-800">"{userToDelete.name || userToDelete.username}"</span>?
             </p>
@@ -2099,42 +2136,115 @@ const UsersView: React.FC = () => {
       {userToEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 px-4" role="dialog" aria-modal="true">
           <form onSubmit={handleEditUser} className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 className="text-lg font-black text-stone-900">Edit User</h2>
-            <div className="mt-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h2 className="text-lg font-black text-stone-900">
+                Edit {(userToEdit.roleName || userToEdit.role || '').toUpperCase() === 'STUDENT' ? 'Student Profile' : 'User Account'}
+              </h2>
+              <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold ${getRoleBadgeStyle(userToEdit.roleName || userToEdit.role)}`}>
+                {userToEdit.role || userToEdit.roleName || 'User'}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-3.5">
               <label className="block">
-                <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-stone-500">Name</span>
+                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-500">Full Name</span>
                 <input
                   value={editName}
                   onChange={(event) => setEditName(event.target.value)}
                   required
-                  className="h-10 w-full rounded-lg border border-stone-200 px-3 text-sm font-medium text-stone-800 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
+                  placeholder="Enter full name"
+                  className="h-10 w-full rounded-xl border border-stone-200 px-3 text-sm font-medium text-stone-800 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
                 />
               </label>
+
+              {(userToEdit.roleName || userToEdit.role || '').toUpperCase() !== 'STUDENT' ? (
+                <label className="block">
+                  <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-500">Email Address</span>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={(event) => setEditEmail(event.target.value)}
+                    required
+                    placeholder="Enter email address"
+                    className="h-10 w-full rounded-xl border border-stone-200 px-3 text-sm font-medium text-stone-800 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
+                  />
+                </label>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-500">Target Board</span>
+                    <select
+                      value={editTargetBoard}
+                      onChange={(e) => setEditTargetBoard(e.target.value)}
+                      className="h-10 w-full rounded-xl border border-stone-200 px-3 text-xs font-semibold text-stone-800 bg-white outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
+                    >
+                      {['CBSE', 'ICSE', 'WBBSE', 'ISC', 'UK-Cambridge', 'NCERT', 'NEET', 'IIT'].map((b) => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-500">Class / Grade</span>
+                    <select
+                      value={editClassGrade}
+                      onChange={(e) => setEditClassGrade(e.target.value)}
+                      className="h-10 w-full rounded-xl border border-stone-200 px-3 text-xs font-semibold text-stone-800 bg-white outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => `Class ${i + 1}`).map((g) => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+
               <label className="block">
-                <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-stone-500">Email</span>
-                <input
-                  type="email"
-                  value={editEmail}
-                  onChange={(event) => setEditEmail(event.target.value)}
-                  required
-                  className="h-10 w-full rounded-lg border border-stone-200 px-3 text-sm font-medium text-stone-800 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20"
-                />
+                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-stone-500">Account Status</span>
+                <div className="flex items-center gap-3 mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setEditIsActive(true)}
+                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      editIsActive
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs'
+                        : 'bg-white border-stone-200 text-stone-500 hover:bg-stone-50'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${editIsActive ? 'bg-emerald-500' : 'bg-stone-300'}`} />
+                    Active
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditIsActive(false)}
+                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      !editIsActive
+                        ? 'bg-rose-50 border-rose-300 text-rose-800 shadow-2xs'
+                        : 'bg-white border-stone-200 text-stone-500 hover:bg-stone-50'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${!editIsActive ? 'bg-rose-500' : 'bg-stone-300'}`} />
+                    Inactive
+                  </button>
+                </div>
               </label>
             </div>
+
             {actionError && <p className="mt-3 text-xs font-semibold text-red-600">{actionError}</p>}
-            <div className="mt-6 flex justify-end gap-2">
+
+            <div className="mt-6 pt-3 border-t border-stone-100 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={closeActionModal}
                 disabled={actionLoading}
-                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 disabled:opacity-50 cursor-pointer"
+                className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 disabled:opacity-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={actionLoading || !editName.trim() || !editEmail.trim()}
-                className="rounded-lg bg-yellow-400 px-4 py-2 text-xs font-bold text-stone-900 hover:bg-yellow-500 disabled:opacity-50 cursor-pointer"
+                disabled={actionLoading || !editName.trim()}
+                className="rounded-xl bg-yellow-400 px-5 py-2 text-xs font-bold text-stone-900 hover:bg-yellow-500 disabled:opacity-50 shadow-xs cursor-pointer"
               >
                 {actionLoading ? 'Saving...' : 'Save changes'}
               </button>
