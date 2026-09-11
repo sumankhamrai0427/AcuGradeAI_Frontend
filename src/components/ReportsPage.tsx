@@ -54,7 +54,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
         </div>
         
         {/* Child Selector (Parent persona only) */}
-        {!isStudent && parentAccount.children.length > 1 && (
+        {!isStudent && parentAccount.children.length > 0 && (
           <select 
             value={selectedChildFilter}
             onChange={(e) => setSelectedChildFilter(e.target.value)}

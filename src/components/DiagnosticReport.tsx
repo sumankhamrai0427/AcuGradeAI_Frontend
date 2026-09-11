@@ -280,7 +280,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
           <div className="mt-6 pt-6 border-t border-stone-100">
             <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider mb-4 flex items-center gap-2">
               <Layers className="w-4 h-4 text-yellow-600" />
-              RAG Knowledge Graph (K-Graph) Concept Mastery Matrix
+              Concept & Topic Mastery Matrix
             </h3>
             <div className="space-y-3">
               {analysis.kGraphInsights.map((kNode, idx) => {

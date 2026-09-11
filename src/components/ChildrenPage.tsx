@@ -43,9 +43,12 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
   const avgScorePct = useMemo(() => {
     if (!activeChild) return 0;
     if (childExams.length > 0) {
-      const totalObt = childExams.reduce((sum, e) => sum + (e.marksObtained || 0), 0);
-      const totalPoss = childExams.reduce((sum, e) => sum + (e.totalMarks || defaultTotalMarks), 0);
-      return totalPoss > 0 ? Math.round((totalObt / totalPoss) * 100) : 0;
+      return Math.round(
+        childExams.reduce(
+          (sum, e) => sum + (e.accuracyPercentage != null ? Number(e.accuracyPercentage) : ((e.marksObtained / (e.totalMarks || defaultTotalMarks)) * 100)),
+          0
+        ) / childExams.length
+      );
     }
     const score = Number(activeChild.averageScore) || 0;
     return score > 10 ? Math.min(100, Math.round(score)) : Math.min(100, Math.round(score * 10));
@@ -221,8 +224,8 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
           <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-stone-900">Performance Trend</h3>
-                <p className="text-xs text-stone-500 font-medium mt-0.5">Accuracy over the weekly cycle (Mon - Sun)</p>
+                <h3 className="text-base sm:text-lg font-bold text-stone-900">Learning Progress Over Time</h3>
+                <p className="text-xs text-stone-500 font-medium mt-0.5">Diagnostic accuracy trend</p>
               </div>
               <div className="h-8 w-8 rounded-xl bg-yellow-50 flex items-center justify-center text-yellow-600">
                 <TrendingUp className="w-4 h-4" />
@@ -271,7 +274,7 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
                 <h3 className="text-lg font-bold text-stone-900">Topic Mastery</h3>
               </div>
               <span className="text-[11px] font-bold text-stone-400 bg-stone-50 border border-stone-100 px-2 py-0.5 rounded-lg">
-                K-Graph Diagnostics
+                Topic Breakdown
               </span>
             </div>
 
@@ -282,7 +285,7 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
                   <p className="text-[10px] uppercase font-black text-stone-400 tracking-wider">Strongest Areas</p>
                   {strongestTopics.length > 0 && (
                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                      ≥70% Mastery
+                      Top Strengths
                     </span>
                   )}
                 </div>
@@ -291,20 +294,22 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
                     strongestTopics.map(({ topic, score }, idx) => (
                       <div key={idx} className="flex flex-col gap-1.5">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="font-bold text-stone-700 truncate max-w-[200px]" title={topic}>{topic}</span>
-                          <span className="font-black text-emerald-600">{score}%</span>
+                          <span className="font-bold text-stone-700 truncate max-w-[190px]" title={topic}>{topic}</span>
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            🌟 Mastered
+                          </span>
                         </div>
                         <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.max(5, score)}%` }}
+                            style={{ width: `${Math.max(15, score)}%` }}
                           />
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="p-3 bg-stone-50 rounded-2xl border border-stone-100 text-center">
-                      <p className="text-xs text-stone-500 font-medium">Practice diagnostic tests to build top strength areas (≥70%).</p>
+                      <p className="text-xs text-stone-500 font-medium">Practice diagnostic tests to build top strength areas.</p>
                     </div>
                   )}
                 </div>
@@ -316,7 +321,7 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
                   <p className="text-[10px] uppercase font-black text-stone-400 tracking-wider">Needs Attention</p>
                   {weakestTopics.length > 0 && (
                     <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
-                      &lt;70% Focus
+                      Focus Areas
                     </span>
                   )}
                 </div>
@@ -325,13 +330,15 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
                     weakestTopics.map(({ topic, score }, idx) => (
                       <div key={idx} className="flex flex-col gap-1.5">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="font-bold text-stone-700 truncate max-w-[200px]" title={topic}>{topic}</span>
-                          <span className="font-black text-rose-500">{score}%</span>
+                          <span className="font-bold text-stone-700 truncate max-w-[190px]" title={topic}>{topic}</span>
+                          <span className="text-[10px] font-bold text-rose-700 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full">
+                            {score >= 60 ? '📈 Developing' : '🎯 Needs Practice'}
+                          </span>
                         </div>
                         <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-rose-400 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.max(8, score)}%` }}
+                            style={{ width: `${Math.max(15, score)}%` }}
                           />
                         </div>
                       </div>

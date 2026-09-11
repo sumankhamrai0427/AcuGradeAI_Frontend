@@ -89,7 +89,7 @@ export const ParentTeacherCommunication: React.FC<ParentTeacherCommunicationProp
   const [ptmSchedules, setPtmSchedules] = useState<PTMSchedule[]>([]);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
-  const [scheduledTopic, setScheduledTopic] = useState('Review K-Graph Topic Mastery & Misconceptions');
+  const [scheduledTopic, setScheduledTopic] = useState('Review Topic Mastery & Misconceptions');
   const [isSubmittingSchedule, setIsSubmittingSchedule] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState(false);
 
@@ -338,7 +338,7 @@ export const ParentTeacherCommunication: React.FC<ParentTeacherCommunicationProp
         teacherId: activeTeacher.id,
         studentId: activeChild.id,
         scheduledAt: scheduledDate,
-        topic: scheduledTopic.trim() || 'Review K-Graph Topic Mastery & Misconceptions',
+        topic: scheduledTopic.trim() || 'Review Topic Mastery & Misconceptions',
       });
       setScheduleSuccess(true);
       setScheduledDate('');
@@ -1118,7 +1118,7 @@ export const ParentTeacherCommunication: React.FC<ParentTeacherCommunicationProp
           {printableDossierData.topicMastery && Object.keys(printableDossierData.topicMastery).length > 0 && (
             <div className="space-y-3">
               <h3 className="text-xs font-bold text-stone-900 uppercase tracking-wider border-b border-stone-200 pb-1">
-                Diagnostic Topic Mastery (K-Graph Analysis)
+                Diagnostic Topic & Concept Mastery
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {Object.entries(printableDossierData.topicMastery).map(([topic, score]: [string, any]) => {

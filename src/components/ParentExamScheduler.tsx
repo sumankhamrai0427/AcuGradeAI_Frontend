@@ -248,18 +248,21 @@ export const ParentExamScheduler: React.FC<ParentExamSchedulerProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
 
-      {/* Top Banner / Header */}
-      <div className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/3"></div>
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold tracking-wide">
-            <CalendarClock className="w-4 h-4 text-yellow-200" />
+      {/* Top Banner / Header (Clean, Light Theme) */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-amber-50/90 via-yellow-50/70 to-orange-50/50 rounded-3xl p-6 sm:p-8 border border-yellow-200/80 shadow-xs">
+        {/* Soft Ambient Glow Accents */}
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-yellow-200/50 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-amber-200/40 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 max-w-2xl space-y-2.5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-100/80 text-amber-900 border border-yellow-300/60 text-xs font-bold shadow-2xs">
+            <CalendarClock className="w-3.5 h-3.5 text-amber-600" />
             <span>Parent Diagnostic Scheduler</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-stone-900">
             Schedule & Assign Custom Exams
           </h1>
-          <p className="text-sm text-yellow-100 font-medium leading-relaxed">
+          <p className="text-xs sm:text-sm text-stone-600 font-medium leading-relaxed">
             Create tailored chapter tests and diagnostic assessments for your children.
             Students receive instant notifications on their account, and you get real-time score reports upon completion.
           </p>

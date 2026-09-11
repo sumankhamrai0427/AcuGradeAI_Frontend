@@ -650,10 +650,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-stone-900 text-base flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-500" />
-                  Topic Diagnostics
+                  Topic Mastery
                 </h3>
                 <span className="text-[10px] font-bold text-stone-400 bg-stone-50 border border-stone-100 px-2 py-0.5 rounded-lg">
-                  K-Graph
+                  Topic Insights
                 </span>
               </div>
 
@@ -665,9 +665,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 {strongTopics.length > 0 ? (
                   <div className="space-y-1.5">
                     {strongTopics.map(({ topic, score }) => (
-                      <div key={topic} className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 text-xs">
+                      <div key={topic} className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/60 border border-emerald-100 text-xs">
                         <span className="font-bold text-stone-800 truncate max-w-[160px]" title={topic}>{topic}</span>
-                        <span className="font-black text-emerald-700 shrink-0">{score}%</span>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0">
+                          🌟 Mastered
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -684,9 +686,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 {weakTopics.length > 0 ? (
                   <div className="space-y-1.5">
                     {weakTopics.map(({ topic, score }) => (
-                      <div key={topic} className="flex items-center justify-between p-2.5 rounded-xl bg-rose-50/60 border border-rose-100 text-xs">
+                      <div key={topic} className="flex items-center justify-between p-2 rounded-xl bg-rose-50/60 border border-rose-100 text-xs">
                         <span className="font-bold text-stone-800 truncate max-w-[160px]" title={topic}>{topic}</span>
-                        <span className="font-black text-rose-600 shrink-0">{score}%</span>
+                        <span className="text-[10px] font-bold text-rose-700 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full shrink-0">
+                          {score >= 60 ? '📈 Developing' : '🎯 Needs Practice'}
+                        </span>
                       </div>
                     ))}
                   </div>

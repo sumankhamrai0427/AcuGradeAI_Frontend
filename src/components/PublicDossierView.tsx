@@ -214,7 +214,7 @@ export const PublicDossierView: React.FC<PublicDossierViewProps> = ({ shareToken
           <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-xs space-y-4">
             <h2 className="font-bold text-sm text-stone-900 flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-yellow-600" />
-              <span>Diagnostic Topic Mastery (K-Graph Analysis)</span>
+              <span>Diagnostic Topic & Concept Mastery</span>
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

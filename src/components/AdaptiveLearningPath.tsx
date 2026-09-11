@@ -326,7 +326,7 @@ export const AdaptiveLearningPath: React.FC<AdaptiveLearningPathProps> = ({
 
                 <div className="text-right shrink-0">
                   <span className="text-2xl font-bold text-yellow-600">{selectedNode.masteryPercentage}%</span>
-                  <span className="text-[10px] text-stone-400 block">K-Graph Score</span>
+                  <span className="text-[10px] text-stone-400 block">Mastery Score</span>
                 </div>
               </div>
 

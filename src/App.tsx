@@ -221,12 +221,14 @@ export default function App() {
     }
     setShowNotificationMenu(false);
 
-    if (notif.type === 'EXAM_ASSIGNED') {
+    const isSubmitted = notif.type === 'EXAM_SUBMITTED' || notif.type === 'SCHEDULED_EXAM_COMPLETED' || notif.metadata?.status === 'SUBMITTED';
+
+    if (notif.type === 'EXAM_ASSIGNED' && !isSubmitted) {
       setActiveTab('arena');
       return;
     }
 
-    if (notif.type === 'EXAM_SUBMITTED' || notif.metadata?.submissionId || notif.metadata?.examId) {
+    if (isSubmitted || notif.metadata?.submissionId || notif.metadata?.examId) {
       // 1. If child specified, activate that child
       if (notif.metadata?.studentId) {
         setActiveChildId(String(notif.metadata.studentId));
@@ -990,8 +992,8 @@ export default function App() {
                         </div>
                       ) : (
                         notifications.map((notif) => {
-                          const isAssigned = notif.type === 'EXAM_ASSIGNED';
-                          const isSubmitted = notif.type === 'EXAM_SUBMITTED';
+                          const isSubmitted = notif.type === 'EXAM_SUBMITTED' || notif.type === 'SCHEDULED_EXAM_COMPLETED' || notif.metadata?.status === 'SUBMITTED';
+                          const isPending = notif.type === 'EXAM_ASSIGNED' && notif.metadata?.status !== 'SUBMITTED';
 
                           return (
                             <div
@@ -1000,39 +1002,51 @@ export default function App() {
                               className={`p-3 rounded-2xl border transition-all duration-150 flex items-start gap-3 cursor-pointer group text-left ${
                                 !notif.isRead
                                   ? 'bg-gradient-to-r from-amber-50/70 via-yellow-50/40 to-white border-amber-200/80 shadow-xs'
-                                  : 'bg-white hover:bg-stone-50/80 border-stone-200/60 opacity-80 hover:opacity-100'
+                                  : 'bg-white hover:bg-stone-50/80 border-stone-200/60 opacity-85 hover:opacity-100'
                               }`}
                             >
                               {/* Icon Badge */}
-                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm mt-0.5 border ${
-                                isAssigned 
-                                  ? 'bg-amber-100 border-amber-200 text-amber-800' 
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm mt-0.5 border shadow-2xs ${
+                                isPending 
+                                  ? 'bg-amber-100/90 border-amber-200 text-amber-800' 
                                   : isSubmitted 
-                                  ? 'bg-emerald-100 border-emerald-200 text-emerald-800' 
+                                  ? 'bg-emerald-100/90 border-emerald-200 text-emerald-800' 
                                   : 'bg-yellow-100 border-yellow-200 text-yellow-800'
                               }`}>
-                                {isAssigned ? '📝' : isSubmitted ? '🎯' : '🔔'}
+                                {isPending ? '📝' : isSubmitted ? '🎯' : '🔔'}
                               </div>
 
                               {/* Text Body */}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-1">
+                                <div className="flex items-center justify-between gap-1.5 mb-0.5">
                                   <h4 className={`text-xs truncate ${!notif.isRead ? 'font-bold text-stone-900' : 'font-semibold text-stone-700'}`}>
                                     {notif.title}
                                   </h4>
-                                  {!notif.isRead && (
-                                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
-                                  )}
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    {/* Dynamic Status Badge */}
+                                    {isPending ? (
+                                      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200/80 shadow-2xs">
+                                        ⏳ Pending
+                                      </span>
+                                    ) : isSubmitted ? (
+                                      <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200/80 shadow-2xs">
+                                        ✓ Submitted
+                                      </span>
+                                    ) : null}
+                                    {!notif.isRead && (
+                                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                                    )}
+                                  </div>
                                 </div>
-                                <p className="text-[11px] text-stone-600 mt-0.5 line-clamp-2 leading-relaxed">
+                                <p className="text-[11px] text-stone-600 line-clamp-2 leading-relaxed">
                                   {notif.message}
                                 </p>
-                                <div className="flex items-center justify-between mt-2 pt-1 border-t border-stone-100/80 text-[10px] text-stone-400">
+                                <div className="flex items-center justify-between mt-2 pt-1 border-t border-stone-100 text-[10px] text-stone-400">
                                   <span>
                                     {notif.createdAt ? new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}
                                   </span>
                                   <span className="text-yellow-700 font-semibold group-hover:underline flex items-center gap-0.5">
-                                    {isAssigned ? 'Open Arena →' : isSubmitted ? 'View Report →' : 'View →'}
+                                    {isPending ? 'Start Exam →' : isSubmitted ? 'View Report →' : 'View →'}
                                   </span>
                                 </div>
                               </div>
