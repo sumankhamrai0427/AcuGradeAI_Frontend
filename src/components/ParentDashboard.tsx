@@ -40,6 +40,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { calculateStudentMetrics } from '../utils/metricsEngine';
 
 interface ParentDashboardProps {
   parentAccount: ParentAccount;
@@ -47,10 +48,9 @@ interface ParentDashboardProps {
   onChildSelect: (childId: string) => void;
   onLaunchExamForChild: (childId: string) => void;
   onOpenAddChildModal: () => void;
-  examHistory: ExamSubmission[];
-  onViewSubmissionReport: (submission: ExamSubmission) => void;
-  onUpdateChild: (updatedChild: ChildAccount) => void;
-  onDeleteChild?: (childId: string) => void;
+  examHistory?: ExamSubmission[];
+  onViewSubmissionReport?: (submission: ExamSubmission) => void;
+  onUpdateChild?: (updatedChild: ChildAccount) => void;
 }
 
 const BOARDS: Board[] = ['CBSE', 'ICSE', 'ISC', 'UK-Cambridge', 'NCERT', 'NEET', 'IIT'];
@@ -65,7 +65,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   onChildSelect,
   onLaunchExamForChild,
   onOpenAddChildModal,
-  examHistory,
+  examHistory = [],
   onViewSubmissionReport,
   onUpdateChild,
 }) => {
@@ -80,42 +80,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
     return parentAccount.children.find((c) => c.id === activeChildId) || parentAccount.children[0];
   }, [parentAccount.children, activeChildId]);
 
-  // Summary Metrics: Accurate Average calculation across all registered children
-  const getChildMetrics = (child: ChildAccount) => {
-    const childExams = (child.recentExams && child.recentExams.length > 0)
-      ? child.recentExams
-      : examHistory.filter(e => String(e.studentId) === String(child.id));
-
-    const isKids = ['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(c => (child.classGrade || '').includes(c));
-    const defaultTotal = isKids ? 5 : 15;
-
-    const scorePct = childExams.length > 0
-      ? (childExams.reduce((acc, e) => acc + (e.accuracyPercentage != null ? Number(e.accuracyPercentage) : ((e.marksObtained / (e.totalMarks || defaultTotal)) * 100)), 0) / childExams.length)
-      : (child.averageScore > 10 ? child.averageScore : (child.averageScore * 10));
-
-    // Unified Dynamic Exam Readiness (60% Exam Score + 40% Topic Mastery if available)
-    const masteryValues = Object.values(child.topicMastery || {}).map((v) => Number(v) || 0);
-    let readinessScore = Math.round(scorePct);
-    if (masteryValues.length > 0 && (childExams.length > 0 || child.averageScore > 0)) {
-      const avgMastery = masteryValues.reduce((a, b) => a + b, 0) / masteryValues.length;
-      const masteryPct = avgMastery > 10 ? avgMastery : avgMastery * 10;
-      readinessScore = Math.min(100, Math.max(0, Math.round(0.6 * scorePct + 0.4 * masteryPct)));
-    }
-
-    return {
-      scorePct: Math.round(scorePct),
-      readinessScore,
-      streak: child.streakDays || 0,
-      totalExams: childExams.length || child.totalExamsTaken || 0,
-      latestExam: childExams[0],
-      childExams
-    };
-  };
-
   const childrenMetrics = useMemo(() => {
     return parentAccount.children.map(child => ({
       child,
-      ...getChildMetrics(child)
+      ...calculateStudentMetrics(child, examHistory)
     }));
   }, [parentAccount.children, examHistory]);
 
@@ -637,36 +605,29 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
                 {/* Progress Indicators */}
                 {(() => {
-                  const childExams = (child.recentExams && child.recentExams.length > 0)
-                    ? child.recentExams
-                    : examHistory.filter(e => String(e.studentId) === String(child.id));
-                  const childTotalObtained = childExams.reduce((acc, e) => acc + (e.marksObtained || 0), 0);
-                  const childTotalPossible = childExams.reduce((acc, e) => acc + (e.totalMarks || 10), 0);
-                  const childScorePct = childTotalPossible > 0
-                    ? (childTotalObtained / childTotalPossible) * 100
-                    : (child.averageScore > 10 ? child.averageScore : (child.averageScore * 10));
-                  const latestExam = childExams[0];
+                  const cm = childrenMetrics.find(m => m.child.id === child.id) || calculateStudentMetrics(child, examHistory);
+                  const latestExam = cm.latestExam;
                   return (
                     <div className="grid grid-cols-3 gap-4 border-y border-stone-100 py-4 relative z-10">
                       <div className="col-span-1">
                         <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Overall Progress</span>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${Math.round(childScorePct)}%` }} />
+                            <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${cm.scorePct}%` }} />
                           </div>
-                          <span className="text-xs font-bold text-stone-800">{Math.round(childScorePct)}%</span>
+                          <span className="text-xs font-bold text-stone-800">{cm.scorePct}%</span>
                         </div>
                       </div>
                       <div className="col-span-1 text-center border-l border-stone-100 pl-4">
                         <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Exam Readiness</span>
                         <span className="text-sm font-bold text-stone-800">
-                          {child.totalExamsTaken > 0 ? `${Math.round(childScorePct)}%` : '—'}
+                          {cm.totalExams > 0 ? `${cm.readinessScore}%` : '—'}
                         </span>
                       </div>
                       <div className="col-span-1 text-right border-l border-stone-100">
                         <span className="text-[10px] text-stone-400 uppercase font-bold block mb-1">Latest Result</span>
                         <span className="text-sm font-bold text-stone-800">
-                          {latestExam ? `${latestExam.marksObtained}/${latestExam.totalMarks}` : (child.totalExamsTaken > 0 ? `${Math.round(childScorePct)}%` : '—')}
+                          {latestExam ? `${latestExam.marksObtained}/${latestExam.totalMarks}` : (cm.totalExams > 0 ? `${cm.scorePct}%` : '—')}
                         </span>
                       </div>
                     </div>

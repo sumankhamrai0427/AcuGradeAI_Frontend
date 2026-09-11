@@ -227,7 +227,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
       const targetQCount = isAssignedTest ? (assignedExam.questionCount || 10) : blueprint.questionCount;
       const targetDuration = isAssignedTest ? (assignedExam.timeLimitMinutes || 15) : blueprint.durationMinutes;
 
-      setTimeout(() => setGenerationStep(`Grounding ${targetQCount} calibrated questions for ${isAssignedTest ? targetQCount : blueprint.totalMarks} marks...`), 400);
+      const targetScheduledId = isAssignedTest ? assignedExam?.id : undefined;
 
       const { exam } = await ApiServices.generateExam({
         studentId: activeChildId,
@@ -237,9 +237,13 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
         difficulty: targetDiff,
         questionCount: targetQCount,
         timeLimitMinutes: targetDuration,
-        scheduledExamId: isAssignedTest ? assignedExam?.id : undefined,
+        scheduledExamId: targetScheduledId,
         chapterTopic: isAssignedTest ? assignedExam?.chapterTopic : undefined,
       });
+
+      if (targetScheduledId) {
+        (exam as any).scheduledExamId = targetScheduledId;
+      }
 
       setActiveExam(exam);
       setCurrentQuestionIdx(0);
@@ -274,20 +278,19 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
     setShowConfirmSubmit(false);
 
     const totalSecondsSpent = (activeExam.timeLimitMinutes || 15) * 60 - timeRemainingSeconds;
+    const scheduledIdToSubmit = (activeExam as any).scheduledExamId || (activeExam as any).scheduled_exam_id || undefined;
 
     try {
       // Only the exam id + the student's answers are sent — never the full
       // exam object. The backend already has the questions (and their
       // correct answers) stored server-side from the /generate call, so
       // there's nothing left for the client to round-trip or tamper with.
-      // (This replaces the original flow, which sent the whole exam —
-      // correctAnswer included — back to the server on every submission.)
       const { submission } = await ApiServices.submitExam(
         activeExam.id,
         {
           answers,
           timeTakenSeconds: Math.max(10, totalSecondsSpent),
-          scheduledExamId: (activeExam as any).scheduledExamId || (activeExam as any).scheduled_exam_id || (assignedExam ? assignedExam.id : undefined),
+          scheduledExamId: scheduledIdToSubmit,
         }
       );
       onExamComplete(submission);

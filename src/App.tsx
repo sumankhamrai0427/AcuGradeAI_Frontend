@@ -173,6 +173,100 @@ export default function App() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
 
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
+
+  // Enforce collapsed sidebar by default on persona/role changes
+  useEffect(() => {
+    setIsSidebarCollapsed(true);
+  }, [authRole, activePersona]);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => !prev);
+  };
+
+  const normalizedRole = (authRole || '').toUpperCase();
+  const isAdminSession = normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
+  const isTeacherSession = normalizedRole === 'TEACHER';
+  const isStudentSession = normalizedRole === 'STUDENT';
+  const isParentSession = normalizedRole === 'PARENT';
+  const activeChild = parentAccount?.children.find((c) => c.id === activeChildId) || parentAccount?.children[0];
+  const isParentActive = !isStudentSession && activePersona === 'parent';
+  const totalFamilyXP = parentAccount?.children.reduce((acc, c) => acc + (c.xp || 0), 0) || 0;
+  const totalChildrenCount = parentAccount?.children.length || 0;
+
+  // ------------------------------------------------------------
+  // Data loading — replaces the old mock-data useState initializers.
+  // ------------------------------------------------------------
+  const loadParentAndChildren = useCallback(async () => {
+    const dashboardData = await ApiServices.getParentDashboard();
+    const { profile, children: enrichedChildren, recentExams, pageAccess } = dashboardData;
+
+    setParentAccount({
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      role: 'parent',
+      children: enrichedChildren,
+      createdAt: profile.createdAt,
+    });
+    setExamHistory(recentExams);
+    setPageAccess(pageAccess);
+    setActiveChildId((prev) => (prev || (enrichedChildren && enrichedChildren[0] ? enrichedChildren[0].id : null)));
+    return pageAccess;
+  }, []);
+
+  const loadStudentData = useCallback(async () => {
+    const dashboardData = await ApiServices.getStudentDashboard();
+    const { profile, recentExams, learningPath, pageAccess } = dashboardData;
+
+    const studentChild: ChildAccount = {
+      ...profile,
+      recentExams: recentExams || []
+    };
+
+    setParentAccount({
+      id: `student-parent-${profile.id}`,
+      name: profile.name,
+      email: profile.email || '',
+      role: 'parent',
+      children: [studentChild],
+      createdAt: profile.createdAt || new Date().toISOString(),
+    });
+    setExamHistory(recentExams || []);
+    setPageAccess(pageAccess || []);
+    setActiveChildId(profile.id);
+    setActivePersona('child');
+    if (learningPath) {
+      setLearningNodes(learningPath);
+    }
+    return pageAccess || [];
+  }, []);
+
+  const loadGamification = useCallback(async () => {
+    const [badgeList, leaderboardList] = await Promise.all([
+      ApiServices.listBadges(),
+      ApiServices.leaderboard('all_time'),
+    ]);
+    setBadges(badgeList);
+    setLeaderboard(
+      leaderboardList.map((entry: LeaderboardEntry) => ({
+        ...entry,
+        isCurrentStudent: entry.studentId === activeChildId,
+      }))
+    );
+  }, [activeChildId]);
+
+  const loadLearningPath = useCallback(async (childId: string) => {
+    if (isStudentSession) {
+      const nodes = await ApiServices.getStudentLearningPath();
+      setLearningNodes(nodes);
+    } else {
+      const nodes = await ApiServices.getChildLearningPath(childId);
+      setLearningNodes(nodes);
+    }
+  }, [isStudentSession]);
+
   const fetchNotifications = useCallback(async () => {
     if (!authRole) return;
     try {
@@ -181,10 +275,16 @@ export default function App() {
         setNotifications(res.notifications || []);
         setUnreadNotifCount(res.unreadCount || 0);
       }
+      // Silently refresh parent data & child reports in the background so all tables/cards stay live
+      if (authRole === 'parent') {
+        loadParentAndChildren().catch(() => {});
+      } else if (authRole === 'student') {
+        loadStudentData().catch(() => {});
+      }
     } catch (err) {
       // Quietly ignore network/auth errors on background poll
     }
-  }, [authRole]);
+  }, [authRole, loadParentAndChildren, loadStudentData]);
 
   // Real-Time Notification Polling (every 15 seconds)
   useEffect(() => {
@@ -326,132 +426,6 @@ export default function App() {
       setActiveTab(cleanUrl);
     }
   };
-
-  // Close persona dropdown when clicking anywhere outside
-  useEffect(() => {
-    if (!showPersonaMenu) return;
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (personaMenuRef.current && !personaMenuRef.current.contains(event.target as Node)) {
-        setShowPersonaMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [showPersonaMenu]);
-
-  // Close notification dropdown when clicking anywhere outside
-  useEffect(() => {
-    if (!showNotificationMenu) return;
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (notificationMenuRef.current && !notificationMenuRef.current.contains(event.target as Node)) {
-        setShowNotificationMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [showNotificationMenu]);
-
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
-
-  // Enforce collapsed sidebar by default on persona/role changes
-  useEffect(() => {
-    setIsSidebarCollapsed(true);
-  }, [authRole, activePersona]);
-
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed((prev) => !prev);
-  };
-
-  const normalizedRole = (authRole || '').toUpperCase();
-  const isAdminSession = normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
-  const isTeacherSession = normalizedRole === 'TEACHER';
-  const isStudentSession = normalizedRole === 'STUDENT';
-  const isParentSession = normalizedRole === 'PARENT';
-  const activeChild = parentAccount?.children.find((c) => c.id === activeChildId) || parentAccount?.children[0];
-  const isParentActive = !isStudentSession && activePersona === 'parent';
-  const totalFamilyXP = parentAccount?.children.reduce((acc, c) => acc + (c.xp || 0), 0) || 0;
-  const totalChildrenCount = parentAccount?.children.length || 0;
-
-  // ------------------------------------------------------------
-  // Data loading — replaces the old mock-data useState initializers.
-  // ------------------------------------------------------------
-  const loadParentAndChildren = useCallback(async () => {
-    const dashboardData = await ApiServices.getParentDashboard();
-    const { profile, children: enrichedChildren, recentExams, pageAccess } = dashboardData;
-
-    setParentAccount({
-      id: profile.id,
-      name: profile.name,
-      email: profile.email,
-      role: 'parent',
-      children: enrichedChildren,
-      createdAt: profile.createdAt,
-    });
-    setExamHistory(recentExams);
-    setPageAccess(pageAccess);
-    setActiveChildId((prev) => (prev || (enrichedChildren && enrichedChildren[0] ? enrichedChildren[0].id : null)));
-    return pageAccess;
-  }, []);
-
-  const loadStudentData = useCallback(async () => {
-    const dashboardData = await ApiServices.getStudentDashboard();
-    const { profile, recentExams, learningPath, pageAccess } = dashboardData;
-
-    const studentChild: ChildAccount = {
-      ...profile,
-      recentExams: recentExams || []
-    };
-
-    setParentAccount({
-      id: `student-parent-${profile.id}`,
-      name: profile.name,
-      email: profile.email || '',
-      role: 'parent',
-      children: [studentChild],
-      createdAt: profile.createdAt || new Date().toISOString(),
-    });
-    setExamHistory(recentExams || []);
-    setPageAccess(pageAccess || []);
-    setActiveChildId(profile.id);
-    setActivePersona('child');
-    if (learningPath) {
-      setLearningNodes(learningPath);
-    }
-    return pageAccess || [];
-  }, []);
-
-  const loadGamification = useCallback(async () => {
-    const [badgeList, leaderboardList] = await Promise.all([
-      ApiServices.listBadges(),
-      ApiServices.leaderboard('all_time'),
-    ]);
-    setBadges(badgeList);
-    setLeaderboard(
-      leaderboardList.map((entry: LeaderboardEntry) => ({
-        ...entry,
-        isCurrentStudent: entry.studentId === activeChildId,
-      }))
-    );
-  }, [activeChildId]);
-
-  const loadLearningPath = useCallback(async (childId: string) => {
-    if (isStudentSession) {
-      const nodes = await ApiServices.getStudentLearningPath();
-      setLearningNodes(nodes);
-    } else {
-      const nodes = await ApiServices.getChildLearningPath(childId);
-      setLearningNodes(nodes);
-    }
-  }, [isStudentSession]);
 
 
 

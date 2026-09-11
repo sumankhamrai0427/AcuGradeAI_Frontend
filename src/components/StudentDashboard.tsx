@@ -42,6 +42,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+import { calculateStudentMetrics } from '../utils/metricsEngine';
+
 interface StudentDashboardProps {
   activeChild: ChildAccount;
   examHistory: ExamSubmission[];
@@ -80,18 +82,20 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 }) => {
   const [timeframe, setTimeframe] = useState<'week' | 'month'>('week');
 
+  // Unified Student Analytics Metrics (SSOT)
+  const metrics = useMemo(() => {
+    return calculateStudentMetrics(activeChild, examHistory);
+  }, [activeChild, examHistory]);
+
+  const studentExams = metrics.childExams;
+  const accuracyPct = metrics.scorePct;
+  const readinessPct = metrics.readinessScore;
+
   // Check if student is in Junior Grade (Class 1 - Class 4)
   const isKid = ['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some((c) =>
     (activeChild.classGrade || '').includes(c)
   );
   const defaultTotalMarks = isKid ? 5 : 15;
-
-  // Filter exams strictly for this student from live database submissions
-  const studentExams = useMemo(() => {
-    return examHistory
-      .filter((e) => String(e.studentId) === String(activeChild.id))
-      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
-  }, [examHistory, activeChild.id]);
 
   // Total XP & Level calculation
   const xp = activeChild.xp || 0;
@@ -107,16 +111,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     if (lvl >= 3) return 'Rising Scholar';
     return 'Novice Explorer';
   };
-
-  // Accuracy calculation (Average across exams, matching database average_score)
-  const accuracyPct = studentExams.length > 0
-    ? Math.round(
-        studentExams.reduce(
-          (sum, e) => sum + (e.accuracyPercentage != null ? Number(e.accuracyPercentage) : ((e.marksObtained / (e.totalMarks || defaultTotalMarks)) * 100)),
-          0
-        ) / studentExams.length
-      )
-    : Math.round(activeChild.averageScore > 10 ? activeChild.averageScore : (activeChild.averageScore * 10 || 0));
 
   const streakDays = activeChild.streakDays || 0;
 

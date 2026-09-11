@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { ParentAccount, ExamSubmission } from '../types';
 import { Trophy, TrendingUp, Target, Flame, BrainCircuit, Sparkles, CheckCircle2 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { calculateStudentMetrics } from '../utils/metricsEngine';
 
 interface ChildrenPageProps {
   parentAccount: ParentAccount;
@@ -22,53 +23,14 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
     return parentAccount.children.find((c) => c.id === activeChildId) || parentAccount.children[0];
   }, [parentAccount.children, activeChildId]);
 
-  // Filter exams strictly for this active child from database submissions
-  const childExams = useMemo(() => {
-    if (!activeChild) return [];
-    return examHistory
-      .filter((e) => String(e.studentId) === String(activeChild.id))
-      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
-  }, [examHistory, activeChild]);
+  // Unified Student Analytics Metrics (SSOT)
+  const metrics = useMemo(() => {
+    return calculateStudentMetrics(activeChild, examHistory);
+  }, [activeChild, examHistory]);
 
-  const isKid = useMemo(() => {
-    if (!activeChild) return false;
-    return ['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some((c) =>
-      (activeChild.classGrade || '').includes(c)
-    );
-  }, [activeChild]);
-
-  const defaultTotalMarks = isKid ? 5 : 15;
-
-  // Real Average Score % and Readiness % from live exams
-  const avgScorePct = useMemo(() => {
-    if (!activeChild) return 0;
-    if (childExams.length > 0) {
-      return Math.round(
-        childExams.reduce(
-          (sum, e) => sum + (e.accuracyPercentage != null ? Number(e.accuracyPercentage) : ((e.marksObtained / (e.totalMarks || defaultTotalMarks)) * 100)),
-          0
-        ) / childExams.length
-      );
-    }
-    const score = Number(activeChild.averageScore) || 0;
-    return score > 10 ? Math.min(100, Math.round(score)) : Math.min(100, Math.round(score * 10));
-  }, [childExams, activeChild, defaultTotalMarks]);
-
-  // 100% Dynamic Exam Readiness based on live exam performance and topic mastery
-  const readinessPct = useMemo(() => {
-    if (!activeChild || (childExams.length === 0 && avgScorePct === 0)) return 0;
-
-    const masteryValues = Object.values(activeChild.topicMastery || {}).map((v) => Number(v) || 0);
-    if (masteryValues.length > 0) {
-      const avgMastery = masteryValues.reduce((a, b) => a + b, 0) / masteryValues.length;
-      const masteryPct = avgMastery > 10 ? avgMastery : avgMastery * 10;
-      // Weighted blend: 60% live exam accuracy + 40% curriculum topic mastery
-      return Math.min(100, Math.max(0, Math.round(0.6 * avgScorePct + 0.4 * masteryPct)));
-    }
-
-    // Direct dynamic readiness from completed exam accuracy
-    return Math.min(100, Math.max(0, avgScorePct));
-  }, [avgScorePct, activeChild, childExams]);
+  const childExams = metrics.childExams;
+  const avgScorePct = metrics.scorePct;
+  const readinessPct = metrics.readinessScore;
 
   const childLevel = activeChild
     ? activeChild.level || Math.floor((activeChild.xp || 0) / 100) + 1
@@ -99,7 +61,7 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
       const score = matching.length > 0
         ? Math.round(
             matching.reduce(
-              (acc, curr) => acc + ((curr.marksObtained / (curr.totalMarks || defaultTotalMarks)) * 100),
+              (acc, curr) => acc + (curr.accuracyPercentage != null ? Number(curr.accuracyPercentage) : ((curr.marksObtained / (curr.totalMarks || 15)) * 100)),
               0
             ) / matching.length
           )
@@ -107,7 +69,7 @@ export const ChildrenPage: React.FC<ChildrenPageProps> = ({
 
       return { date: dayLabel, score };
     });
-  }, [childExams, defaultTotalMarks]);
+  }, [childExams]);
 
   if (!activeChild) {
     return (

@@ -64,7 +64,7 @@ export const ParentExamScheduler: React.FC<ParentExamSchedulerProps> = ({
   const [chapterTopic, setChapterTopic] = useState<string>('');
   const [difficulty, setDifficulty] = useState<'simple' | 'medium' | 'hard'>('medium');
   const [questionCount, setQuestionCount] = useState<number>(10);
-  const [timeLimitMinutes, setTimeLimitMinutes] = useState<number>(15);
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState<number>(10);
   const [dueDate, setDueDate] = useState<string>('');
   const [parentInstructions, setParentInstructions] = useState<string>('');
 
@@ -82,18 +82,18 @@ export const ParentExamScheduler: React.FC<ParentExamSchedulerProps> = ({
     setSubject('');
     if (isKid) {
       setQuestionCount(5);
-      setTimeLimitMinutes(10);
+      setTimeLimitMinutes(5);
       setDifficulty('simple');
     } else {
       setQuestionCount(10);
-      setTimeLimitMinutes(15);
+      setTimeLimitMinutes(10);
       setDifficulty('medium');
     }
   };
 
-  const fetchScheduledExams = async () => {
+  const fetchScheduledExams = async (isInitial: boolean = false) => {
     try {
-      setIsLoadingList(true);
+      if (isInitial) setIsLoadingList(true);
       const res = await ApiServices.getScheduledExams();
       if (res && res.scheduledExams) {
         setScheduledExams(res.scheduledExams);
@@ -103,12 +103,16 @@ export const ParentExamScheduler: React.FC<ParentExamSchedulerProps> = ({
     } catch (err) {
       console.error('Failed to fetch scheduled exams:', err);
     } finally {
-      setIsLoadingList(false);
+      if (isInitial) setIsLoadingList(false);
     }
   };
 
   useEffect(() => {
-    fetchScheduledExams();
+    fetchScheduledExams(true);
+    const interval = setInterval(() => {
+      fetchScheduledExams(false);
+    }, 8000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleScheduleSubmit = async (e: React.FormEvent) => {
@@ -416,17 +420,14 @@ export const ParentExamScheduler: React.FC<ParentExamSchedulerProps> = ({
                   onChange={(e) => {
                     const count = Number(e.target.value);
                     setQuestionCount(count);
-                    if (count === 5) setTimeLimitMinutes(10);
-                    else if (count === 10) setTimeLimitMinutes(15);
-                    else if (count === 15) setTimeLimitMinutes(20);
-                    else if (count === 20) setTimeLimitMinutes(25);
+                    setTimeLimitMinutes(count); // Exactly 1 min per question/mark
                   }}
                   className="w-full px-2.5 py-2 rounded-xl border border-stone-200 bg-stone-50/50 text-xs font-semibold text-stone-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400/50 focus:border-yellow-400 transition-all truncate"
                 >
-                  <option value={5}>5 Qs (5M) • 10 min{isKidGrade ? ' ★' : ''}</option>
-                  <option value={10}>10 Qs (10M) • 15 min{!isKidGrade ? ' ★' : ''}</option>
-                  <option value={15}>15 Qs (15M) • 20 min</option>
-                  <option value={20}>20 Qs (20M) • 25 min</option>
+                  <option value={5}>5 Qs (5M) • 5 min{isKidGrade ? ' ★' : ''}</option>
+                  <option value={10}>10 Qs (10M) • 10 min{!isKidGrade ? ' ★' : ''}</option>
+                  <option value={15}>15 Qs (15M) • 15 min</option>
+                  <option value={20}>20 Qs (20M) • 20 min</option>
                 </select>
               </div>
 
