@@ -224,7 +224,6 @@ export const Header: React.FC<HeaderProps> = ({
 
                     {/* Children Items */}
                     {parentAccount.children.map((child) => {
-                      const isSelected = activeChildId === child.id;
                       return (
                         <button
                           key={child.id}
@@ -232,9 +231,7 @@ export const Header: React.FC<HeaderProps> = ({
                             setActiveChildId(child.id);
                             setShowPersonaMenu(false);
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${
-                            isSelected ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
-                          }`}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors text-stone-700 hover:bg-stone-100 cursor-pointer"
                         >
                           <div className="flex items-center gap-2.5">
                             <span className="text-lg">{child.avatar}</span>
@@ -245,7 +242,6 @@ export const Header: React.FC<HeaderProps> = ({
                               </div>
                             </div>
                           </div>
-                          {isSelected && <CheckCircle className="w-4 h-4 text-yellow-600" />}
                         </button>
                       );
                     })}

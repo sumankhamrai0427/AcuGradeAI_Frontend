@@ -185,6 +185,28 @@ export default function App() {
     setIsSidebarCollapsed((prev) => !prev);
   };
 
+  // Close Persona and Notification dropdown menus when clicking anywhere outside
+  useEffect(() => {
+    if (!showPersonaMenu && !showNotificationMenu) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (showPersonaMenu && personaMenuRef.current && !personaMenuRef.current.contains(target)) {
+        setShowPersonaMenu(false);
+      }
+      if (showNotificationMenu && notificationMenuRef.current && !notificationMenuRef.current.contains(target)) {
+        setShowNotificationMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showPersonaMenu, showNotificationMenu]);
+
   const normalizedRole = (authRole || '').toUpperCase();
   const isAdminSession = normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
   const isTeacherSession = normalizedRole === 'TEACHER';
@@ -918,7 +940,10 @@ export default function App() {
               {/* Real-Time Notification Bell & Dropdown */}
               <div className="relative" ref={notificationMenuRef}>
                 <button
-                  onClick={() => setShowNotificationMenu(!showNotificationMenu)}
+                  onClick={() => {
+                    setShowNotificationMenu((prev) => !prev);
+                    setShowPersonaMenu(false);
+                  }}
                   className="relative p-2 rounded-full hover:bg-stone-100 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
                   title="Notifications"
                 >
@@ -1037,7 +1062,10 @@ export default function App() {
               <div className="relative" ref={personaMenuRef}>
                 <button
                   id="header-persona-switcher"
-                  onClick={() => setShowPersonaMenu(!showPersonaMenu)}
+                  onClick={() => {
+                    setShowPersonaMenu((prev) => !prev);
+                    setShowNotificationMenu(false);
+                  }}
                   className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-50 to-amber-50 border border-yellow-200 shadow-sm flex items-center justify-center text-xl hover:scale-105 transition-transform cursor-pointer"
                   title={isParentActive ? `Parent Account (${parentAccount?.name})` : `Active Student (${activeChild?.name})`}
                 >
@@ -1098,13 +1126,11 @@ export default function App() {
                               <p className="text-[10px] text-stone-500 font-medium">No children added yet</p>
                             </div>
                           ) : (parentAccount?.children || []).map((child) => {
-                            const isSelected = activeChildId === child.id;
                             return (
                               <button
                                 key={child.id}
                                 onClick={() => handleSwitchToChild(child.id)}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors ${isSelected ? 'bg-yellow-50 text-yellow-900 font-semibold' : 'text-stone-700 hover:bg-stone-100'
-                                  }`}
+                                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors text-stone-700 hover:bg-stone-100 cursor-pointer"
                               >
                                 <div className="flex items-center gap-2.5">
                                   <span className="text-base">{child.avatar}</span>
@@ -1115,7 +1141,6 @@ export default function App() {
                                     </div>
                                   </div>
                                 </div>
-                                {isSelected && <CheckCircle className="w-4 h-4 text-yellow-600 shrink-0" />}
                               </button>
                             );
                           })}

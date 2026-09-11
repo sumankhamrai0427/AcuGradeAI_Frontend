@@ -503,8 +503,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
           </div>
         </div>
 
-        {/* Card 4: Learning Streak (Rose/Pink) */}
-        <div className="bg-gradient-to-br from-rose-50 to-pink-50 p-4 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
+        {/* Card 4: Learning Streak (Rose/Pink - Clickable) */}
+        <div
+          onClick={() => setActiveModalMetric('streak')}
+          className="bg-gradient-to-br from-rose-50 to-pink-50 p-4 rounded-2xl border border-rose-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md hover:border-rose-400 hover:scale-[1.01] transition-all cursor-pointer"
+        >
           <div className="absolute -right-4 -top-4 w-20 h-20 bg-rose-400 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
           <div className="flex items-center justify-between mb-2 relative z-10">
             <div className="flex items-center gap-2">
@@ -513,9 +516,12 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
               </div>
               <span className="text-xs font-bold text-rose-900 uppercase tracking-wider">Streak</span>
             </div>
-            <span className="text-[10px] font-bold bg-rose-200/70 text-rose-900 px-2 py-0.5 rounded-full border border-rose-300/60 shadow-2xs flex items-center gap-1">
-              🔥 Active
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold bg-rose-200/70 text-rose-900 px-2 py-0.5 rounded-full border border-rose-300/60 shadow-2xs flex items-center gap-1">
+                🔥 Active
+              </span>
+              <ChevronRight className="w-3.5 h-3.5 text-rose-600/60 group-hover:translate-x-0.5 transition-transform" />
+            </div>
           </div>
           <div className="flex items-end justify-between relative z-10 mt-1">
             <div>
@@ -910,19 +916,38 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${activeModalMetric === 'progress' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${
+                  activeModalMetric === 'progress' 
+                    ? 'bg-emerald-100 text-emerald-800' 
+                    : activeModalMetric === 'streak'
+                    ? 'bg-rose-100 text-rose-800'
+                    : 'bg-blue-100 text-blue-800'
                   }`}>
-                  {activeModalMetric === 'progress' ? <TrendingUp className="w-5 h-5" /> : <Award className="w-5 h-5" />}
+                  {activeModalMetric === 'progress' ? (
+                    <TrendingUp className="w-5 h-5" />
+                  ) : activeModalMetric === 'streak' ? (
+                    <Flame className="w-5 h-5" />
+                  ) : (
+                    <Award className="w-5 h-5" />
+                  )}
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-stone-900">
-                    {activeModalMetric === 'progress' ? 'Student-Wise Overall Progress' : 'Student-Wise Exam Readiness'}
+                    {activeModalMetric === 'progress' 
+                      ? 'Student-Wise Overall Progress' 
+                      : activeModalMetric === 'streak'
+                      ? 'Student-Wise Learning Streak'
+                      : 'Student-Wise Exam Readiness'}
                   </h3>
                   <p className="text-xs text-stone-500">
                     {activeModalMetric === 'progress'
                       ? (totalChildren === 1
                         ? `Diagnostic learning progress for ${childrenMetrics[0]?.child.name || 'student'}.`
                         : `Individual learning progress for all ${totalChildren} children. Tap to view profile.`)
+                      : activeModalMetric === 'streak'
+                      ? (totalChildren === 1
+                        ? `Daily learning streak and practice consistency for ${childrenMetrics[0]?.child.name || 'student'}.`
+                        : `Individual daily learning streaks for all ${totalChildren} children. Tap to view profile.`)
                       : (totalChildren === 1
                         ? `Exam & board readiness evaluation for ${childrenMetrics[0]?.child.name || 'student'}.`
                         : `Individual exam readiness for all ${totalChildren} children. Tap to view profile.`)}
@@ -960,6 +985,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                           } else {
                             navigate('/children');
                           }
+                        } else if (activeModalMetric === 'streak') {
+                          navigate('/children');
                         } else {
                           navigate('/reports');
                         }
@@ -996,6 +1023,14 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                               <span className="text-lg font-black text-emerald-700">{scorePct}%</span>
                               <p className="text-[9px] text-stone-400 font-semibold">Individual Score</p>
                             </div>
+                          ) : activeModalMetric === 'streak' ? (
+                            <div>
+                              <span className="text-lg font-black text-rose-600 flex items-center justify-end gap-1">
+                                <Flame className="w-4 h-4 fill-current text-rose-500" />
+                                {child.streakDays || 0} {(child.streakDays || 0) === 1 ? 'Day' : 'Days'}
+                              </span>
+                              <p className="text-[9px] text-stone-400 font-semibold">Active Streak</p>
+                            </div>
                           ) : (
                             <div>
                               <span className="text-lg font-black text-blue-700">{readinessScore}%</span>
@@ -1005,20 +1040,46 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                         </div>
                       </div>
 
-                      {/* Visual Bar */}
-                      <div className="space-y-1 mt-2">
-                        <div className="w-full h-2 bg-stone-200 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${activeModalMetric === 'progress' ? 'bg-emerald-500' : 'bg-blue-500'
+                      {/* Visual Bar / Streak indicator */}
+                      {activeModalMetric === 'streak' ? (
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-stone-100 text-[10px] text-stone-500 font-medium">
+                          <div className="flex items-center gap-1.5">
+                            <span>Consistency:</span>
+                            <span className="font-bold text-rose-600">
+                              {(child.streakDays || 0) >= 3 ? '🔥 Super Active' : (child.streakDays || 0) > 0 ? '🔥 On Track' : '⏳ Needs Practice Today'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+                              const isActive = day <= Math.min(child.streakDays || 0, 7);
+                              return (
+                                <span
+                                  key={day}
+                                  className={`w-2 h-2 rounded-full transition-all ${
+                                    isActive ? 'bg-rose-500 shadow-2xs scale-110' : 'bg-rose-200/80'
+                                  }`}
+                                  title={`Day ${day}`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1 mt-2">
+                          <div className="w-full h-2 bg-stone-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                activeModalMetric === 'progress' ? 'bg-emerald-500' : 'bg-blue-500'
                               }`}
-                            style={{ width: `${Math.min(100, Math.max(5, scorePct))}%` }}
-                          />
+                              style={{ width: `${Math.min(100, Math.max(5, scorePct))}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[10px] text-stone-500 font-medium">
+                            <span>Diagnostic Accuracy</span>
+                            <span>Latest Result: <strong>{latestExam ? `${latestExam.marksObtained}/${latestExam.totalMarks || (['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(c => (child.classGrade || '').includes(c)) ? 5 : 15)}` : (scorePct > 0 ? `${scorePct}%` : '—')}</strong></span>
+                          </div>
                         </div>
-                        <div className="flex justify-between text-[10px] text-stone-500 font-medium">
-                          <span>Diagnostic Accuracy</span>
-                          <span>Latest Result: <strong>{latestExam ? `${latestExam.marksObtained}/${latestExam.totalMarks || (['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(c => (child.classGrade || '').includes(c)) ? 5 : 15)}` : (scorePct > 0 ? `${scorePct}%` : '—')}</strong></span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   );
                 })

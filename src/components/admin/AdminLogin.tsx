@@ -147,24 +147,82 @@ interface StatCardProps {
   label: string;
   value: string;
   change: string;
+  subText?: string;
+  theme?: 'yellow' | 'emerald' | 'blue' | 'rose';
   positive?: boolean;
   accent?: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon, label, value, change, positive = true, accent = 'bg-amber-400' }) => (
-  <div className="admin-card group hover:-translate-y-1 transition-all duration-300">
-    <div className="flex items-start justify-between mb-4">
-      <div className={`w-12 h-12 rounded-2xl ${accent} flex items-center justify-center shadow-lg`}>
-        {icon}
+const themeStyles = {
+  yellow: {
+    gradient: 'from-yellow-50 to-orange-50',
+    border: 'border-yellow-200/80 hover:border-yellow-400',
+    glow: 'bg-yellow-400',
+    title: 'text-yellow-900',
+    badge: 'bg-yellow-200/70 text-yellow-900 border-yellow-300/60',
+    subText: 'text-yellow-800',
+  },
+  emerald: {
+    gradient: 'from-emerald-50 to-teal-50',
+    border: 'border-emerald-200/80 hover:border-emerald-400',
+    glow: 'bg-emerald-400',
+    title: 'text-emerald-900',
+    badge: 'bg-emerald-200/70 text-emerald-900 border-emerald-300/60',
+    subText: 'text-emerald-700',
+  },
+  blue: {
+    gradient: 'from-blue-50 to-indigo-50',
+    border: 'border-blue-200/80 hover:border-blue-400',
+    glow: 'bg-blue-400',
+    title: 'text-blue-900',
+    badge: 'bg-blue-200/70 text-blue-900 border-blue-300/60',
+    subText: 'text-blue-700',
+  },
+  rose: {
+    gradient: 'from-rose-50 to-pink-50',
+    border: 'border-rose-200/80 hover:border-rose-400',
+    glow: 'bg-rose-400',
+    title: 'text-rose-900',
+    badge: 'bg-rose-200/70 text-rose-900 border-rose-300/60',
+    subText: 'text-rose-700',
+  },
+};
+
+const StatCard: React.FC<StatCardProps> = ({
+  icon,
+  label,
+  value,
+  change,
+  subText,
+  theme = 'yellow',
+}) => {
+  const t = themeStyles[theme] || themeStyles.yellow;
+
+  return (
+    <div className={`bg-gradient-to-br ${t.gradient} p-4 rounded-2xl border ${t.border} shadow-xs flex flex-col justify-between relative overflow-hidden group hover:shadow-md hover:scale-[1.01] transition-all`}>
+      <div className={`absolute -right-4 -top-4 w-20 h-20 ${t.glow} rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity`}></div>
+      <div className="flex items-center justify-between mb-2 relative z-10">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-xl bg-white shadow-xs flex items-center justify-center">
+            {icon}
+          </div>
+          <span className={`text-xs font-bold ${t.title} uppercase tracking-wider`}>{label}</span>
+        </div>
+        <span className={`text-[10px] font-bold ${t.badge} px-2 py-0.5 rounded-full border shadow-2xs`}>
+          {change}
+        </span>
       </div>
-      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${positive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
-        {change}
-      </span>
+      <div className="flex items-end justify-between relative z-10 mt-1">
+        <div>
+          <p className="text-2xl font-black text-stone-900">{value}</p>
+          <p className={`text-[10px] ${t.subText} font-semibold mt-0.5`}>
+            {subText || label}
+          </p>
+        </div>
+      </div>
     </div>
-    <p className="text-3xl font-black text-stone-900 tracking-tight">{value}</p>
-    <p className="text-sm text-stone-500 font-medium mt-1">{label}</p>
-  </div>
-);
+  );
+};
 
 // ─────────────────────────────────────────────────────────────
 // Sidebar Nav Item
@@ -875,38 +933,38 @@ const DashboardView: React.FC = () => {
       {/* Stats Grid */}
       <div>
         <h2 className="text-xs font-black uppercase tracking-widest text-stone-400 mb-4">Platform Overview</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
-            icon={<Users className="w-6 h-6 text-white" />}
+            icon={<Users className="w-3.5 h-3.5 text-yellow-600" />}
             label="Total Users"
             value={statsLoading ? '...' : (stats?.totalUsers ?? 0).toLocaleString()}
             change="Registered"
-            positive={true}
-            accent="bg-amber-400"
+            subText="Parents & Students"
+            theme="yellow"
           />
           <StatCard
-            icon={<GraduationCap className="w-6 h-6 text-white" />}
+            icon={<GraduationCap className="w-3.5 h-3.5 text-emerald-600" />}
             label="Exams Generated"
             value={statsLoading ? '...' : (stats?.totalExamsGenerated ?? 0).toLocaleString()}
             change="Smart Exams"
-            positive={true}
-            accent="bg-yellow-500"
+            subText="AI Curriculum Tests"
+            theme="emerald"
           />
           <StatCard
-            icon={<Activity className="w-6 h-6 text-white" />}
+            icon={<Activity className="w-3.5 h-3.5 text-blue-600" />}
             label="Tests Evaluated"
             value={statsLoading ? '...' : (stats?.totalExamsCompleted ?? 0).toLocaleString()}
             change="Completed"
-            positive={true}
-            accent="bg-amber-500"
+            subText="Scored Submissions"
+            theme="blue"
           />
           <StatCard
-            icon={<TrendingUp className="w-6 h-6 text-white" />}
+            icon={<TrendingUp className="w-3.5 h-3.5 text-rose-500" />}
             label="Platform Accuracy"
             value={statsLoading ? '...' : `${stats?.averagePlatformScore ?? 0}%`}
             change="Avg Score"
-            positive={true}
-            accent="bg-yellow-400"
+            subText="Diagnostic Mastery"
+            theme="rose"
           />
         </div>
       </div>

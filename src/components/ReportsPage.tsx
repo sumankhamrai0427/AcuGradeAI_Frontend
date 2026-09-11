@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ExamSubmission, ParentAccount } from '../types';
-import { FileText, Calendar, Filter, ChevronRight, CheckCircle2, Clock, BookOpen, AlertTriangle } from 'lucide-react';
+import { FileText, Calendar, Filter, ChevronRight, ChevronLeft, CheckCircle2, Clock, BookOpen, AlertTriangle } from 'lucide-react';
 
 interface ReportsPageProps {
   examHistory: ExamSubmission[];
@@ -8,6 +8,8 @@ interface ReportsPageProps {
   onViewSubmissionReport: (submission: ExamSubmission) => void;
   isStudent?: boolean;
 }
+
+const PAGE_SIZE = 5;
 
 export const ReportsPage: React.FC<ReportsPageProps> = ({
   examHistory,
@@ -17,6 +19,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
 }) => {
   const [selectedChildFilter, setSelectedChildFilter] = useState<string>('all');
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const subjects = Array.from(new Set(examHistory.map(e => e.subject).filter(Boolean)));
 
@@ -32,6 +35,13 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
     }
     return true;
   });
+
+  const totalItems = filteredHistory.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safeCurrentPage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
+  const paginatedHistory = filteredHistory.slice(startIndex, endIndex);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-20 fade-in">
@@ -57,7 +67,10 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
         {!isStudent && parentAccount.children.length > 0 && (
           <select 
             value={selectedChildFilter}
-            onChange={(e) => setSelectedChildFilter(e.target.value)}
+            onChange={(e) => {
+              setSelectedChildFilter(e.target.value);
+              setCurrentPage(1);
+            }}
             className="bg-stone-50 border border-stone-200 text-stone-700 text-sm font-bold rounded-xl px-4 py-2 outline-none focus:border-yellow-400 focus:ring-4 focus:ring-yellow-50 transition-all cursor-pointer"
           >
             <option value="all">All Children</option>
@@ -69,7 +82,10 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
 
         <select 
           value={selectedSubjectFilter}
-          onChange={(e) => setSelectedSubjectFilter(e.target.value)}
+          onChange={(e) => {
+            setSelectedSubjectFilter(e.target.value);
+            setCurrentPage(1);
+          }}
           className="bg-stone-50 border border-stone-200 text-stone-700 text-sm font-bold rounded-xl px-4 py-2 outline-none focus:border-yellow-400 focus:ring-4 focus:ring-yellow-50 transition-all cursor-pointer"
         >
           <option value="all">All Subjects</option>
@@ -94,7 +110,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {filteredHistory.length > 0 ? filteredHistory.map((exam) => {
+              {paginatedHistory.length > 0 ? paginatedHistory.map((exam) => {
                 const child = parentAccount.children.find(c => String(c.id) === String(exam.studentId) || (exam.studentName && c.name?.toLowerCase() === exam.studentName.toLowerCase()));
                 const scorePercentage = (exam.marksObtained / exam.totalMarks) * 100;
                 const displayTopic = (exam as any).topic || exam.evaluations?.[0]?.topic || exam.examTitle || 'Diagnostic Assessment';
@@ -160,7 +176,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button className="text-xs font-bold text-yellow-600 bg-white border border-yellow-200 px-3 py-1.5 rounded-lg group-hover:bg-yellow-50 transition-colors inline-flex items-center gap-1">
+                      <button className="text-xs font-bold text-yellow-600 bg-white border border-yellow-200 px-3 py-1.5 rounded-lg group-hover:bg-yellow-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
                         View Report <ChevronRight className="w-3 h-3" />
                       </button>
                     </td>
@@ -180,6 +196,55 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Footer */}
+        {totalItems > 0 && (
+          <div className="px-6 py-4 bg-stone-50/70 border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-stone-600">
+            <div>
+              Showing <span className="font-bold text-stone-900">{totalItems > 0 ? startIndex + 1 : 0}</span> to <span className="font-bold text-stone-900">{endIndex}</span> of <span className="font-bold text-stone-900">{totalItems}</span> {totalItems === 1 ? 'report' : 'reports'}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safeCurrentPage === 1}
+                  className="px-3 py-1.5 rounded-xl border border-stone-200 bg-white text-stone-700 hover:bg-stone-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs font-bold"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                  const isActive = pageNum === safeCurrentPage;
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`min-w-[32px] h-8 rounded-xl font-bold transition-all cursor-pointer text-xs ${
+                        isActive
+                          ? 'bg-yellow-400 text-stone-950 shadow-xs border border-yellow-500/30'
+                          : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100 shadow-2xs'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safeCurrentPage === totalPages}
+                  className="px-3 py-1.5 rounded-xl border border-stone-200 bg-white text-stone-700 hover:bg-stone-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs font-bold"
+                >
+                  Next <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
