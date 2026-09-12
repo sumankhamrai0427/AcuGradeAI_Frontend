@@ -43,6 +43,7 @@ interface RagDocument {
 
 interface RagStatusData {
   vector_store_enabled: boolean;
+  total_ai_exams?: number;
   total_documents: number;
   total_chunks: number;
   total_runbooks: number;
@@ -156,20 +157,32 @@ export const AiRagHub: React.FC = () => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-white shadow-xs">
-            <Sparkles className="w-5 h-5" />
+      {/* Top Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-amber-50/90 via-yellow-50/80 to-orange-50/60 border border-yellow-200/90 p-6 rounded-3xl shadow-xs">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-white shadow-xs">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="text-xl font-bold text-stone-900">Curriculum RAG & Knowledge Vector Hub</h1>
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-stone-900 tracking-tight">AI & RAG Management Hub</h1>
-            <p className="text-xs text-stone-500 font-medium">Textbook PDF Chunking, ChromaDB Vector Store & Live AI Playground</p>
-          </div>
+          <p className="text-xs text-stone-600 pl-11">
+            Official NCERT & Board textbook ingestion engine. Generates 300-token semantic chunks into ChromaDB for AI teacher grounding.
+          </p>
         </div>
+        <button
+          onClick={fetchRagStatus}
+          disabled={loadingStatus}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-yellow-50 text-stone-800 rounded-xl text-xs font-semibold border border-yellow-300/80 shadow-2xs hover:border-yellow-400 transition-all cursor-pointer shrink-0 active:scale-95"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-amber-600 ${loadingStatus ? 'animate-spin' : ''}`} />
+          <span className="font-bold text-amber-950">Refresh Status</span>
+        </button>
+      </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-1.5 p-1.5 bg-stone-100 rounded-2xl border border-stone-200/60 w-full md:w-auto">
+      {/* Navigation Tabs */}
+      <div className="flex items-center justify-between border-b border-stone-200/80 pb-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('ingestion')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -196,19 +209,19 @@ export const AiRagHub: React.FC = () => {
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          VECTOR STORE HEALTH METRICS CARDS
+          VECTOR STORE HEALTH & CURRICULUM METRICS CARDS
          ───────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-3xl border border-stone-200/80 shadow-xs space-y-2 relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Vector Store</span>
-            <span className={`w-2.5 h-2.5 rounded-full ${ragStatus?.vector_store_enabled ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'}`} />
+            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Curriculum Topics</span>
+            <Sparkles className="w-4 h-4 text-amber-500" />
           </div>
           <p className="text-2xl font-black text-stone-900">
-            {ragStatus?.vector_store_enabled ? 'ChromaDB Active' : 'Offline'}
+            {ragStatus?.total_topics ?? 0}
           </p>
           <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5" /> High-dimensional cosine embeddings
+            <CheckCircle2 className="w-3.5 h-3.5" /> Mapped Core Learning Concepts
           </p>
         </div>
 
@@ -223,7 +236,7 @@ export const AiRagHub: React.FC = () => {
 
         <div className="bg-white p-5 rounded-3xl border border-stone-200/80 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Textbook PDFs</span>
+            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Textbook Repository</span>
             <FileText className="w-4 h-4 text-blue-600" />
           </div>
           <p className="text-2xl font-black text-stone-900">{ragStatus?.total_documents || 0}</p>

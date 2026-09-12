@@ -42,6 +42,7 @@ export const GET_APIS = {
   dossierPreview: (id: string | number) => `${API_V1}/dossiers/preview/${id}`,
   publicDossier: (token: string) => `${API_V1}/dossiers/public/${encodeURIComponent(token)}`,
   ptmSchedules: `${API_V1}/ptm/schedules`,
+  chatSuggestions: `${API_V1}/chat/suggestions`,
 
   // Blogs
   blogs: `${API_V1}/blogs`,

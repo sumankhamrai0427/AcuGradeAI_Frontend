@@ -814,7 +814,7 @@ export default function App() {
           />
         </div>
         {/* Floating AI Chat Widget */}
-        <AIChatWidget activeChild={activeChild} />
+        <AIChatWidget activeChild={activeChild} isStudent={false} role="admin" />
       </div>
     );
   }
@@ -857,7 +857,7 @@ export default function App() {
           </div>
         </div>
         {/* Floating AI Chat Widget */}
-        <AIChatWidget activeChild={activeChild} />
+        <AIChatWidget activeChild={activeChild} isStudent={false} role="teacher" />
       </div>
     );
   }
@@ -1374,7 +1374,12 @@ export default function App() {
       />
 
       {/* Floating AI Chat Widget */}
-      <AIChatWidget activeChild={activeChild} />
+      <AIChatWidget
+        activeChild={activeChild}
+        childrenList={parentAccount?.children || []}
+        isStudent={isStudentSession || activePersona === 'child'}
+        role={isStudentSession || activePersona === 'child' ? 'student' : 'parent'}
+      />
     </div>
   );
 }

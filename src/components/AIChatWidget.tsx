@@ -1,41 +1,139 @@
-import React, { useState, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { MessageSquare, X, Send, Bot, User, Loader2, RotateCw } from 'lucide-react';
 import ApiServices from '../services/ApiServices';
 
 interface AIChatWidgetProps {
   activeChild?: any;
+  childrenList?: any[];
+  role?: 'parent' | 'student' | 'teacher' | 'admin';
+  isStudent?: boolean;
 }
 
-export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild }) => {
+export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild, childrenList, role, isStudent: propIsStudent }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ id: number, text: string, isBot: boolean }[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
+  const [isRefreshingSuggestions, setIsRefreshingSuggestions] = useState(false);
 
-  const childName = activeChild?.name || 'your child';
-  const childGrade = activeChild?.grade ? ` (Class ${activeChild.grade})` : '';
+  const isStudent = propIsStudent ?? (role === 'student');
+  const studentFirstName = activeChild?.name ? activeChild.name.split(' ')[0] : 'there';
+
+  const fetchSuggestions = useCallback(async () => {
+    setIsRefreshingSuggestions(true);
+    try {
+      const res = await ApiServices.getChatSuggestions();
+      if (res && res.suggestions && Array.isArray(res.suggestions) && res.suggestions.length > 0) {
+        setApiSuggestions(res.suggestions);
+      }
+    } catch (e) {
+      console.warn("Failed to fetch suggestions from API, falling back to local pool", e);
+    } finally {
+      setIsRefreshingSuggestions(false);
+    }
+  }, []);
 
   useEffect(() => {
-    setMessages([
-      { id: 1, text: `Hello! I'm SahajPath Teacher Support. Do you have any questions about ${childName}'s learning journey${childGrade}?`, isBot: true }
-    ]);
-  }, [activeChild]);
+    if (isOpen) {
+      fetchSuggestions();
+    }
+  }, [isOpen, fetchSuggestions]);
 
-  const hasTakenExams = activeChild?.totalExamsTaken > 0;
+  useEffect(() => {
+    if (isStudent) {
+      setMessages([
+        {
+          id: 1,
+          text: `Hey ${studentFirstName}! 🚀 I'm your AI Teacher. Stuck on a concept, test question, or need tips to level up your score? Ask me anything!`,
+          isBot: true
+        }
+      ]);
+    } else if (role === 'teacher' || role === 'admin') {
+      setMessages([
+        {
+          id: 1,
+          text: `Hello! I'm SahajPath AI Support. How can I assist you with curriculum guidance, class analytics, or student management today?`,
+          isBot: true
+        }
+      ]);
+    } else {
+      setMessages([
+        {
+          id: 1,
+          text: `Hello! I'm SahajPath Teacher Support. How can I assist you with your children's learning journey, academic progress, or home-study guidance today?`,
+          isBot: true
+        }
+      ]);
+    }
+  }, [activeChild, isStudent, role, studentFirstName]);
 
-  const SUGGESTED_QUESTIONS = hasTakenExams 
-    ? [
-        `How is ${childName} progressing?`,
-        `Which subject does ${childName} need more attention on?`,
-        `What should ${childName} practice next?`,
-        "Explain the latest exam result to me"
+  const hasTakenExams = (activeChild?.totalExamsTaken || activeChild?.recentExams?.length || 0) > 0;
+
+  // Resolve all children for dynamic parent questions fallback
+  const children = (childrenList && childrenList.length > 0)
+    ? childrenList
+    : (activeChild ? [activeChild] : []);
+
+  let dynamicParentFallback: string[] = [];
+
+  if (children.length === 0) {
+    dynamicParentFallback = [
+      "How do I get started with SahajPath?",
+      "How can I add and track my children's learning journey?",
+      "Can you suggest some interactive learning activities?",
+      "How can I assess my child's current knowledge level?"
+    ];
+  } else if (children.length === 1) {
+    const name = children[0].name ? children[0].name.split(' ')[0] : 'my child';
+    dynamicParentFallback = [
+      `How is ${name} progressing overall?`,
+      `Which subjects or topics does ${name} need more attention on?`,
+      `What should ${name} practice next to improve?`,
+      `How can I help ${name} build an effective daily study routine?`
+    ];
+  } else if (children.length === 2) {
+    const name1 = children[0].name ? children[0].name.split(' ')[0] : 'child 1';
+    const name2 = children[1].name ? children[1].name.split(' ')[0] : 'child 2';
+    dynamicParentFallback = [
+      `How is ${name1} progressing overall?`,
+      `Which topics does ${name1} need more attention on?`,
+      `How is ${name2} performing in recent tests?`,
+      `What should ${name2} practice next to improve?`
+    ];
+  } else {
+    dynamicParentFallback = [
+      ...children.slice(0, 3).map(c => `How is ${c.name ? c.name.split(' ')[0] : 'Student'} progressing overall?`),
+      `What should my children practice next to improve?`
+    ];
+  }
+
+  const fallbackQuestions = isStudent
+    ? (hasTakenExams
+      ? [
+        "How can I improve my score in my weakest subject?",
+        "Explain the mistakes I made in my latest test.",
+        "What should I practice today to earn more XP & streak?",
+        "Can you explain a difficult concept in simple words?"
       ]
-    : [
-        "How do I get started with SahajPath?",
-        `What is the best way to build a daily study routine for ${childName}?`,
-        "Can you suggest some fun learning activities?",
-        `How can I assess ${childName}'s current knowledge level?`
-      ];
+      : [
+        "How do I start a 10-Mark diagnostic practice test?",
+        "Can you explain a difficult topic in simple words?",
+        "What is the best way to earn badges and level up?",
+        "Give me 3 smart tips to study faster!"
+      ])
+    : (role === 'teacher' || role === 'admin'
+      ? [
+        "How can I generate dynamic diagnostic question papers?",
+        "Show summary of class mastery and average scores",
+        "What topics need remediation across students?",
+        "How does the AI RAG grounding work?"
+      ]
+      : dynamicParentFallback);
+
+  const displayQuestions = (apiSuggestions && apiSuggestions.length > 0)
+    ? apiSuggestions
+    : fallbackQuestions;
 
   const handleSendText = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -46,9 +144,8 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild }) => {
     setIsLoading(true);
 
     try {
-      // Build history for backend (skip the first greeting or keep it, backend ignores non user/assistant anyway)
       const chatHistory = messages
-        .filter(m => m.id !== 1) // Optional: remove local initial greeting from context if desired, or keep it
+        .filter(m => m.id !== 1)
         .map(m => ({ role: m.isBot ? "assistant" : "user", content: m.text }));
       chatHistory.push({ role: "user", content: text });
 
@@ -56,7 +153,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild }) => {
         messages: chatHistory,
         student_id: activeChild?.id
       });
-      
+
       const botMsg = { id: Date.now() + 1, text: res.response || "I didn't quite get that.", isBot: true };
       setMessages((prev) => [...prev, botMsg]);
     } catch (error) {
@@ -83,11 +180,15 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild }) => {
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-sm">Teacher Support</h3>
-                <p className="text-[10px] text-yellow-100 font-medium">Online • Replies instantly</p>
+                <h3 className="font-bold text-sm">
+                  {isStudent ? 'AI Study Buddy' : 'Teacher Support'}
+                </h3>
+                <p className="text-[10px] text-yellow-100 font-medium">
+                  {isStudent ? 'Online • Your Personal AI Tutor' : 'Online • Replies instantly'}
+                </p>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-1 rounded-full">
+            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-1 rounded-full cursor-pointer">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -106,12 +207,26 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild }) => {
 
             {messages.length === 1 && (
               <div className="flex flex-col gap-2 pt-2">
-                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider text-center mb-1">Suggested Questions</p>
-                {SUGGESTED_QUESTIONS.map((q, idx) => (
+                <div className="flex items-center justify-between px-1 mb-1">
+                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                    {isStudent ? 'Recommended for You' : 'Suggested Questions'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={fetchSuggestions}
+                    disabled={isRefreshingSuggestions}
+                    title="Refresh suggestions"
+                    className="flex items-center gap-1 text-[10px] text-amber-600 hover:text-amber-700 font-semibold cursor-pointer transition-colors bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200 active:scale-95"
+                  >
+                    <RotateCw className={`w-2.5 h-2.5 ${isRefreshingSuggestions ? 'animate-spin' : ''}`} />
+                    <span>{isRefreshingSuggestions ? 'Updating...' : 'Refresh'}</span>
+                  </button>
+                </div>
+                {displayQuestions.map((q, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSendText(q)}
-                    className="text-left bg-white border border-yellow-200 hover:border-yellow-400 hover:bg-yellow-50 text-stone-700 text-xs px-3 py-2 rounded-xl transition-all shadow-2xs"
+                    className="text-left bg-white border border-yellow-200 hover:border-yellow-400 hover:bg-yellow-50 text-stone-700 text-xs px-3 py-2 rounded-xl transition-all shadow-2xs cursor-pointer active:scale-[0.99]"
                   >
                     {q}
                   </button>
@@ -138,13 +253,13 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild }) => {
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ask Teacher Support anything..."
+              placeholder={isStudent ? "Ask your study buddy anything..." : "Ask Teacher Support anything..."}
               className="flex-1 bg-stone-100 border-none rounded-full px-4 py-2 text-xs focus:ring-2 focus:ring-yellow-400 focus:outline-hidden"
             />
             <button
               type="submit"
               disabled={!inputText.trim() || isLoading}
-              className="bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 text-white w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors shadow-xs"
+              className="bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 text-white w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors shadow-xs cursor-pointer"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 ml-0.5" />}
             </button>
@@ -155,7 +270,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild }) => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95 bg-gradient-to-tr from-yellow-500 to-amber-500 text-white hover:shadow-yellow-500/20"
+          className="w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105 active:scale-95 bg-gradient-to-tr from-yellow-500 to-amber-500 text-white hover:shadow-yellow-500/20 cursor-pointer"
         >
           <MessageSquare className="w-6 h-6" />
         </button>
