@@ -329,9 +329,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="absolute top-20 right-0 text-3xl opacity-40 animate-float-delayed select-none pointer-events-none">💡</div>
               <div className="absolute bottom-10 right-10 text-4xl opacity-50 animate-float-slow select-none pointer-events-none">🎨</div>
               <img
-                src="/hero-illustration.jpg"
+                src="/hero-illustration.png"
                 alt="Animated Hero Illustration"
-                className="w-full max-w-[550px] object-contain mix-blend-multiply animate-float-hero rounded-3xl"
+                className="w-full max-w-[550px] object-contain animate-float-hero filter drop-shadow-xl"
               />
             </div>
           </div>
