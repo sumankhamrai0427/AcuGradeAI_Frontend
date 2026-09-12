@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Share2,
   BookOpen,
+  CheckCircle2,
 } from "lucide-react";
 import ApiServices from "../services/ApiServices";
 import DOMPurify from "dompurify";
@@ -31,6 +32,7 @@ export interface BlogPostData {
   authorAvatar: string;
   readTime: string;
   publishedDate: string;
+  sharesCount?: number;
   category: string;
   categoryId: number | null;
   classRange: string;
@@ -127,6 +129,13 @@ const BlogCard: React.FC<{ post: BlogPostData }> = ({ post }) => (
 const ArticleDetail: React.FC<{ post: BlogPostData; allPosts: BlogPostData[]; onBack: () => void }> = ({ post, allPosts, onBack }) => {
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [post]);
 
+  const [sharesCount, setSharesCount] = useState<number>(post.sharesCount || 0);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSharesCount(post.sharesCount || 0);
+  }, [post.sharesCount]);
+
   const relatedPosts = allPosts.filter(p => p.category === post.category && p.id !== post.id).slice(0, 3);
   const latestPosts = allPosts.filter(p => p.id !== post.id).slice(0, 4);
 
@@ -134,90 +143,231 @@ const ArticleDetail: React.FC<{ post: BlogPostData; allPosts: BlogPostData[]; on
   const prevPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
   const nextPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
 
+  // Calculate dynamic reading time based on total word count
+  const readingTime = useMemo(() => {
+    const raw = [
+      post.title,
+      post.introduction,
+      ...(Array.isArray(post.content) ? post.content : [post.content || ''])
+    ].join(' ').replace(/<[^>]+>/g, ' ').trim();
+    const words = raw.split(/\s+/).filter(Boolean).length;
+    return Math.max(1, Math.ceil(words / 180));
+  }, [post]);
+
+  // Robust formatted published date
+  const formattedDate = useMemo(() => {
+    try {
+      const d = new Date(post.publishedDate);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+      }
+    } catch {}
+    return post.publishedDate || "Recently Published";
+  }, [post.publishedDate]);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3200);
+  };
+
+  const handleShare = async (platform: 'facebook' | 'twitter' | 'linkedin' | 'whatsapp' | 'native') => {
+    const url = window.location.href;
+    const title = post.title || 'Check out this article on SahajPath';
+
+    // Asynchronously increment share counter in database
+    if (post.id) {
+      ApiServices.shareBlog(post.id)
+        .then(() => setSharesCount(prev => prev + 1))
+        .catch(() => {});
+    }
+
+    switch (platform) {
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'width=620,height=480,noopener,noreferrer');
+        break;
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank', 'width=620,height=480,noopener,noreferrer');
+        break;
+      case 'linkedin':
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'width=620,height=520,noopener,noreferrer');
+        break;
+      case 'whatsapp':
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(title + '\n' + url)}`, '_blank', 'noopener,noreferrer');
+        break;
+      case 'native':
+        if (navigator.share) {
+          try {
+            await navigator.share({ title, url });
+            showToast('Thank you for sharing!');
+            return;
+          } catch (e) {
+            // Cancelled or unsupported, fallback to copy link
+          }
+        }
+        if (navigator.clipboard) {
+          try {
+            await navigator.clipboard.writeText(url);
+            showToast('Link copied to clipboard! 📋');
+          } catch {
+            showToast('Link copied!');
+          }
+        }
+        break;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-stone-50 py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Main Content (Left) */}
-          <div className="lg:col-span-2 bg-white p-6 sm:p-10 rounded-xl border border-stone-200 shadow-sm">
-            {/* Hero Image */}
-            <div className="w-full rounded-xl overflow-hidden mb-8 border border-stone-100 shadow-sm">
-              <img src={post.image} alt={post.title} className="w-full h-auto object-cover" />
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+            {/* Hero Image - Full Align / Edge-to-Edge */}
+            <div className="w-full aspect-video max-h-[480px] overflow-hidden bg-stone-100 border-b border-stone-100">
+              <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
             </div>
 
-            {/* Category Pill */}
-            <div className="mb-4">
-              <span className="inline-block px-3 py-1 rounded bg-[#0d47a1] text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                {post.category}
-              </span>
-            </div>
+            {/* Article Body Content */}
+            <div className="p-6 sm:p-10">
+              {/* Category Pill */}
+              <div className="mb-4">
+                <span className="inline-block px-3 py-1 rounded bg-[#0d47a1] text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                  {post.category}
+                </span>
+              </div>
 
-            {/* Title */}
-            <h1 className="text-3xl sm:text-4xl font-black text-stone-900 leading-tight mb-4">{post.heading || post.title}</h1>
+              {/* Title */}
+              <h1 className="text-3xl sm:text-4xl font-black text-stone-900 leading-tight mb-4">{post.heading || post.title}</h1>
 
-            {/* Meta: Author & Date */}
-            <div className="text-sm text-stone-500 mb-6 font-medium">
-              By <span className="text-stone-700">{post.author}</span> / {new Date(post.publishedDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-            </div>
+              {/* Meta: Author, Date & Reading Time */}
+              <div className="flex flex-wrap items-center gap-y-2 gap-x-2.5 text-sm text-stone-500 mb-6 font-medium">
+                <span>By <span className="text-stone-800 font-bold">{post.author}</span></span>
+                <span className="text-stone-300">•</span>
+                <span>{formattedDate}</span>
+                <span className="text-stone-300">•</span>
+                <span className="flex items-center gap-1 text-stone-600 bg-stone-100 px-2 py-0.5 rounded-md text-xs font-semibold">
+                  <Clock className="w-3.5 h-3.5 text-stone-500" />
+                  {readingTime} min read
+                </span>
+              </div>
 
-            {/* Share Row */}
-            <div className="flex items-center gap-2 mb-6 pb-6 border-b border-stone-100">
-              <span className="text-sm text-stone-500 mr-2 font-bold">Share</span>
-              <button className="w-8 h-8 flex items-center justify-center rounded bg-[#1877F2] text-white hover:opacity-90 transition"><span className="text-sm font-bold font-serif">f</span></button>
-              <button className="w-8 h-8 flex items-center justify-center rounded bg-black text-white hover:opacity-90 transition"><span className="text-xs font-bold font-sans">X</span></button>
-              <button className="w-8 h-8 flex items-center justify-center rounded bg-[#0A66C2] text-white hover:opacity-90 transition"><span className="text-xs font-bold font-sans">in</span></button>
-              <button className="w-8 h-8 flex items-center justify-center rounded bg-[#25D366] text-white hover:opacity-90 transition"><span className="text-xs font-bold font-sans">Wa</span></button>
-              <button className="w-8 h-8 flex items-center justify-center rounded bg-stone-200 text-stone-600 hover:bg-stone-300 transition"><Share2 className="w-4 h-4" /></button>
-            </div>
+              {/* Share Row */}
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-stone-100 relative">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs uppercase tracking-wider text-stone-500 font-black mr-1">Share</span>
+                  <button
+                    type="button"
+                    onClick={() => handleShare('facebook')}
+                    title="Share on Facebook"
+                    aria-label="Share on Facebook"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#1877F2] text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <span className="text-sm font-bold font-serif">f</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleShare('twitter')}
+                    title="Share on X (Twitter)"
+                    aria-label="Share on X"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-black text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <span className="text-xs font-bold font-sans">X</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleShare('linkedin')}
+                    title="Share on LinkedIn"
+                    aria-label="Share on LinkedIn"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#0A66C2] text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <span className="text-xs font-bold font-sans">in</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleShare('whatsapp')}
+                    title="Share on WhatsApp"
+                    aria-label="Share on WhatsApp"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#25D366] text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <span className="text-xs font-bold font-sans">Wa</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleShare('native')}
+                    title="Copy Link / Share"
+                    aria-label="Copy Link"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-stone-100 text-stone-700 hover:bg-stone-200 hover:scale-105 active:scale-95 border border-stone-200 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
 
-            {/* Breadcrumb */}
-            <div className="text-xs text-stone-500 mb-8 flex items-center gap-1.5 flex-wrap font-semibold">
-              <Link to="/" className="text-[#0d47a1] hover:underline">Home</Link>
-              <ChevronRight className="w-3 h-3" />
-              <Link to="/blog" className="text-[#0d47a1] hover:underline">Blog</Link>
-              <ChevronRight className="w-3 h-3" />
-              <span className="text-stone-700">{post.title}</span>
-            </div>
+                {/* Share Count Indicator */}
+                {sharesCount > 0 && (
+                  <span className="text-xs font-bold text-stone-600 bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    {sharesCount} {sharesCount === 1 ? 'Share' : 'Shares'}
+                  </span>
+                )}
 
-            {/* Content Header */}
-            <h2 className="text-xl font-bold text-stone-900 mb-4">Introduction</h2>
-            {post.introduction && (
-              <div
-                className="mb-6 text-stone-600 font-medium prose prose-stone max-w-none"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.introduction) }}
-              />
-            )}
+                {/* Toast message */}
+                {toastMessage && (
+                  <div className="absolute -top-10 left-0 bg-stone-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{toastMessage}</span>
+                  </div>
+                )}
+              </div>
 
-            {/* Content Body */}
-            <div className="space-y-6 text-stone-700 text-[15px] leading-relaxed">
-              {post.content?.map((para, i) => (
-                <div key={i} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(para) }} />
-              ))}
-            </div>
+              {/* Breadcrumb */}
+              <div className="text-xs text-stone-500 mb-8 flex items-center gap-1.5 flex-wrap font-semibold">
+                <Link to="/" className="text-[#0d47a1] hover:underline">Home</Link>
+                <ChevronRight className="w-3 h-3" />
+                <Link to="/blog" className="text-[#0d47a1] hover:underline">Blog</Link>
+                <ChevronRight className="w-3 h-3" />
+                <span className="text-stone-700">{post.title}</span>
+              </div>
 
-            {/* Previous & Next Post */}
-            <div className="mt-10 pt-8 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-              {prevPost ? (
-                <Link to={`/blog/${prevPost.slug}`} className="group max-w-[45%] flex-1">
-                  <p className="text-xs text-stone-400 mb-1 font-bold">Previous Post</p>
-                  <p className="text-[#0d47a1] text-sm font-semibold group-hover:underline line-clamp-2">
-                    {prevPost.title}
-                  </p>
-                </Link>
-              ) : (
-                <div className="flex-1" />
+              {/* Content Header */}
+              <h2 className="text-xl font-bold text-stone-900 mb-4">Introduction</h2>
+              {post.introduction && (
+                <div
+                  className="mb-6 text-stone-600 font-medium prose prose-stone max-w-none"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.introduction) }}
+                />
               )}
-              {nextPost ? (
-                <Link to={`/blog/${nextPost.slug}`} className="group max-w-[45%] flex-1 text-left sm:text-right">
-                  <p className="text-xs text-stone-400 mb-1 font-bold">Next Post</p>
-                  <p className="text-[#0d47a1] text-sm font-semibold group-hover:underline line-clamp-2">
-                    {nextPost.title}
-                  </p>
-                </Link>
-              ) : (
-                <div className="flex-1" />
-              )}
+
+              {/* Content Body */}
+              <div className="space-y-6 text-stone-700 text-[15px] leading-relaxed">
+                {post.content?.map((para, i) => (
+                  <div key={i} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(para) }} />
+                ))}
+              </div>
+
+              {/* Previous & Next Post */}
+              <div className="mt-10 pt-8 border-t border-stone-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                {prevPost ? (
+                  <Link to={`/blog/${prevPost.slug}`} className="group max-w-[45%] flex-1">
+                    <p className="text-xs text-stone-400 mb-1 font-bold">Previous Post</p>
+                    <p className="text-[#0d47a1] text-sm font-semibold group-hover:underline line-clamp-2">
+                      {prevPost.title}
+                    </p>
+                  </Link>
+                ) : (
+                  <div className="flex-1" />
+                )}
+                {nextPost ? (
+                  <Link to={`/blog/${nextPost.slug}`} className="group max-w-[45%] flex-1 text-left sm:text-right">
+                    <p className="text-xs text-stone-400 mb-1 font-bold">Next Post</p>
+                    <p className="text-[#0d47a1] text-sm font-semibold group-hover:underline line-clamp-2">
+                      {nextPost.title}
+                    </p>
+                  </Link>
+                ) : (
+                  <div className="flex-1" />
+                )}
+              </div>
             </div>
           </div>
 
@@ -325,6 +475,7 @@ export const BlogPage: React.FC = () => {
               authorAvatar: "",
               readTime: "5 min read",
               publishedDate: blog.isoDate || blog.date || new Date().toISOString(),
+              sharesCount: Number(blog.sharesCount || blog.shares_count || 0),
               category: blog.category || "Uncategorized",
               categoryId: blog.categoryId == null ? null : Number(blog.categoryId),
               classRange: "All classes",

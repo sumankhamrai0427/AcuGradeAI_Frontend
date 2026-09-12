@@ -287,6 +287,7 @@ class ApiServices {
   deleteBlogCategory(id: string | number) { return this.del(DELETE_APIS.deleteBlogCategory(id)); }
   listBlogAuthors() { return this.get(GET_APIS.blogAuthors); }
   createBlogAuthor(body: any) { return this.post(POST_APIS.createBlogAuthor, body); }
+  shareBlog(id: string | number) { return this.post(POST_APIS.shareBlog(id), {}); }
 
   // ── Curriculum & Question Bank ────────────
   getCurriculumTree() { return this.get(GET_APIS.curriculumTree); }

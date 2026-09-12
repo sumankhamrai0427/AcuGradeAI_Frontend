@@ -103,6 +103,7 @@ export const POST_APIS = {
   uploadBlogImage: `${API_V1}/files/upload-image`,
   createBlogCategory: `${API_V1}/blogs/categories`,
   createBlogAuthor: `${API_V1}/blogs/authors`,
+  shareBlog: (id: string | number) => `${API_V1}/blogs/${id}/share`,
 
   // Admin & Academics
   createQuestion: `${API_V1}/admin/questions`,

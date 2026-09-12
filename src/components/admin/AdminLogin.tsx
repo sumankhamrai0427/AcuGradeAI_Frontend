@@ -22,6 +22,7 @@ import {
   ChevronRight,
   ChevronLeft,
   ChevronDown,
+  ChevronUp,
   Settings,
   Activity,
   GraduationCap,
@@ -34,6 +35,11 @@ import {
   Plus,
   Edit,
   Trash2,
+  Upload,
+  Globe,
+  Tag as TagIcon,
+  Pin,
+  Filter,
   Image as ImageIcon,
 } from 'lucide-react';
 import ApiServices, {
@@ -92,7 +98,8 @@ const INTRODUCTION_EDITOR_CONFIG = {
 
 const BLOG_CONTENT_EDITOR_CONFIG = {
   ...BLOG_EDITOR_CONFIG,
-  height: 320,
+  minHeight: 380,
+  height: 420,
   placeholder: 'Write the blog content here...',
 };
 
@@ -111,20 +118,11 @@ const BlogEditPage: React.FC<{ blogId: string; onBack: () => void; onSaved: () =
       .finally(() => setLoading(false));
   }, [blogId]);
 
-  if (loading) return <div className="py-24 text-center text-stone-500">Loading blog editor...</div>;
-  if (!blog) return <div className="py-24 text-center text-rose-600">{error || 'Blog not found'}</div>;
+  if (loading) return <div className="py-24 text-center text-stone-500 font-medium">Loading blog editor...</div>;
+  if (!blog) return <div className="py-24 text-center text-rose-600 font-semibold">{error || 'Blog not found'}</div>;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="p-2 hover:bg-stone-100 rounded-xl text-stone-500 cursor-pointer">
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-black text-stone-900">Jodit Editor</h1>
-          <p className="text-sm text-stone-500">Edit blog heading, introduction and content.</p>
-        </div>
-      </div>
+    <div className="w-full">
       <BlogFormModal
         isOpen
         fullPage
@@ -260,7 +258,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, collapsed, onCli
 );
 
 // ─────────────────────────────────────────────────────────────
-// Shared full-page blog editor component
+// Shared Full-Featured Blog Editor Modal
 // ─────────────────────────────────────────────────────────────
 interface BlogFormModalProps {
   isOpen: boolean;
@@ -270,26 +268,38 @@ interface BlogFormModalProps {
   fullPage?: boolean;
 }
 
-const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialBlog, onSuccess, fullPage = false }) => {
+const BlogFormModal: React.FC<BlogFormModalProps> = ({
+  isOpen,
+  onClose,
+  initialBlog,
+  onSuccess,
+  fullPage = false,
+}) => {
   const [title, setTitle] = useState('');
-  const [heading, setHeading] = useState('');
   const [introduction, setIntroduction] = useState('');
   const [content, setContent] = useState('');
-  const [subcategory, setSubcategory] = useState('');
   const [coverImage, setCoverImage] = useState('');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [author, setAuthor] = useState('Admin User');
+  const [category, setCategory] = useState('Education');
+  const [isPinned, setIsPinned] = useState(false);
+  const [status, setStatus] = useState<'Published' | 'Draft'>('Published');
+  const [blogDate, setBlogDate] = useState('');
+
+  // SEO Accordion
+  const [showSeo, setShowSeo] = useState(false);
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
   const [metaKeywords, setMetaKeywords] = useState('');
   const [canonicalUrl, setCanonicalUrl] = useState('');
-  const [isPinned, setIsPinned] = useState(false);
+
+  // State & Loading
   const [uploading, setUploading] = useState(false);
-  const [author, setAuthor] = useState('Admin User');
-  const [category, setCategory] = useState('Education');
-  const [status, setStatus] = useState<'Published' | 'Draft'>('Published');
-  const [blogDate, setBlogDate] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [categories, setCategories] = useState<string[]>([
     'Education',
@@ -330,12 +340,16 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
   useEffect(() => {
     if (initialBlog) {
       setTitle(initialBlog.title || '');
-      setHeading(initialBlog.heading || initialBlog.title || '');
       setIntroduction(initialBlog.introduction || '');
       setContent(initialBlog.content || '');
-      setSubcategory(initialBlog.subcategory || '');
-      setCoverImage(initialBlog.imageUrl || initialBlog.image_url || '');
-      setTags(Array.isArray(initialBlog.tags) ? initialBlog.tags.join(', ') : (initialBlog.tags || ''));
+      setCoverImage(initialBlog.imageUrl || initialBlog.image_url || initialBlog.image || '');
+      setTags(
+        Array.isArray(initialBlog.tags)
+          ? initialBlog.tags
+          : typeof initialBlog.tags === 'string'
+          ? initialBlog.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
+          : []
+      );
       setMetaTitle(initialBlog.metaTitle || initialBlog.meta_title || '');
       setMetaDescription(initialBlog.metaDescription || initialBlog.meta_description || '');
       setMetaKeywords(initialBlog.metaKeywords || initialBlog.meta_keywords || '');
@@ -351,12 +365,11 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
       );
     } else {
       setTitle('');
-      setHeading('');
       setIntroduction('');
       setContent('');
-      setSubcategory('');
       setCoverImage('');
-      setTags('');
+      setTags([]);
+      setTagInput('');
       setMetaTitle('');
       setMetaDescription('');
       setMetaKeywords('');
@@ -368,6 +381,7 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
       setBlogDate(new Date().toISOString().slice(0, 10));
     }
     setError(null);
+    setFieldErrors({});
   }, [initialBlog, isOpen]);
 
   if (!isOpen) return null;
@@ -383,24 +397,70 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
     }
   };
 
-  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const processImageFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload a valid image file (PNG, JPG, WebP).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image file is too large. Maximum allowed size is 5MB.');
+      return;
+    }
     try {
-      setCoverImage(await uploadImage(file));
+      const url = await uploadImage(file);
+      setCoverImage(url);
+      setFieldErrors(prev => ({ ...prev, coverImage: '' }));
+      setError(null);
     } catch (err: any) {
       setError(err?.message || 'Failed to upload cover image');
     }
   };
 
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await processImageFile(file);
+  };
+
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const clean = tagInput.trim().replace(/^,+|,+$/g, '');
+      if (clean && !tags.includes(clean)) {
+        if (tags.length >= 5) {
+          setError('You can add up to 5 tags maximum.');
+          return;
+        }
+        setTags([...tags, clean]);
+        setTagInput('');
+        setError(null);
+      }
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-    const nextStatus = submitter?.value === 'Draft' || submitter?.value === 'Published'
-      ? submitter.value
-      : status;
-    if (!title.trim()) {
-      setError('Blog title is required');
+    const nextStatus =
+      submitter?.value === 'Draft' || submitter?.value === 'Published'
+        ? (submitter.value as 'Published' | 'Draft')
+        : status;
+
+    // Field-level validation
+    const errors: Record<string, string> = {};
+    if (!title.trim()) errors.title = 'Blog title is required.';
+    if (!content.trim() || content === '<p><br></p>') errors.content = 'Blog content body is required.';
+    if (!coverImage) errors.coverImage = 'Cover image is required for publishing.';
+    if (!category) errors.category = 'Please select a category.';
+    if (!author) errors.author = 'Please select an author.';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError('Please provide all mandatory fields marked in red.');
       return;
     }
 
@@ -409,17 +469,14 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
     try {
       const payload = {
         title: title.trim(),
-        heading: heading.trim() || title.trim(),
         introduction: introduction.trim(),
-        content,
-        subcategory: subcategory.trim(),
+        content: content.trim(),
         image_url: coverImage,
         is_pinned: isPinned,
-        is_post: nextStatus === 'Published',
-        tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean),
-        meta_title: metaTitle.trim(),
-        meta_description: metaDescription.trim(),
-        meta_keywords: metaKeywords.trim(),
+        tags: tags,
+        meta_title: metaTitle.trim() || title.trim(),
+        meta_description: metaDescription.trim() || introduction.trim(),
+        meta_keywords: metaKeywords.trim() || tags.join(', '),
         canonical_url: canonicalUrl.trim(),
         author: author.trim(),
         category: category.trim(),
@@ -447,199 +504,422 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
   };
 
   return (
-    <div className={fullPage ? 'min-h-[calc(100vh-8rem)] w-full' : 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200'}>
+    <div
+      className={
+        fullPage
+          ? 'w-full pb-10'
+          : 'fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-stone-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200'
+      }
+    >
       <div
-        className={fullPage ? 'bg-white border border-stone-200 shadow-sm w-full max-w-6xl mx-auto overflow-hidden flex flex-col' : 'bg-white rounded-2xl border border-stone-200 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]'}
+        className={
+          fullPage
+            ? 'bg-white rounded-3xl border border-stone-200/90 shadow-xs w-full overflow-hidden flex flex-col'
+            : 'bg-white rounded-3xl border border-stone-200 shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col max-h-[92vh]'
+        }
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/60">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-              <BookOpen className="w-4 h-4" />
+        <div className="px-6 sm:px-8 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/70">
+          <div className="flex items-center gap-3.5">
+            {fullPage && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (title || content) {
+                    if (!confirm('You may have unsaved changes. Are you sure you want to go back?')) return;
+                  }
+                  onClose();
+                }}
+                className="p-2 -ml-1 text-stone-500 hover:text-stone-800 hover:bg-stone-200/60 rounded-xl transition-colors cursor-pointer"
+                title="Back to Blog List"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shadow-2xs">
+              <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-stone-900">
-                {initialBlog ? 'Edit Blog Post' : 'Create New Blog'}
+              <h2 className="text-xl font-black text-stone-900">
+                {initialBlog ? 'Edit Blog Post' : 'Create New Blog Post'}
               </h2>
               <p className="text-xs text-stone-500 font-medium">
-                {initialBlog ? 'Update existing blog details in MySQL' : 'Publish a new curriculum blog post to MySQL'}
+                {initialBlog ? 'Update article details, rich content and search metadata' : 'Publish a new curriculum blog post to SahajPath Journal'}
               </p>
             </div>
           </div>
           <button
             type="button"
-            onClick={onClose}
-            className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
+            onClick={() => {
+              if (title || content) {
+                if (!confirm('You may have unsaved changes. Are you sure you want to close?')) return;
+              }
+              onClose();
+            }}
+            className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-xl transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className={`${fullPage ? 'p-5 sm:p-8' : 'p-6'} space-y-4 overflow-y-auto`}>
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center gap-2">
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs font-semibold text-rose-700 flex items-center gap-2.5 animate-in fade-in shadow-xs">
               <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-500" />
               <span>{error}</span>
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
-              Blog Title <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. 10 Tips for Effective Online Learning"
-              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
-            />
-          </div>
+          {/* 2-Column Responsive Layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            {/* Left Main Column: Title, Excerpt, Content Editor */}
+            <div className="xl:col-span-8 space-y-6">
+              {/* Blog Title */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                    Blog Title <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-stone-400 font-medium">{title.length} chars</span>
+                </div>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={title}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
+                  }}
+                  placeholder="e.g. 10 Essential Tips for Effective Diagnostic Exam Preparation"
+                  className={`w-full px-4 py-3 bg-stone-50 border rounded-2xl text-stone-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:bg-white transition-all ${
+                    fieldErrors.title
+                      ? 'border-rose-400 focus:ring-rose-300 bg-rose-50/30'
+                      : 'border-stone-200 focus:ring-amber-400'
+                  }`}
+                />
+                {fieldErrors.title && (
+                  <p className="mt-1 text-xs text-rose-600 font-medium">{fieldErrors.title}</p>
+                )}
+              </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
-              Heading
-            </label>
-            <input
-              type="text"
-              value={heading}
-              onChange={(e) => setHeading(e.target.value)}
-              placeholder="Main article heading"
-              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
-            />
-          </div>
+              {/* Short Summary / Excerpt */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                    Short Summary / Excerpt
+                  </label>
+                  <span className={`text-[11px] font-medium ${introduction.length > 250 ? 'text-rose-600 font-bold' : 'text-stone-400'}`}>
+                    {introduction.length}/250 chars
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  maxLength={250}
+                  value={introduction}
+                  onChange={(e) => setIntroduction(e.target.value)}
+                  placeholder="A concise 2-3 line overview shown on blog cards, search snippet previews, and social cards..."
+                  className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-stone-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white resize-none transition-all leading-relaxed"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
-              Introduction
-            </label>
-            <Suspense fallback={<div className="h-64 flex items-center justify-center text-sm text-stone-500">Loading editor...</div>}>
-              <JoditEditor
-                key={`blog-introduction-editor-${initialBlog?.id ?? 'new'}`}
-                value={introduction}
-                onChange={(value: string) => setIntroduction(value)}
-                config={INTRODUCTION_EDITOR_CONFIG}
-              />
-            </Suspense>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">Subcategory</label>
-              <input value={subcategory} onChange={(e) => setSubcategory(e.target.value)} placeholder="e.g. Exam Strategy" className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">Tags</label>
-              <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="math, learning, exams" className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">Featured / Cover Image</label>
-              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleCoverUpload} className="w-full text-xs text-stone-500 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-100 file:px-3 file:py-2 file:font-bold file:text-amber-800" />
-              {coverImage && <img src={coverImage} alt="Cover preview" className="mt-3 h-24 w-full rounded-lg object-cover border border-stone-200" />}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
-              Blog Content
-            </label>
-            <Suspense fallback={<div className="h-80 flex items-center justify-center text-sm text-stone-500">Loading editor...</div>}>
-              <JoditEditor
-                key={`blog-editor-${initialBlog?.id ?? 'new'}`}
-                value={content}
-                onChange={(value: string) => setContent(value)}
-                config={BLOG_CONTENT_EDITOR_CONFIG}
-              />
-            </Suspense>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
-                Category
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all cursor-pointer"
-              >
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
-                Author
-              </label>
-              <select
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all cursor-pointer"
-              >
-                {authors.map((a) => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="border-t border-stone-100 pt-4 space-y-4">
-            <p className="text-xs font-black uppercase tracking-wider text-stone-500">Search Metadata</p>
-            <input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder="Meta title" className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-            <textarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} placeholder="Meta description" rows={2} className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-y" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input value={metaKeywords} onChange={(e) => setMetaKeywords(e.target.value)} placeholder="Meta keywords" className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-              <input value={canonicalUrl} onChange={(e) => setCanonicalUrl(e.target.value)} placeholder="Canonical URL" type="url" className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-            </div>
-            <label className="inline-flex items-center gap-2 text-sm font-semibold text-stone-700 cursor-pointer">
-              <input type="checkbox" checked={isPinned} onChange={(e) => setIsPinned(e.target.checked)} className="h-4 w-4 accent-amber-500" />
-              Pin blog
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
-                Status
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as 'Published' | 'Draft')}
-                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all cursor-pointer"
-              >
-                <option value="Published">Published</option>
-                <option value="Draft">Draft</option>
-              </select>
+              {/* Main Article Content */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                    Blog Article Content <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-stone-400 font-medium">Rich Text Body</span>
+                </div>
+                <div
+                  className={`rounded-2xl overflow-hidden border transition-all ${
+                    fieldErrors.content ? 'border-rose-400 ring-2 ring-rose-200' : 'border-stone-200'
+                  }`}
+                >
+                  <Suspense
+                    fallback={
+                      <div className="h-80 flex items-center justify-center text-xs text-stone-400 font-medium">
+                        <Loader2 className="w-5 h-5 animate-spin mr-2 text-amber-500" />
+                        Loading Rich Text Editor...
+                      </div>
+                    }
+                  >
+                    <JoditEditor
+                      key={`blog-content-editor-${initialBlog?.id ?? 'new'}`}
+                      value={content}
+                      onChange={(value: string) => {
+                        setContent(value);
+                        if (fieldErrors.content) setFieldErrors(prev => ({ ...prev, content: '' }));
+                      }}
+                      config={BLOG_CONTENT_EDITOR_CONFIG}
+                    />
+                  </Suspense>
+                </div>
+                {fieldErrors.content && (
+                  <p className="mt-1 text-xs text-rose-600 font-medium">{fieldErrors.content}</p>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 mb-1.5">
-                Publication Date
-              </label>
-              <input
-                type="date"
-                value={blogDate}
-                onChange={(e) => setBlogDate(e.target.value)}
-                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all cursor-pointer"
-              />
+            {/* Right Sidebar Column: Cover Image, Taxonomy, Tags, SEO */}
+            <div className="xl:col-span-4 space-y-5">
+              {/* Cover Image Upload Card */}
+              <div className="p-4 bg-stone-50/80 rounded-2xl border border-stone-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                    Featured Cover Image <span className="text-rose-500">*</span>
+                  </label>
+                  {uploading && <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />}
+                </div>
+
+                {coverImage ? (
+                  <div className="relative rounded-xl overflow-hidden border border-stone-200 group bg-white shadow-2xs">
+                    <img
+                      src={coverImage}
+                      alt="Cover preview"
+                      className="w-full h-36 object-cover transition-transform group-hover:scale-105 duration-300"
+                    />
+                    <div className="absolute inset-0 bg-stone-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <label
+                        htmlFor="replace-cover-input"
+                        className="px-3 py-1.5 rounded-lg bg-white/90 hover:bg-white text-stone-800 text-xs font-bold shadow-xs cursor-pointer"
+                      >
+                        Change
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setCoverImage('')}
+                        className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <input
+                      type="file"
+                      id="replace-cover-input"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleCoverUpload}
+                      className="hidden"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) processImageFile(file);
+                    }}
+                    className={`border-2 border-dashed rounded-xl p-5 text-center transition-all cursor-pointer ${
+                      isDragging
+                        ? 'border-amber-500 bg-amber-50/50'
+                        : fieldErrors.coverImage
+                        ? 'border-rose-400 bg-rose-50/30'
+                        : 'border-stone-300 hover:border-amber-400 bg-white'
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      id="cover-upload-input"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleCoverUpload}
+                      className="hidden"
+                    />
+                    <label htmlFor="cover-upload-input" className="cursor-pointer space-y-1.5 block">
+                      <Upload className="w-7 h-7 mx-auto text-amber-600" />
+                      <p className="text-xs font-bold text-stone-800">
+                        {uploading ? 'Uploading image...' : 'Click or Drag & Drop Cover Image'}
+                      </p>
+                      <p className="text-[10px] text-stone-400 font-medium">JPG, PNG, WebP (Max 5MB)</p>
+                    </label>
+                  </div>
+                )}
+                {fieldErrors.coverImage && (
+                  <p className="text-xs text-rose-600 font-medium">{fieldErrors.coverImage}</p>
+                )}
+              </div>
+
+              {/* Taxonomy: Category & Author */}
+              <div className="p-4 bg-stone-50/80 rounded-2xl border border-stone-200/80 space-y-3.5">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5">
+                    Category <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => {
+                      setCategory(e.target.value);
+                      if (fieldErrors.category) setFieldErrors(prev => ({ ...prev, category: '' }));
+                    }}
+                    className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-stone-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                  >
+                    {categories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 mb-1.5">
+                    Author <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={author}
+                    onChange={(e) => {
+                      setAuthor(e.target.value);
+                      if (fieldErrors.author) setFieldErrors(prev => ({ ...prev, author: '' }));
+                    }}
+                    className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-stone-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                  >
+                    {authors.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Interactive Tags Input */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                      Tags (Max 5)
+                    </label>
+                    <span className="text-[10px] text-stone-400 font-medium">{tags.length}/5</span>
+                  </div>
+                  <div className="p-2 bg-white border border-stone-200 rounded-xl space-y-2">
+                    {tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {tags.map((t) => (
+                          <span
+                            key={t}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold"
+                          >
+                            #{t}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveTag(t)}
+                              className="hover:text-rose-600 cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleAddTag}
+                      disabled={tags.length >= 5}
+                      placeholder={tags.length >= 5 ? 'Max 5 tags reached' : 'Type tag & press Enter...'}
+                      className="w-full text-xs font-medium text-stone-800 placeholder:text-stone-400 focus:outline-none bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Pin to Top Checkbox */}
+                <div className="pt-2 border-t border-stone-200/60">
+                  <label className="inline-flex items-center gap-2.5 text-xs font-bold text-stone-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isPinned}
+                      onChange={(e) => setIsPinned(e.target.checked)}
+                      className="h-4 w-4 rounded text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
+                    />
+                    <Pin className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Pin this blog to featured header</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Collapsible SEO Metadata Accordion */}
+              <div className="p-4 bg-stone-50/80 rounded-2xl border border-stone-200/80 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSeo(!showSeo)}
+                  className="w-full flex items-center justify-between text-xs font-bold uppercase tracking-wider text-stone-700 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Search Engine Optimization (SEO)</span>
+                  </div>
+                  {showSeo ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
+                </button>
+
+                {showSeo && (
+                  <div className="space-y-3 pt-2 border-t border-stone-200/60 animate-in fade-in">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold text-stone-600">Meta Title</label>
+                        <span className="text-[10px] text-stone-400">{metaTitle.length || title.length}/60</span>
+                      </div>
+                      <input
+                        type="text"
+                        maxLength={60}
+                        value={metaTitle}
+                        onChange={(e) => setMetaTitle(e.target.value)}
+                        placeholder={title || 'Custom SEO Title...'}
+                        className="w-full px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-medium text-stone-800 focus:ring-2 focus:ring-amber-400"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold text-stone-600">Meta Description</label>
+                        <span className="text-[10px] text-stone-400">{metaDescription.length || introduction.length}/160</span>
+                      </div>
+                      <textarea
+                        rows={2}
+                        maxLength={160}
+                        value={metaDescription}
+                        onChange={(e) => setMetaDescription(e.target.value)}
+                        placeholder={introduction || 'Custom search engine summary...'}
+                        className="w-full px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs font-medium text-stone-800 focus:ring-2 focus:ring-amber-400 resize-none"
+                      />
+                    </div>
+
+                    {/* Google SERP Snippet Preview */}
+                    <div className="p-3 rounded-xl bg-white border border-stone-200/80 space-y-1">
+                      <p className="text-[10px] font-extrabold uppercase text-stone-400">Google Search Preview</p>
+                      <p className="text-[11px] text-emerald-800 truncate">
+                        sahajpath.in/blog/{title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) || 'article-slug'}
+                      </p>
+                      <p className="text-xs font-bold text-blue-700 line-clamp-1">
+                        {metaTitle || title || 'Your Article Title Appears Here'}
+                      </p>
+                      <p className="text-[11px] text-stone-500 line-clamp-2 leading-tight">
+                        {metaDescription || introduction || 'Your article description appears in search results to attract readers...'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Footer buttons */}
-          <div className="pt-4 border-t border-stone-100 flex items-center justify-end gap-3">
+          {/* Footer Action Bar */}
+          <div className="pt-6 border-t border-stone-100 flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                if (title || content) {
+                  if (!confirm('You may have unsaved changes. Are you sure you want to cancel?')) return;
+                }
+                onClose();
+              }}
               disabled={loading}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-stone-600 hover:bg-stone-100 border border-stone-200 transition-all disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 border border-stone-200 transition-all disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
@@ -647,7 +927,7 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
               type="submit"
               value="Draft"
               disabled={loading || uploading}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-stone-700 hover:bg-stone-100 border border-stone-200 transition-all disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl text-xs font-bold text-stone-700 hover:bg-stone-100 border border-stone-200 transition-all disabled:opacity-50 cursor-pointer"
             >
               Save Draft
             </button>
@@ -655,10 +935,10 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({ isOpen, onClose, initialB
               type="submit"
               value="Published"
               disabled={loading || uploading}
-              className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-7 py-2.5 rounded-xl text-xs font-bold shadow-xs transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
             >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {initialBlog ? 'Update Blog' : 'Publish Blog'}
+              {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-400" />}
+              <span>{initialBlog ? 'Update Blog' : 'Publish Blog'}</span>
             </button>
           </div>
         </form>
@@ -3298,6 +3578,8 @@ const ReportsView: React.FC = () => {
 const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setActiveView }) => {
   const navigate = useNavigate();
   const [blogs, setBlogs] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -3310,10 +3592,24 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
 
-  const fetchBlogs = useCallback(async (query?: string) => {
+  // Fetch categories directly from database
+  useEffect(() => {
+    ApiServices.listBlogCategories()
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : res?.items || res?.data || [];
+        setCategories(list);
+      })
+      .catch((err: any) => console.error('Failed to fetch categories:', err));
+  }, []);
+
+  const fetchBlogs = useCallback(async (query?: string, categoryFilter?: string) => {
     setLoading(true);
     try {
-      const filters = { ...(query && query.trim() ? { search: query.trim() } : {}), status: 'all' };
+      const activeCat = categoryFilter !== undefined ? categoryFilter : selectedCategory;
+      const filters: any = { status: 'all' };
+      if (query && query.trim()) filters.search = query.trim();
+      if (activeCat && activeCat !== 'all') filters.category = activeCat;
+
       const res = await ApiServices.listBlogs(filters);
       const list = Array.isArray(res)
         ? res
@@ -3328,7 +3624,7 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedCategory]);
 
   useEffect(() => {
     fetchBlogs();
@@ -3338,7 +3634,14 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
     const val = e.target.value;
     setSearchQuery(val);
     setCurrentPage(1);
-    fetchBlogs(val);
+    fetchBlogs(val, selectedCategory);
+  };
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    setSelectedCategory(val);
+    setCurrentPage(1);
+    fetchBlogs(searchQuery, val);
   };
 
   const handleCreateBlog = () => {
@@ -3363,7 +3666,7 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
       await ApiServices.deleteBlog(id);
       setToast('Blog deleted successfully');
       setTimeout(() => setToast(null), 3500);
-      await fetchBlogs(searchQuery);
+      await fetchBlogs(searchQuery, selectedCategory);
     } catch (err) {
       console.error('Failed to delete blog:', err);
     } finally {
@@ -3389,7 +3692,26 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
           <h1 className="text-2xl font-black text-stone-900">Manage Blogs</h1>
           <p className="text-sm text-stone-500 font-medium mt-1">Create and manage content for your platform.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Category Filter Dropdown (Direct from DB) */}
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+            <select
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              className="pl-9 pr-9 py-2 bg-white border border-stone-200 rounded-xl text-sm font-semibold text-stone-700 hover:border-stone-300 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all cursor-pointer appearance-none shadow-2xs"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((cat: any) => (
+                <option key={cat.id || cat.name} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" />
+          </div>
+
+          {/* Search Input */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input
@@ -3397,9 +3719,11 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="Search blogs..."
-              className="w-full sm:w-64 pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all"
+              className="w-full sm:w-64 pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all shadow-2xs"
             />
           </div>
+
+          {/* Add Blog Button */}
           <button
             onClick={handleCreateBlog}
             className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all whitespace-nowrap cursor-pointer active:scale-95"
