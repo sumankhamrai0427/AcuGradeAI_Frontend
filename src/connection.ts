@@ -49,11 +49,15 @@ export const GET_APIS = {
   blogCategories: `${API_V1}/blogs/categories`,
   blogAuthors: `${API_V1}/blogs/authors`,
 
-  // Admin & Health
+  // Admin & Academics
   adminStatistics: `${API_V1}/admin/statistics`,
   adminDashboard: `${API_V1}/admin/dashboard`,
   adminUsers: (params?: string) => `${API_V1}/admin/users${params ? `?${params}` : ''}`,
   adminAuditLogs: (params?: string) => `${API_V1}/admin/audit-logs${params ? `?${params}` : ''}`,
+  curriculumTree: `${API_V1}/admin/curriculum/tree`,
+  adminQuestions: (params?: string) => `${API_V1}/admin/questions${params ? `?${params}` : ''}`,
+  questionUploadHistory: (limit: number = 20) => `${API_V1}/admin/questions/upload-history?limit=${limit}`,
+  ragStatus: `${API_V1}/admin/rag/status`,
   health: `${API_V1}/health`,
 };
 
@@ -100,27 +104,34 @@ export const POST_APIS = {
   createBlogCategory: `${API_V1}/blogs/categories`,
   createBlogAuthor: `${API_V1}/blogs/authors`,
 
-  // Admin
+  // Admin & Academics
+  createQuestion: `${API_V1}/admin/questions`,
+  bulkUploadQuestions: `${API_V1}/admin/questions/bulk-upload`,
+  bulkUploadQuestionsStream: `${API_V1}/admin/questions/bulk-upload-stream`,
+  uploadRagFile: `${API_V1}/files/upload`,
   adminLogin: `${API_V1}/admin/login`,
   adminResetPassword: `${API_V1}/admin/reset-password`,
 };
 
 export const PUT_APIS = {
-  updateAdminUser: (id: string | number) => `${API_V1}/admin/users/${id}`,
+  markNotificationRead: (id: string | number) => `${API_V1}/notifications/${id}/read`,
   updateChild: (id: string | number) => `${API_V1}/parents/me/children/${id}`,
   updateRunbook: (id: string) => `${API_V1}/runbooks/${id}`,
+  updateAdminUser: (id: string | number) => `${API_V1}/admin/users/${id}`,
   updateBlog: (id: string | number) => `${API_V1}/blogs/${id}`,
   updateBlogCategory: (id: string | number) => `${API_V1}/blogs/categories/${id}`,
   markMessageRead: (id: string) => `${API_V1}/messages/${id}/read`,
-  markNotificationRead: (id: string) => `${API_V1}/notifications/${id}/read`,
+  updateQuestion: (id: string | number) => `${API_V1}/admin/questions/${id}`,
 };
 
 export const DELETE_APIS = {
-  deleteAdminUser: (id: string | number) => `${API_V1}/admin/users/${id}`,
   deleteChild: (id: string | number) => `${API_V1}/parents/me/children/${id}`,
   deleteScheduledExam: (id: string) => `${API_V1}/parents/scheduled-exams/${id}`,
   deleteRunbook: (id: string) => `${API_V1}/runbooks/${id}`,
+  deleteAdminUser: (id: string | number) => `${API_V1}/admin/users/${id}`,
+  deleteDossier: (id: string) => `${API_V1}/dossiers/${encodeURIComponent(id)}`,
   deleteBlog: (id: string | number) => `${API_V1}/blogs/${id}`,
   deleteBlogCategory: (id: string | number) => `${API_V1}/blogs/categories/${id}`,
-  deleteDossier: (id: string) => `${API_V1}/dossiers/${encodeURIComponent(id)}`,
+  deleteQuestion: (id: string | number) => `${API_V1}/admin/questions/${id}`,
+  deleteRagDocument: (id: string) => `${API_V1}/admin/rag/documents/${id}`,
 };

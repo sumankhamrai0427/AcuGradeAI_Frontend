@@ -288,6 +288,111 @@ class ApiServices {
   listBlogAuthors() { return this.get(GET_APIS.blogAuthors); }
   createBlogAuthor(body: any) { return this.post(POST_APIS.createBlogAuthor, body); }
 
+  // ── Curriculum & Question Bank ────────────
+  getCurriculumTree() { return this.get(GET_APIS.curriculumTree); }
+  listQuestions(filters?: any) {
+    const params = filters ? new URLSearchParams(filters).toString() : '';
+    return this.get(GET_APIS.adminQuestions(params));
+  }
+  createQuestion(body: any) { return this.post(POST_APIS.createQuestion, body); }
+  updateQuestion(id: string | number, body: any) { return this.put(PUT_APIS.updateQuestion(id), body); }
+  deleteQuestion(id: string | number) { return this.del(DELETE_APIS.deleteQuestion(id)); }
+  getQuestionUploadHistory(limit: number = 20) { return this.get(GET_APIS.questionUploadHistory(limit)); }
+
+  bulkUploadQuestions(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post(POST_APIS.bulkUploadQuestions, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((res) => res.data.data !== undefined ? res.data.data : res.data);
+  }
+
+  async bulkUploadQuestionsStream(file: File, onProgress: (data: any) => void): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const tokens = getStoredTokens();
+    const token = tokens?.accessToken || '';
+
+    const response = await fetch(POST_APIS.bulkUploadQuestionsStream, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      let errJson: any = null;
+      try {
+        errJson = await response.json();
+      } catch (e) {
+        // text fallback
+      }
+      throw new Error(errJson?.error?.message || `Upload failed with HTTP ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('ReadableStream not supported by browser environment.');
+    }
+
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let finalResult: any = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (parsed.type === 'progress') {
+            onProgress(parsed);
+          } else if (parsed.type === 'complete') {
+            finalResult = parsed;
+          }
+        } catch (e) {
+          console.error('Failed to parse stream chunk:', trimmed, e);
+        }
+      }
+    }
+
+    if (buffer.trim()) {
+      try {
+        const parsed = JSON.parse(buffer.trim());
+        if (parsed.type === 'complete') {
+          finalResult = parsed;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    return finalResult || {
+      inserted: 0,
+      updated: 0,
+      duplicate_skipped: 0,
+      message: 'Upload completed'
+    };
+  }
+
+  // ── AI & RAG Management ───────────────────
+  getRagStatus() { return this.get(GET_APIS.ragStatus); }
+  uploadRagFile(formData: FormData) {
+    return apiClient.post(POST_APIS.uploadRagFile, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then((res) => res.data.data !== undefined ? res.data.data : res.data);
+  }
+  deleteRagDocument(documentId: string) { return this.del(DELETE_APIS.deleteRagDocument(documentId)); }
+
   // ── Health ────────────────────────────────
   checkHealth() { return this.get(GET_APIS.health); }
 }

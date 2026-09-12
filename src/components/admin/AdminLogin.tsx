@@ -56,6 +56,8 @@ import {
 } from 'recharts';
 import 'jodit/es2021/jodit.min.css';
 import { lazy, Suspense } from 'react';
+import { AcademicsHub } from './AcademicsHub';
+import { AiRagHub } from './AiRagHub';
 
 const JoditEditor = lazy(() => import('jodit-react'));
 
@@ -3749,23 +3751,114 @@ const AddBlogView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ setA
   );
 };
 // ─────────────────────────────────────────────────────────────
-// Category View (With Minimalist Delete Modal)
+// Category View (With Full Add, Edit, Delete, & Live API Integration)
 // ─────────────────────────────────────────────────────────────
 const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Education', count: 24, status: 'Active' },
-    { id: 2, name: 'Technology', count: 18, status: 'Active' },
-    { id: 3, name: 'Parenting', count: 12, status: 'Active' },
-    { id: 4, name: 'Platform News', count: 5, status: 'Active' },
-    { id: 5, name: 'Engineering', count: 9, status: 'Active' },
-  ]);
+  interface CategoryItem {
+    id: number;
+    name: string;
+    count: number;
+    isActive: boolean;
+    status: string;
+  }
 
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Add / Edit Modal State
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | null>(null);
+  const [categoryForm, setCategoryForm] = useState<{ id?: number; name: string; isActive: boolean }>({
+    name: '',
+    isActive: true,
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
   // Custom Delete Modal State
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: number; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  // Fetch Categories from Backend API
+  const fetchCategories = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await ApiServices.listBlogCategories();
+      const list = Array.isArray(res) ? res : res?.data || [];
+      const mapped: CategoryItem[] = list.map((c: any) => ({
+        id: c.id,
+        name: c.name || 'Unnamed Category',
+        count: typeof c.count === 'number' ? c.count : (typeof c.items === 'number' ? c.items : 0),
+        isActive: c.isActive !== undefined ? Boolean(c.isActive) : (c.is_active !== undefined ? Boolean(c.is_active) : true),
+        status: (c.isActive !== undefined ? c.isActive : (c.is_active !== undefined ? c.is_active : true)) ? 'Active' : 'Inactive',
+      }));
+      setCategories(mapped);
+    } catch (err: any) {
+      console.error('Failed to fetch blog categories:', err);
+      showToast('error', err?.response?.data?.message || 'Failed to load categories');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Open Add Category Modal
+  const openAddModal = () => {
+    setCategoryForm({ name: '', isActive: true });
+    setModalMode('add');
+  };
+
+  // Open Edit Category Modal
+  const openEditModal = (cat: CategoryItem) => {
+    setCategoryForm({ id: cat.id, name: cat.name, isActive: cat.isActive });
+    setModalMode('edit');
+  };
+
+  // Save / Update Category
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanName = categoryForm.name.trim();
+    if (!cleanName) {
+      showToast('error', 'Category name is required.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (modalMode === 'add') {
+        await ApiServices.createBlogCategory({
+          name: cleanName,
+          is_active: categoryForm.isActive,
+        });
+        showToast('success', `Category "${cleanName}" created successfully!`);
+      } else if (modalMode === 'edit' && categoryForm.id) {
+        await ApiServices.updateBlogCategory(categoryForm.id, {
+          name: cleanName,
+          is_active: categoryForm.isActive,
+        });
+        showToast('success', `Category "${cleanName}" updated successfully!`);
+      }
+      setModalMode(null);
+      fetchCategories();
+    } catch (err: any) {
+      console.error('Failed to save category:', err);
+      showToast('error', err?.response?.data?.message || 'Failed to save category');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Open Delete Confirmation Modal
   const promptDeleteCategory = (cat: { id: number; name: string }) => {
@@ -3776,28 +3869,46 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
   const handleExecuteDelete = async () => {
     if (!categoryToDelete) return;
     setIsDeleting(true);
-
-    setTimeout(() => {
-      setCategories((prev) => prev.filter((c) => c.id !== categoryToDelete.id));
-      setToast(`Category deleted successfully`);
-      setIsDeleting(false);
+    try {
+      await ApiServices.deleteBlogCategory(categoryToDelete.id);
+      showToast('success', `Category "${categoryToDelete.name}" deleted successfully!`);
       setCategoryToDelete(null);
-
-      setTimeout(() => setToast(null), 3500);
-    }, 400);
+      fetchCategories();
+    } catch (err: any) {
+      console.error('Failed to delete category:', err);
+      showToast('error', err?.response?.data?.message || 'Failed to delete category');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const filteredCategories = categories.filter((c) =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredCategories.length / pageSize) || 1;
+  const paginatedCategories = filteredCategories.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
     <div className="space-y-6 relative">
       {/* Toast Notification */}
       {toast && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold shadow-xs animate-in fade-in duration-300">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-          <span>{toast}</span>
+        <div
+          className={`p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-xl border backdrop-blur-md animate-in fade-in duration-300 ${
+            toast.type === 'success'
+              ? 'bg-emerald-500/90 text-white border-emerald-400'
+              : 'bg-rose-500/90 text-white border-rose-400'
+          }`}
+        >
+          {toast.type === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+          ) : (
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          )}
+          <span>{toast.message}</span>
         </div>
       )}
 
@@ -3813,12 +3924,18 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Search categories..."
               className="w-full sm:w-64 pl-9 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 transition-all"
             />
           </div>
-          <button className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-xs transition-all whitespace-nowrap cursor-pointer active:scale-95">
+          <button
+            onClick={openAddModal}
+            className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-xs transition-all whitespace-nowrap cursor-pointer active:scale-95"
+          >
             <Plus className="w-4 h-4" /> Add Category
           </button>
         </div>
@@ -3837,19 +3954,35 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-50">
-              {filteredCategories.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-12 text-center text-stone-400 font-medium">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                      <span>Loading categories...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedCategories.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-10 text-center text-stone-400 font-medium">
-                    No categories found.
+                    No categories found. Click <strong>+ Add Category</strong> to create one.
                   </td>
                 </tr>
               ) : (
-                filteredCategories.map((c) => (
+                paginatedCategories.map((c) => (
                   <tr key={c.id} className="hover:bg-amber-50/40 transition-colors group">
                     <td className="px-6 py-4 font-semibold text-stone-800">{c.name}</td>
                     <td className="px-6 py-4 text-stone-600 font-medium">{c.count}</td>
                     <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${
+                          c.isActive
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${c.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                         {c.status}
                       </span>
                     </td>
@@ -3858,6 +3991,7 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
                         {/* Soft Blue Edit Button */}
                         <button
                           type="button"
+                          onClick={() => openEditModal(c)}
                           title="Edit Category"
                           className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100/80 hover:text-blue-700 rounded-xl transition-all cursor-pointer active:scale-95"
                         >
@@ -3884,22 +4018,133 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
 
         {/* Footer Pagination Bar */}
         <div className="px-6 py-4 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
-          <span>Showing 1 to {filteredCategories.length} of {filteredCategories.length} categories</span>
+          <span>
+            Showing {filteredCategories.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{' '}
+            {Math.min(currentPage * pageSize, filteredCategories.length)} of {filteredCategories.length} categories
+          </span>
           <div className="flex items-center gap-1">
-            <button disabled className="px-3 py-1.5 rounded-lg border border-stone-200 text-stone-400 cursor-not-allowed opacity-60">
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:text-stone-400 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+            >
               Previous
             </button>
-            <button className="px-3 py-1.5 rounded-lg bg-stone-900 text-white font-semibold shadow-xs">
-              1
-            </button>
-            <button disabled className="px-3 py-1.5 rounded-lg border border-stone-200 text-stone-400 cursor-not-allowed opacity-60">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => (
+              <button
+                key={pNum}
+                onClick={() => setCurrentPage(pNum)}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                  currentPage === pNum
+                    ? 'bg-stone-900 text-white shadow-xs'
+                    : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
+                }`}
+              >
+                {pNum}
+              </button>
+            ))}
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="px-3 py-1.5 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:text-stone-400 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+            >
               Next
             </button>
           </div>
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* ─────────────────────────────────────────────────────────────
+          Add / Edit Category Modal
+         ───────────────────────────────────────────────────────────── */}
+      {modalMode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-stone-100 animate-in zoom-in-95 duration-200 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800">
+                  {modalMode === 'add' ? <Plus className="w-5 h-5" /> : <Edit className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-stone-900">
+                    {modalMode === 'add' ? 'Add New Category' : 'Edit Category'}
+                  </h3>
+                  <p className="text-xs text-stone-500 font-medium">
+                    {modalMode === 'add' ? 'Create a category for organizing articles' : 'Update category name and status'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalMode(null)}
+                className="p-1.5 hover:bg-stone-100 rounded-xl text-stone-400 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCategory} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1.5">
+                  Category Name <span className="text-amber-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={categoryForm.name}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                  placeholder="e.g. Artificial Intelligence, Mathematics..."
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all"
+                />
+              </div>
+
+              {modalMode === 'edit' && (
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1.5">Status</label>
+                  <select
+                    value={categoryForm.isActive ? 'active' : 'inactive'}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, isActive: e.target.value === 'active' })}
+                    className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm font-semibold text-stone-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  >
+                    <option value="active">Active (Visible across platform)</option>
+                    <option value="inactive">Inactive (Hidden)</option>
+                  </select>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={() => setModalMode(null)}
+                  disabled={isSaving}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-stone-900 hover:bg-stone-800 text-white shadow-xs transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 active:scale-95"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>{modalMode === 'add' ? 'Create Category' : 'Save Changes'}</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          Delete Confirmation Modal
+         ───────────────────────────────────────────────────────────── */}
       {categoryToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-stone-100 animate-in zoom-in-95 duration-200">
@@ -3909,7 +4154,7 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
               </div>
               <h3 className="text-lg font-bold text-stone-900 mb-1">Delete Category?</h3>
               <p className="text-xs text-stone-500 font-medium mb-5">
-                Are you sure you want to delete <span className="font-semibold text-stone-800">"{categoryToDelete.name}"</span>? This action cannot be undone.
+                Are you sure you want to delete <span className="font-semibold text-stone-800">"{categoryToDelete.name}"</span>? This action will remove the category from the database.
               </p>
               <div className="flex items-center gap-3 w-full">
                 <button
@@ -3924,7 +4169,7 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
                   type="button"
                   onClick={handleExecuteDelete}
                   disabled={isDeleting}
-                  className="flex-1 py-2.5 px-4 bg-rose-400 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                  className="flex-1 py-2.5 px-4 bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
                 >
                   {isDeleting ? (
                     <>
@@ -4223,8 +4468,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
             const VIEW_MAP: Record<string, React.ReactNode> = {
               dashboard: <DashboardView />,
               users: <UsersView />,
-              academics: <CoursesView />,
-              courses: <CoursesView />,
+              academics: <AcademicsHub />,
+              courses: <AcademicsHub />,
+              'ai-rag': <AiRagHub />,
+              airag: <AiRagHub />,
               analytics: <ReportsView />,
               reports: <ReportsView />,
               blogs: <ManageBlogsView setActiveView={(v) => navigate('/' + v)} />,
