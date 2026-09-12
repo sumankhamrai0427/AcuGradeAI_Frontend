@@ -394,6 +394,12 @@ class ApiServices {
     }).then((res) => res.data.data !== undefined ? res.data.data : res.data);
   }
   deleteRagDocument(documentId: string) { return this.del(DELETE_APIS.deleteRagDocument(documentId)); }
+  generateRagQuestions(payload: { document_id: string; count?: number; type?: string; difficulty?: string; instructions?: string }) {
+    return this.post(POST_APIS.generateRagQuestions, payload);
+  }
+  saveRagQuestions(payload: { topic_id: number; questions: any[] }) {
+    return this.post(POST_APIS.saveRagQuestions, payload);
+  }
 
   // ── Health ────────────────────────────────
   checkHealth() { return this.get(GET_APIS.health); }

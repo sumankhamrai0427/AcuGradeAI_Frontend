@@ -111,6 +111,8 @@ export const POST_APIS = {
   bulkUploadQuestions: `${API_V1}/admin/questions/bulk-upload`,
   bulkUploadQuestionsStream: `${API_V1}/admin/questions/bulk-upload-stream`,
   uploadRagFile: `${API_V1}/files/upload`,
+  generateRagQuestions: `${API_V1}/admin/rag/generate-questions`,
+  saveRagQuestions: `${API_V1}/admin/rag/save-questions`,
   adminLogin: `${API_V1}/admin/login`,
   adminResetPassword: `${API_V1}/admin/reset-password`,
 };

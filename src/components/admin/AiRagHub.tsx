@@ -14,7 +14,14 @@ import {
   Layers,
   Check,
   Zap,
-  Bot
+  Bot,
+  PlusCircle,
+  HelpCircle,
+  X,
+  Edit3,
+  Sliders,
+  ChevronRight,
+  BookmarkCheck
 } from 'lucide-react';
 import ApiServices from '../../services/ApiServices';
 import { Board, ClassGrade, Subject } from '../../types';
@@ -43,11 +50,33 @@ interface RagDocument {
 
 interface RagStatusData {
   vector_store_enabled: boolean;
+  total_topics?: number;
   total_ai_exams?: number;
   total_documents: number;
   total_chunks: number;
   total_runbooks: number;
   documents: RagDocument[];
+}
+
+interface GeneratedQuestionItem {
+  id: string;
+  question: string;
+  type: string;
+  difficulty: string;
+  marks: number;
+  options: string[];
+  correct_answer: string;
+  explanation: string;
+  topic_suggested?: string;
+}
+
+interface FlatTopic {
+  id: number;
+  name: string;
+  chapterName: string;
+  subjectName: string;
+  className: string;
+  boardName: string;
 }
 
 export const AiRagHub: React.FC = () => {
@@ -67,11 +96,24 @@ export const AiRagHub: React.FC = () => {
   const [testResponse, setTestResponse] = useState<string | null>(null);
   const [testingLlm, setTestingLlm] = useState(false);
 
+  // AI Question Generator Modal State
+  const [generatorModalOpen, setGeneratorModalOpen] = useState(false);
+  const [activeDocForGen, setActiveDocForGen] = useState<RagDocument | null>(null);
+  const [genCount, setGenCount] = useState<number>(5);
+  const [genType, setGenType] = useState<string>('MCQ');
+  const [genDifficulty, setGenDifficulty] = useState<string>('medium');
+  const [genInstructions, setGenInstructions] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [generatedQuestions, setGeneratedQuestions] = useState<GeneratedQuestionItem[]>([]);
+  const [selectedTargetTopicId, setSelectedTargetTopicId] = useState<number | null>(null);
+  const [flatTopics, setFlatTopics] = useState<FlatTopic[]>([]);
+
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const showNotify = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
-    setTimeout(() => setNotification(null), 4000);
+    setTimeout(() => setNotification(null), 4500);
   };
 
   const fetchRagStatus = async () => {
@@ -88,8 +130,41 @@ export const AiRagHub: React.FC = () => {
     }
   };
 
+  const fetchCurriculumTopics = async () => {
+    try {
+      const res = await ApiServices.getCurriculumTree();
+      const tree = Array.isArray(res) ? res : res?.tree || [];
+      const topics: FlatTopic[] = [];
+      tree.forEach((b: any) => {
+        (b.classes || []).forEach((c: any) => {
+          (c.subjects || []).forEach((s: any) => {
+            (s.chapters || []).forEach((ch: any) => {
+              (ch.topics || []).forEach((t: any) => {
+                topics.push({
+                  id: t.id,
+                  name: t.topic_name,
+                  chapterName: ch.chapter_name,
+                  subjectName: s.subject_name,
+                  className: c.class_name,
+                  boardName: b.board_name
+                });
+              });
+            });
+          });
+        });
+      });
+      setFlatTopics(topics);
+      if (topics.length > 0 && !selectedTargetTopicId) {
+        setSelectedTargetTopicId(topics[0].id);
+      }
+    } catch (err: any) {
+      console.warn('Failed to load topics for Question Bank mapping:', err);
+    }
+  };
+
   useEffect(() => {
     fetchRagStatus();
+    fetchCurriculumTopics();
   }, []);
 
   const handleUploadPdf = async (e: React.FormEvent) => {
@@ -103,10 +178,26 @@ export const AiRagHub: React.FC = () => {
       formData.append('classGrade', selectedGrade);
       formData.append('subject', selectedSubject);
 
-      await ApiServices.uploadRagFile(formData);
-      showNotify('success', `PDF "${uploadFile.name}" ingested into ChromaDB Vector Store!`);
+      const res = await ApiServices.uploadRagFile(formData);
+      showNotify('success', `PDF "${uploadFile.name}" indexed successfully!`);
       setUploadFile(null);
-      fetchRagStatus();
+      await fetchRagStatus();
+
+      // Automatically offer to generate questions from this newly uploaded document
+      if (res && res.id) {
+        const newDoc: RagDocument = {
+          id: res.id,
+          filename: res.filename || uploadFile.name,
+          content_type: 'application/pdf',
+          board: selectedBoard,
+          classGrade: selectedGrade,
+          subject: selectedSubject,
+          status: 'PROCESSED',
+          chunk_count: 1,
+          created_at: new Date().toISOString()
+        };
+        openQuestionGenerator(newDoc);
+      }
     } catch (err: any) {
       console.error('PDF upload error:', err);
       showNotify('error', err?.response?.data?.error?.message || 'Failed to ingest PDF');
@@ -143,6 +234,100 @@ export const AiRagHub: React.FC = () => {
     }
   };
 
+  // Open Question Generator Modal for a document
+  const openQuestionGenerator = (doc: RagDocument) => {
+    setActiveDocForGen(doc);
+    setGeneratedQuestions([]);
+    setGenCount(5);
+    setGenType('MCQ');
+    setGenDifficulty('medium');
+    setGenInstructions('');
+
+    // Pre-select matching topic based on doc subject/board if available
+    const matched = flatTopics.find(
+      t => t.boardName.toLowerCase() === (doc.board || '').toLowerCase() &&
+           t.className.toLowerCase() === (doc.classGrade || '').toLowerCase() &&
+           t.subjectName.toLowerCase() === (doc.subject || '').toLowerCase()
+    ) || flatTopics[0];
+
+    if (matched) {
+      setSelectedTargetTopicId(matched.id);
+    }
+    setGeneratorModalOpen(true);
+  };
+
+  // Trigger AI Question Generation
+  const handleGenerateQuestions = async () => {
+    if (!activeDocForGen) return;
+    setIsGenerating(true);
+    try {
+      const res = await ApiServices.generateRagQuestions({
+        document_id: activeDocForGen.id,
+        count: genCount,
+        type: genType,
+        difficulty: genDifficulty,
+        instructions: genInstructions
+      });
+
+      const questionsList = res?.questions || res?.data?.questions || [];
+      if (Array.isArray(questionsList) && questionsList.length > 0) {
+        setGeneratedQuestions(questionsList);
+        showNotify('success', `✨ Generated ${questionsList.length} questions from ${activeDocForGen.filename}!`);
+      } else {
+        showNotify('error', 'No questions were returned. Please try with different instructions.');
+      }
+    } catch (err: any) {
+      console.error('Question generation error:', err);
+      showNotify('error', err?.response?.data?.error?.message || 'Failed to generate questions with AI');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Save generated questions to question_master
+  const handleSaveQuestionsToBank = async () => {
+    if (!selectedTargetTopicId) {
+      showNotify('error', 'Please select a curriculum Topic to save questions under.');
+      return;
+    }
+    if (generatedQuestions.length === 0) {
+      showNotify('error', 'No questions to save.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const res = await ApiServices.saveRagQuestions({
+        topic_id: selectedTargetTopicId,
+        questions: generatedQuestions
+      });
+
+      showNotify('success', res?.message || `Successfully saved ${generatedQuestions.length} questions to Question Bank!`);
+      setGeneratorModalOpen(false);
+      setGeneratedQuestions([]);
+      fetchRagStatus();
+    } catch (err: any) {
+      console.error('Save questions error:', err);
+      showNotify('error', err?.response?.data?.error?.message || 'Failed to save questions to database');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Edit question locally
+  const handleUpdateGeneratedQuestion = (index: number, updatedFields: Partial<GeneratedQuestionItem>) => {
+    setGeneratedQuestions(prev => {
+      const clone = [...prev];
+      clone[index] = { ...clone[index], ...updatedFields };
+      return clone;
+    });
+  };
+
+  // Remove single generated question from review list
+  const handleRemoveGeneratedQuestion = (index: number) => {
+    setGeneratedQuestions(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="space-y-6">
       {/* Toast Notification */}
@@ -164,10 +349,10 @@ export const AiRagHub: React.FC = () => {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-white shadow-xs">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-stone-900">Curriculum RAG & Knowledge Vector Hub</h1>
+            <h1 className="text-xl font-bold text-stone-900">Curriculum RAG & Question Synthesis Hub</h1>
           </div>
           <p className="text-xs text-stone-600 pl-11">
-            Official NCERT & Board textbook ingestion engine. Generates 300-token semantic chunks into ChromaDB for AI teacher grounding.
+            Official NCERT & Board textbook ingestion engine. Generates semantic chunks into ChromaDB and auto-synthesizes exam questions into <code className="bg-yellow-200/60 px-1 rounded font-mono text-[11px]">question_master</code>.
           </p>
         </div>
         <button
@@ -202,9 +387,15 @@ export const AiRagHub: React.FC = () => {
                 : 'text-stone-500 hover:text-stone-800'
             }`}
           >
-            <Bot className="w-4 h-4 text-yellow-600" />
-            AI RAG Playground
+            <Cpu className="w-4 h-4 text-yellow-600" />
+            AI Query Playground
           </button>
+        </div>
+
+        {/* Vector Store Status Badge */}
+        <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 bg-stone-50 px-3 py-1.5 rounded-xl border border-stone-200/80">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>ChromaDB Vector Store: Active</span>
         </div>
       </div>
 
@@ -260,9 +451,9 @@ export const AiRagHub: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Upload Form */}
           <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-stone-200/80 shadow-xs space-y-5">
-            <div className="flex items-center gap-2 pb-3 border-b border-stone-100">
-              <UploadCloud className="w-5 h-5 text-yellow-600" />
-              <h2 className="text-base font-black text-stone-900">Ingest Textbook PDF</h2>
+            <div>
+              <h2 className="text-base font-black text-stone-900">Ingest Curriculum PDF</h2>
+              <p className="text-xs text-stone-400">Upload chapters to extract chunks, vectorize, and generate examination questions</p>
             </div>
 
             <form onSubmit={handleUploadPdf} className="space-y-4">
@@ -343,7 +534,7 @@ export const AiRagHub: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
                 <h2 className="text-base font-black text-stone-900">Vector Repository Documents</h2>
-                <p className="text-xs text-stone-400">PDFs parsed into ChromaDB vector chunks</p>
+                <p className="text-xs text-stone-400">PDFs parsed into ChromaDB vector chunks with 1-click Question Synthesis</p>
               </div>
               <button
                 onClick={fetchRagStatus}
@@ -367,23 +558,34 @@ export const AiRagHub: React.FC = () => {
             ) : (
               <div className="divide-y divide-stone-100">
                 {ragStatus.documents.map((doc) => (
-                  <div key={doc.id} className="py-3.5 flex items-center justify-between gap-4">
+                  <div key={doc.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-stone-50/60 p-2 rounded-2xl transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-yellow-50 text-yellow-700 flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center flex-shrink-0 border border-amber-200/60 font-bold">
                         <FileText className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-stone-900 truncate">{doc.filename}</p>
+                        <p className="text-xs font-bold text-stone-900 truncate" title={doc.filename}>{doc.filename}</p>
                         <p className="text-[10px] text-stone-400 font-medium">
-                          {doc.board} &bull; {doc.classGrade} &bull; {doc.subject}
+                          {doc.board || 'General'} &bull; {doc.classGrade || 'Standard'} &bull; {doc.subject || 'All'}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
                         {doc.chunk_count} Chunks
                       </span>
+
+                      {/* ⚡ Generate Questions Action Button */}
+                      <button
+                        onClick={() => openQuestionGenerator(doc)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-900 font-bold text-[11px] shadow-2xs transition-all cursor-pointer hover:scale-105 active:scale-95"
+                        title="Synthesize AI Questions from this document into question_master"
+                      >
+                        <Zap className="w-3.5 h-3.5 fill-current" />
+                        <span>Generate Questions</span>
+                      </button>
+
                       <button
                         onClick={() => handleDeleteDoc(doc.id)}
                         className="p-1.5 hover:bg-rose-50 text-stone-400 hover:text-rose-600 rounded-lg transition-colors"
@@ -417,7 +619,7 @@ export const AiRagHub: React.FC = () => {
                 value={testQuery}
                 onChange={(e) => setTestQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleTestChat()}
-                placeholder="Ask an educational or progress query (e.g. 'Explain Newton 3rd law in simple words', 'How is the student progressing?')..."
+                placeholder="Ask an educational query (e.g. 'Explain Newton 3rd law in simple words', 'What is photosynthesis?')..."
                 className="w-full pl-4 pr-32 py-3 bg-stone-50 border border-stone-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
               <button
@@ -438,6 +640,257 @@ export const AiRagHub: React.FC = () => {
                 <p className="text-stone-800 leading-relaxed font-medium whitespace-pre-wrap">{testResponse}</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL: AI QUESTION GENERATOR & REVIEW CONSOLE
+         ───────────────────────────────────────────────────────────── */}
+      {generatorModalOpen && activeDocForGen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-stone-200 flex flex-col max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-stone-100 bg-gradient-to-r from-yellow-50/90 to-amber-50/70 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-yellow-400 text-stone-900 flex items-center justify-center shadow-xs">
+                  <Zap className="w-5 h-5 fill-current" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-stone-900 flex items-center gap-2">
+                    <span>AI Question Generator from Document</span>
+                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-yellow-200/70 text-yellow-900 border border-yellow-300">
+                      Auto-Synthesis
+                    </span>
+                  </h3>
+                  <p className="text-xs text-stone-600 truncate max-w-lg">
+                    Source: <strong className="text-stone-800">{activeDocForGen.filename}</strong> ({activeDocForGen.board} &bull; {activeDocForGen.classGrade} &bull; {activeDocForGen.subject})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setGeneratorModalOpen(false)}
+                className="p-2 hover:bg-stone-200/60 rounded-xl text-stone-500 hover:text-stone-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Generation Settings Card */}
+              <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-4">
+                <div className="flex items-center gap-2 text-xs font-bold text-stone-800">
+                  <Sliders className="w-4 h-4 text-amber-600" />
+                  <span>Configure Question Synthesis Parameters</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-stone-600 mb-1">Number of Questions</label>
+                    <select
+                      value={genCount}
+                      onChange={(e) => setGenCount(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
+                    >
+                      <option value={3}>3 Questions</option>
+                      <option value={5}>5 Questions</option>
+                      <option value={10}>10 Questions</option>
+                      <option value={15}>15 Questions</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-stone-600 mb-1">Question Type</label>
+                    <select
+                      value={genType}
+                      onChange={(e) => setGenType(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
+                    >
+                      <option value="MCQ">MCQ (Multiple Choice)</option>
+                      <option value="TRUE_FALSE">True / False</option>
+                      <option value="SHORT_ANSWER">Short Answer</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-stone-600 mb-1">Difficulty Calibration</label>
+                    <select
+                      value={genDifficulty}
+                      onChange={(e) => setGenDifficulty(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
+                    >
+                      <option value="easy">Easy / Foundation</option>
+                      <option value="medium">Medium / Standard</option>
+                      <option value="hard">Hard / Analytical</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-stone-600 mb-1">Custom Focus Instructions (Optional)</label>
+                  <input
+                    type="text"
+                    value={genInstructions}
+                    onChange={(e) => setGenInstructions(e.target.value)}
+                    placeholder="e.g., Focus heavily on core definitions, formulas, and conceptual traps from the PDF..."
+                    className="w-full px-3.5 py-2 bg-white border border-stone-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleGenerateQuestions}
+                    disabled={isGenerating}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-stone-900 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Analyzing Chunks & Synthesizing Questions...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        {generatedQuestions.length > 0 ? 'Re-generate Questions' : 'Generate Questions with AI'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Generated Questions Preview & Review List */}
+              {generatedQuestions.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-stone-100">
+                    <div className="flex items-center gap-2">
+                      <BookmarkCheck className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs font-black text-stone-900">
+                        Generated Questions Preview ({generatedQuestions.length})
+                      </span>
+                    </div>
+
+                    {/* Target Topic Selection for Database Linkage */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-stone-600 shrink-0">Save under Topic:</span>
+                      <select
+                        value={selectedTargetTopicId || ''}
+                        onChange={(e) => setSelectedTargetTopicId(Number(e.target.value))}
+                        className="px-3 py-1.5 bg-yellow-50/80 border border-yellow-300/80 rounded-xl text-xs font-bold text-stone-800 max-w-xs truncate"
+                      >
+                        {flatTopics.map(t => (
+                          <option key={t.id} value={t.id}>
+                            {t.boardName} &bull; {t.className} &bull; {t.subjectName} &bull; {t.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {generatedQuestions.map((q, idx) => (
+                      <div key={q.id || idx} className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-2 hover:border-yellow-300 transition-colors">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 border border-stone-200">
+                              Q{idx + 1} &bull; {q.type}
+                            </span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                              q.difficulty === 'hard'
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : q.difficulty === 'medium'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            }`}>
+                              {q.difficulty}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveGeneratedQuestion(idx)}
+                            className="p-1 text-stone-400 hover:text-rose-600 transition-colors"
+                            title="Remove this question"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Editable Question Text */}
+                        <textarea
+                          value={q.question}
+                          onChange={(e) => handleUpdateGeneratedQuestion(idx, { question: e.target.value })}
+                          rows={2}
+                          className="w-full p-2 bg-stone-50/70 border border-stone-200 rounded-xl text-xs font-bold text-stone-900 leading-relaxed focus:bg-white focus:outline-none focus:ring-1 focus:ring-yellow-400"
+                        />
+
+                        {/* Options Display */}
+                        {q.options && q.options.length > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            {q.options.map((opt, optIdx) => {
+                              const isCorrect = opt.trim().toLowerCase().startsWith(q.correct_answer.toLowerCase()) ||
+                                                opt.trim().toLowerCase().includes(q.correct_answer.toLowerCase()) ||
+                                                (q.correct_answer.toUpperCase() === String.fromCharCode(65 + optIdx));
+                              return (
+                                <div
+                                  key={optIdx}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-medium border flex items-center justify-between ${
+                                    isCorrect
+                                      ? 'bg-emerald-50 text-emerald-900 border-emerald-300 font-bold'
+                                      : 'bg-stone-50 text-stone-700 border-stone-200/70'
+                                  }`}
+                                >
+                                  <span>{opt}</span>
+                                  {isCorrect && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Explanation */}
+                        {q.explanation && (
+                          <div className="p-2 rounded-xl bg-yellow-50/60 border border-yellow-200/60 text-[11px] text-yellow-900 font-medium">
+                            💡 <strong>Explanation:</strong> {q.explanation}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-stone-100 bg-stone-50 flex items-center justify-between">
+              <span className="text-xs text-stone-500 font-medium">
+                {generatedQuestions.length > 0 ? `${generatedQuestions.length} questions ready to save` : 'Select settings and click generate'}
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setGeneratorModalOpen(false)}
+                  className="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveQuestionsToBank}
+                  disabled={generatedQuestions.length === 0 || isSaving}
+                  className="flex items-center gap-2 px-5 py-2 bg-yellow-400 hover:bg-yellow-300 text-stone-900 rounded-xl text-xs font-bold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isSaving ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Saving to Database...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      Save to Question Bank (<code className="bg-yellow-200/60 px-1 rounded font-mono text-[11px]">question_master</code>)
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
