@@ -100,8 +100,8 @@ export const AiRagHub: React.FC = () => {
   const [generatorModalOpen, setGeneratorModalOpen] = useState(false);
   const [activeDocForGen, setActiveDocForGen] = useState<RagDocument | null>(null);
   const [genCount, setGenCount] = useState<number>(5);
-  const [genType, setGenType] = useState<string>('MCQ');
-  const [genDifficulty, setGenDifficulty] = useState<string>('medium');
+  const [genType, setGenType] = useState<string>('ALL');
+  const [genDifficulty, setGenDifficulty] = useState<string>('ALL');
   const [genInstructions, setGenInstructions] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -239,15 +239,15 @@ export const AiRagHub: React.FC = () => {
     setActiveDocForGen(doc);
     setGeneratedQuestions([]);
     setGenCount(5);
-    setGenType('MCQ');
-    setGenDifficulty('medium');
+    setGenType('ALL');
+    setGenDifficulty('ALL');
     setGenInstructions('');
 
     // Pre-select matching topic based on doc subject/board if available
     const matched = flatTopics.find(
       t => t.boardName.toLowerCase() === (doc.board || '').toLowerCase() &&
-           t.className.toLowerCase() === (doc.classGrade || '').toLowerCase() &&
-           t.subjectName.toLowerCase() === (doc.subject || '').toLowerCase()
+        t.className.toLowerCase() === (doc.classGrade || '').toLowerCase() &&
+        t.subjectName.toLowerCase() === (doc.subject || '').toLowerCase()
     ) || flatTopics[0];
 
     if (matched) {
@@ -278,7 +278,7 @@ export const AiRagHub: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Question generation error:', err);
-      showNotify('error', err?.response?.data?.error?.message || 'Failed to generate questions with AI');
+      showNotify('error', err?.response?.data?.error?.message || 'Failed to generate questions');
     } finally {
       setIsGenerating(false);
     }
@@ -332,11 +332,10 @@ export const AiRagHub: React.FC = () => {
     <div className="space-y-6">
       {/* Toast Notification */}
       {notification && (
-        <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border backdrop-blur-md transition-all animate-bounce ${
-          notification.type === 'success'
-            ? 'bg-emerald-500/90 text-white border-emerald-400'
-            : 'bg-rose-500/90 text-white border-rose-400'
-        }`}>
+        <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border backdrop-blur-md transition-all animate-bounce ${notification.type === 'success'
+          ? 'bg-emerald-500/90 text-white border-emerald-400'
+          : 'bg-rose-500/90 text-white border-rose-400'
+          }`}>
           {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
           <span className="text-sm font-semibold">{notification.message}</span>
         </div>
@@ -370,22 +369,20 @@ export const AiRagHub: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveTab('ingestion')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'ingestion'
-                ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80'
-                : 'text-stone-500 hover:text-stone-800'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'ingestion'
+              ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80'
+              : 'text-stone-500 hover:text-stone-800'
+              }`}
           >
             <Database className="w-4 h-4 text-yellow-600" />
             PDF & Vector Ingestion
           </button>
           <button
             onClick={() => setActiveTab('playground')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'playground'
-                ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80'
-                : 'text-stone-500 hover:text-stone-800'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'playground'
+              ? 'bg-white text-stone-900 shadow-xs border border-stone-200/80'
+              : 'text-stone-500 hover:text-stone-800'
+              }`}
           >
             <Cpu className="w-4 h-4 text-yellow-600" />
             AI Query Playground
@@ -491,8 +488,8 @@ export const AiRagHub: React.FC = () => {
                 </div>
               </div>
 
-              {/* PDF Dropzone */}
-              <div className="border-2 border-dashed border-stone-300 rounded-2xl p-6 text-center hover:border-yellow-400 transition-colors cursor-pointer bg-stone-50/50">
+              {/* PDF Dropzone & Selected File Display */}
+              <div className="space-y-2">
                 <input
                   type="file"
                   id="pdf-upload-input"
@@ -500,13 +497,68 @@ export const AiRagHub: React.FC = () => {
                   onChange={(e) => e.target.files && setUploadFile(e.target.files[0])}
                   className="hidden"
                 />
-                <label htmlFor="pdf-upload-input" className="cursor-pointer space-y-2 block">
-                  <FileText className="w-8 h-8 mx-auto text-yellow-600 animate-bounce" />
-                  <p className="text-xs font-bold text-stone-800">
-                    {uploadFile ? uploadFile.name : 'Click to select Textbook PDF'}
-                  </p>
-                  <p className="text-[10px] text-stone-400 font-medium">Supports PDF textbooks up to 50MB</p>
-                </label>
+
+                {!uploadFile ? (
+                  <label
+                    htmlFor="pdf-upload-input"
+                    className="border-2 border-dashed border-stone-300 hover:border-yellow-400 bg-stone-50/60 hover:bg-yellow-50/30 rounded-2xl p-6 text-center transition-all cursor-pointer block group"
+                  >
+                    <div className="w-12 h-12 mx-auto mb-2.5 rounded-2xl bg-yellow-100/80 text-yellow-700 flex items-center justify-center group-hover:scale-110 transition-transform shadow-2xs">
+                      <UploadCloud className="w-6 h-6" />
+                    </div>
+                    <p className="text-xs font-bold text-stone-800">
+                      Click to select Textbook PDF
+                    </p>
+                    <p className="text-[11px] text-stone-400 font-medium mt-0.5">
+                      Supports PDF documents up to 50MB
+                    </p>
+                  </label>
+                ) : (
+                  <div className="p-3.5 rounded-2xl bg-stone-50/90 border border-stone-200/90 shadow-2xs space-y-2.5">
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                        <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 border border-rose-200/80 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className="text-xs font-bold text-stone-900 break-all leading-snug line-clamp-3"
+                            title={uploadFile.name}
+                          >
+                            {uploadFile.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-stone-500 font-semibold">
+                              {(uploadFile.size / (1024 * 1024)).toFixed(2)} MB
+                            </span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Ready to Index
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadFile(null);
+                          const input = document.getElementById('pdf-upload-input') as HTMLInputElement;
+                          if (input) input.value = '';
+                        }}
+                        className="p-1 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0 cursor-pointer"
+                        title="Remove selected file"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <label
+                      htmlFor="pdf-upload-input"
+                      className="block text-center py-1 text-[11px] font-bold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer border-t border-stone-200/60 pt-2"
+                    >
+                      Choose a different PDF
+                    </label>
+                  </div>
+                )}
               </div>
 
               <button
@@ -707,9 +759,11 @@ export const AiRagHub: React.FC = () => {
                       onChange={(e) => setGenType(e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
                     >
+                      <option value="ALL">All Types</option>
                       <option value="MCQ">MCQ (Multiple Choice)</option>
-                      <option value="TRUE_FALSE">True / False</option>
-                      <option value="SHORT_ANSWER">Short Answer</option>
+                      <option value="SAQ">SAQ (Short Answer Question)</option>
+                      <option value="NUMERICAL">Numerical (Calculation Based)</option>
+                      <option value="OBJECTIVE">Objective (One-word / Fill-in / Direct)</option>
                     </select>
                   </div>
 
@@ -720,9 +774,10 @@ export const AiRagHub: React.FC = () => {
                       onChange={(e) => setGenDifficulty(e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
                     >
+                      <option value="ALL">All Levels</option>
                       <option value="easy">Easy / Foundation</option>
                       <option value="medium">Medium / Standard</option>
-                      <option value="hard">Hard / Analytical</option>
+                      <option value="hard">Hard / Analytical (HOTS)</option>
                     </select>
                   </div>
                 </div>
@@ -752,7 +807,7 @@ export const AiRagHub: React.FC = () => {
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4" />
-                        {generatedQuestions.length > 0 ? 'Re-generate Questions' : 'Generate Questions with AI'}
+                        {generatedQuestions.length > 0 ? 'Re-generate Questions' : 'Generate Questions'}
                       </>
                     )}
                   </button>
@@ -792,16 +847,19 @@ export const AiRagHub: React.FC = () => {
                       <div key={q.id || idx} className="p-4 rounded-2xl bg-white border border-stone-200/90 shadow-2xs space-y-2 hover:border-yellow-300 transition-colors">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-stone-100 text-stone-700 border border-stone-200">
+                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${q.type === 'MCQ' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              q.type === 'SAQ' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                q.type === 'NUMERICAL' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                  'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              }`}>
                               Q{idx + 1} &bull; {q.type}
                             </span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                              q.difficulty === 'hard'
-                                ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                : q.difficulty === 'medium'
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${q.difficulty === 'hard'
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : q.difficulty === 'medium'
                                 ? 'bg-amber-50 text-amber-700 border-amber-200'
                                 : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            }`}>
+                              }`}>
                               {q.difficulty}
                             </span>
                           </div>
@@ -822,27 +880,31 @@ export const AiRagHub: React.FC = () => {
                           className="w-full p-2 bg-stone-50/70 border border-stone-200 rounded-xl text-xs font-bold text-stone-900 leading-relaxed focus:bg-white focus:outline-none focus:ring-1 focus:ring-yellow-400"
                         />
 
-                        {/* Options Display */}
-                        {q.options && q.options.length > 0 && (
+                        {/* Options Display for MCQ vs Direct Answer for SAQ/Numerical/Objective */}
+                        {q.options && q.options.length > 0 ? (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                             {q.options.map((opt, optIdx) => {
                               const isCorrect = opt.trim().toLowerCase().startsWith(q.correct_answer.toLowerCase()) ||
-                                                opt.trim().toLowerCase().includes(q.correct_answer.toLowerCase()) ||
-                                                (q.correct_answer.toUpperCase() === String.fromCharCode(65 + optIdx));
+                                opt.trim().toLowerCase().includes(q.correct_answer.toLowerCase()) ||
+                                (q.correct_answer.toUpperCase() === String.fromCharCode(65 + optIdx));
                               return (
                                 <div
                                   key={optIdx}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-medium border flex items-center justify-between ${
-                                    isCorrect
-                                      ? 'bg-emerald-50 text-emerald-900 border-emerald-300 font-bold'
-                                      : 'bg-stone-50 text-stone-700 border-stone-200/70'
-                                  }`}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-medium border flex items-center justify-between ${isCorrect
+                                    ? 'bg-emerald-50 text-emerald-900 border-emerald-300 font-bold'
+                                    : 'bg-stone-50 text-stone-700 border-stone-200/70'
+                                    }`}
                                 >
                                   <span>{opt}</span>
                                   {isCorrect && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
                                 </div>
                               );
                             })}
+                          </div>
+                        ) : (
+                          <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-xs font-semibold text-emerald-900 flex items-start gap-2">
+                            <span className="shrink-0 font-bold text-emerald-700">🎯 Correct Answer / Solution:</span>
+                            <span className="font-bold text-emerald-950">{q.correct_answer}</span>
                           </div>
                         )}
 
@@ -885,7 +947,7 @@ export const AiRagHub: React.FC = () => {
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      Save to Question Bank (<code className="bg-yellow-200/60 px-1 rounded font-mono text-[11px]">question_master</code>)
+                      Save to Question Bank
                     </>
                   )}
                 </button>

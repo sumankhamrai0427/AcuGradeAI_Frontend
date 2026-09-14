@@ -347,8 +347,8 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({
         Array.isArray(initialBlog.tags)
           ? initialBlog.tags
           : typeof initialBlog.tags === 'string'
-          ? initialBlog.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-          : []
+            ? initialBlog.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
+            : []
       );
       setMetaTitle(initialBlog.metaTitle || initialBlog.meta_title || '');
       setMetaDescription(initialBlog.metaDescription || initialBlog.meta_description || '');
@@ -594,11 +594,10 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({
                     if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
                   }}
                   placeholder="e.g. 10 Essential Tips for Effective Diagnostic Exam Preparation"
-                  className={`w-full px-4 py-3 bg-stone-50 border rounded-2xl text-stone-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:bg-white transition-all ${
-                    fieldErrors.title
+                  className={`w-full px-4 py-3 bg-stone-50 border rounded-2xl text-stone-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:bg-white transition-all ${fieldErrors.title
                       ? 'border-rose-400 focus:ring-rose-300 bg-rose-50/30'
                       : 'border-stone-200 focus:ring-amber-400'
-                  }`}
+                    }`}
                 />
                 {fieldErrors.title && (
                   <p className="mt-1 text-xs text-rose-600 font-medium">{fieldErrors.title}</p>
@@ -634,9 +633,8 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({
                   <span className="text-[11px] text-stone-400 font-medium">Rich Text Body</span>
                 </div>
                 <div
-                  className={`rounded-2xl overflow-hidden border transition-all ${
-                    fieldErrors.content ? 'border-rose-400 ring-2 ring-rose-200' : 'border-stone-200'
-                  }`}
+                  className={`rounded-2xl overflow-hidden border transition-all ${fieldErrors.content ? 'border-rose-400 ring-2 ring-rose-200' : 'border-stone-200'
+                    }`}
                 >
                   <Suspense
                     fallback={
@@ -717,13 +715,12 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({
                       const file = e.dataTransfer.files?.[0];
                       if (file) processImageFile(file);
                     }}
-                    className={`border-2 border-dashed rounded-xl p-5 text-center transition-all cursor-pointer ${
-                      isDragging
+                    className={`border-2 border-dashed rounded-xl p-5 text-center transition-all cursor-pointer ${isDragging
                         ? 'border-amber-500 bg-amber-50/50'
                         : fieldErrors.coverImage
-                        ? 'border-rose-400 bg-rose-50/30'
-                        : 'border-stone-300 hover:border-amber-400 bg-white'
-                    }`}
+                          ? 'border-rose-400 bg-rose-50/30'
+                          : 'border-stone-300 hover:border-amber-400 bg-white'
+                      }`}
                   >
                     <input
                       type="file"
@@ -952,12 +949,11 @@ const BlogFormModal: React.FC<BlogFormModalProps> = ({
 // ─────────────────────────────────────────────────────────────
 const DashboardView: React.FC = () => {
   const navigate = useNavigate();
-  const [blogs, setBlogs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingBlog, setEditingBlog] = useState<any | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [blogToDelete, setBlogToDelete] = useState<{ id: number; title: string } | null>(null);
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [dashboardUsers, setDashboardUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersTotalCount, setUsersTotalCount] = useState(0);
+  const [usersCurrentPage, setUsersCurrentPage] = useState(1);
+  const pageSize = 5;
 
   // Platform dynamic stats & audit logs state
   const [stats, setStats] = useState<{
@@ -969,10 +965,6 @@ const DashboardView: React.FC = () => {
     averagePlatformScore?: number;
   } | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
-
-  // Pagination state for Platform Blogs
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
 
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
@@ -1013,58 +1005,49 @@ const DashboardView: React.FC = () => {
     }
   }, []);
 
-  const fetchBlogs = useCallback(async () => {
-    setLoading(true);
+  const fetchDashboardUsers = useCallback(async (page: number) => {
+    setUsersLoading(true);
     try {
-      const res = await ApiServices.listBlogs({ status: 'all' });
-      const list = Array.isArray(res)
-        ? res
-        : Array.isArray(res?.items)
-          ? res.items
-          : Array.isArray(res?.data)
-            ? res.data
-            : [];
-      setBlogs(Array.isArray(list) ? list : []);
+      const res = await ApiServices.listAdminUsers({ page, limit: pageSize, flat: 'true' });
+      const data = res?.data || res;
+      const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+      setDashboardUsers(items);
+      setUsersTotalCount(data?.pagination?.total ?? data?.total ?? items.length);
     } catch (err) {
-      console.error('Failed to fetch blogs:', err);
+      console.error('Failed to fetch dashboard users:', err);
     } finally {
-      setLoading(false);
+      setUsersLoading(false);
     }
-  }, []);
+  }, [pageSize]);
 
   useEffect(() => {
-    fetchBlogs();
+    fetchDashboardUsers(usersCurrentPage);
+  }, [usersCurrentPage, fetchDashboardUsers]);
+
+  useEffect(() => {
     fetchStatsAndLogs();
-  }, [fetchBlogs, fetchStatsAndLogs]);
+  }, [fetchStatsAndLogs]);
 
-  const handleCreateBlog = () => {
-    navigate('/add-blogs');
-  };
-
-  const handleEditBlog = (b: any) => {
-    navigate(`/edit-blog/${b.id}`);
-  };
-
-  const promptDeleteBlog = (blog: any) => {
-    setBlogToDelete({ id: blog.id, title: blog.title });
-  };
-
-  const handleExecuteDelete = async () => {
-    if (!blogToDelete) return;
-    const id = blogToDelete.id;
-    setDeletingId(id);
+  const formatJoinedDate = (isoString?: string) => {
+    if (!isoString) return '—';
     try {
-      await ApiServices.deleteBlog(id);
-      setActionSuccess('Blog deleted successfully');
-      setTimeout(() => setActionSuccess(null), 3500);
-      await fetchBlogs();
-      fetchStatsAndLogs();
-    } catch (err) {
-      console.error('Failed to delete blog:', err);
-    } finally {
-      setDeletingId(null);
-      setBlogToDelete(null);
+      return new Date(isoString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch {
+      return '—';
     }
+  };
+
+  const getRoleBadgeStyle = (role?: string) => {
+    const r = (role || '').toUpperCase();
+    if (r === 'PARENT') return 'bg-amber-100 text-amber-800 border border-amber-200';
+    if (r === 'STUDENT') return 'bg-pink-100 text-pink-800 border border-pink-200';
+    if (r === 'TEACHER') return 'bg-blue-100 text-blue-800 border border-blue-200';
+    if (r === 'ADMIN' || r === 'SUPER_ADMIN') return 'bg-purple-100 text-purple-800 border border-purple-200';
+    return 'bg-stone-100 text-stone-700 border border-stone-200';
   };
 
   const formatRelativeTime = (isoString?: string): string => {
@@ -1204,14 +1187,6 @@ const DashboardView: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Toast Notification */}
-      {actionSuccess && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-semibold shadow-sm animate-in fade-in duration-300">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-          <span>{actionSuccess}</span>
-        </div>
-      )}
-
       {/* Stats Grid */}
       <div>
         <h2 className="text-xs font-black uppercase tracking-widest text-stone-400 mb-4">Platform Overview</h2>
@@ -1251,26 +1226,18 @@ const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Dynamic Platform Blogs Section ── */}
+      {/* ── Dynamic Registered Users Section (Flat table with 5 per page pagination, no actions column) ── */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-yellow-600" />
-              <h2 className="text-xl font-black text-stone-900">Platform Blogs</h2>
+              <Users className="w-5 h-5 text-yellow-600" />
+              <h2 className="text-xl font-black text-stone-900">Registered Users</h2>
             </div>
             <p className="text-sm text-stone-500 font-medium mt-0.5">
-              Live curriculum blogs and pedagogical updates.
+              Live overview of all registered students, parents.
             </p>
           </div>
-          <button
-            id="dashboard-create-blog-btn"
-            onClick={handleCreateBlog}
-            className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-all whitespace-nowrap active:scale-95 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Add Blog
-          </button>
         </div>
 
         <div className="admin-card overflow-hidden !p-0">
@@ -1278,78 +1245,58 @@ const DashboardView: React.FC = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-stone-100 bg-stone-50/60">
-                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Title</th>
-                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Author</th>
-                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Category</th>
-                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Status</th>
-                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Date</th>
-                  <th className="text-right px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Actions</th>
+                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Name</th>
+                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Role</th>
+                  <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400 hidden sm:table-cell">Status</th>
+                  <th className="text-right px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Joined</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-50">
-                {loading ? (
+                {usersLoading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-10 text-center text-stone-400 font-medium">
+                    <td colSpan={4} className="px-6 py-10 text-center text-stone-400 font-medium">
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
-                        <span> </span>
+                        <span>Loading users...</span>
                       </div>
                     </td>
                   </tr>
-                ) : blogs.length === 0 ? (
+                ) : dashboardUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-10 text-center text-stone-400 font-medium">
-                      <p className="font-semibold text-stone-600 mb-1">No blogs found in MySQL</p>
-                      <p className="text-xs">Click "Create Blog" above to publish your first post.</p>
+                    <td colSpan={4} className="px-6 py-10 text-center text-stone-400 font-medium">
+                      <p className="font-semibold text-stone-600 mb-1">No users found</p>
+                      <p className="text-xs">Registered platform users will appear here.</p>
                     </td>
                   </tr>
                 ) : (
-                  blogs.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((b) => (
-                    <tr key={b.id} className="hover:bg-amber-50/40 transition-colors group">
-                      <td className="px-6 py-4">
-                        <p className="font-semibold text-stone-800">{b.title}</p>
+                  dashboardUsers.map((u) => (
+                    <tr key={u.id} className="hover:bg-amber-50/30 transition-colors">
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-yellow-500 flex items-center justify-center text-white font-black text-sm shadow-2xs flex-shrink-0">
+                            {u.avatar || (u.name || u.username || 'U').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-stone-800 truncate">{u.name || u.username}</p>
+                            <p className="text-xs text-stone-400 truncate">
+                              {u.classGrade ? `${u.classGrade} • ${u.targetBoard || ''}` : (u.email || u.username)}
+                            </p>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-stone-600 font-medium">{b.author || 'Admin User'}</td>
-                      <td className="px-6 py-4 text-stone-600">{b.category || 'General'}</td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold ${b.status === 'Published'
-                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                            : 'bg-amber-50 text-amber-600 border border-amber-200'
-                            }`}
-                        >
-                          {b.status}
+                      <td className="px-6 py-3.5">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getRoleBadgeStyle(u.roleName || u.role)}`}>
+                          {u.role || u.roleName || 'User'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-stone-500 text-xs">{b.date}</td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              handleEditBlog(b);
-                            }}
-                            title="Edit Blog"
-                            className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => promptDeleteBlog(b)}
-                            disabled={deletingId === b.id}
-                            title="Delete Blog"
-                            className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                          >
-                            {deletingId === b.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
+                      <td className="px-6 py-3.5 hidden sm:table-cell">
+                        <span className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-1 rounded-full ${u.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${u.isActive !== false ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                          {u.isActive !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5 text-stone-500 text-xs text-right">
+                        {formatJoinedDate(u.createdAt)}
                       </td>
                     </tr>
                   ))
@@ -1359,19 +1306,20 @@ const DashboardView: React.FC = () => {
           </div>
 
           {/* Pagination Controls */}
-          {blogs.length > 0 && (
+          {usersTotalCount > 0 && (
             <div className="px-6 py-3.5 border-t border-stone-100 bg-stone-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <span className="text-stone-500 font-medium">
-                Showing <span className="font-bold text-stone-800">{(currentPage - 1) * pageSize + 1}</span> to{' '}
-                <span className="font-bold text-stone-800">{Math.min(currentPage * pageSize, blogs.length)}</span> of{' '}
-                <span className="font-bold text-stone-800">{blogs.length}</span> blogs
+                Showing <span className="font-bold text-stone-800">{(usersCurrentPage - 1) * pageSize + 1}</span> to{' '}
+                <span className="font-bold text-stone-800">{Math.min(usersCurrentPage * pageSize, usersTotalCount)}</span> of{' '}
+                <span className="font-bold text-stone-800">{usersTotalCount}</span> users
               </span>
 
-              {Math.ceil(blogs.length / pageSize) > 1 && (
+              {Math.ceil(usersTotalCount / pageSize) > 1 && (
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
+                    type="button"
+                    onClick={() => setUsersCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={usersCurrentPage === 1 || usersLoading}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 font-semibold hover:bg-stone-50 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
@@ -1379,12 +1327,14 @@ const DashboardView: React.FC = () => {
                   </button>
 
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.ceil(blogs.length / pageSize) }, (_, idx) => idx + 1).map((pageNum) => (
+                    {Array.from({ length: Math.ceil(usersTotalCount / pageSize) }, (_, idx) => idx + 1).map((pageNum) => (
                       <button
                         key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${currentPage === pageNum
-                          ? 'bg-stone-900 text-white shadow-xs'
+                        type="button"
+                        onClick={() => setUsersCurrentPage(pageNum)}
+                        disabled={usersLoading}
+                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${usersCurrentPage === pageNum
+                          ? 'bg-stone-900 text-white shadow-2xs'
                           : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
                           }`}
                       >
@@ -1394,8 +1344,9 @@ const DashboardView: React.FC = () => {
                   </div>
 
                   <button
-                    onClick={() => setCurrentPage((p) => Math.min(Math.ceil(blogs.length / pageSize), p + 1))}
-                    disabled={currentPage === Math.ceil(blogs.length / pageSize)}
+                    type="button"
+                    onClick={() => setUsersCurrentPage((p) => Math.min(Math.ceil(usersTotalCount / pageSize), p + 1))}
+                    disabled={usersCurrentPage === Math.ceil(usersTotalCount / pageSize) || usersLoading}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-600 font-semibold hover:bg-stone-50 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
                   >
                     <span>Next</span>
@@ -1538,47 +1489,6 @@ const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {blogToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-stone-100 animate-in zoom-in-95 duration-200">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center mb-4">
-                <Trash2 className="w-6 h-6 text-rose-400" />
-              </div>
-              <h3 className="text-lg font-bold text-stone-900 mb-1">Delete Blog Post?</h3>
-              <p className="text-xs text-stone-500 font-medium mb-5">
-                Are you sure you want to delete <span className="font-semibold text-stone-800">"{blogToDelete.title}"</span>? This action cannot be undone.
-              </p>
-              <div className="flex items-center gap-3 w-full">
-                <button
-                  type="button"
-                  onClick={() => setBlogToDelete(null)}
-                  disabled={deletingId !== null}
-                  className="flex-1 py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleExecuteDelete}
-                  disabled={deletingId !== null}
-                  className="flex-1 py-2.5 px-4 bg-rose-400 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
-                >
-                  {deletingId !== null ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Deleting...</span>
-                    </>
-                  ) : (
-                    <span>Delete</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -2029,6 +1939,7 @@ const UsersView: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedParentIds, setExpandedParentIds] = useState<Set<string | number>>(new Set());
   const [userToDelete, setUserToDelete] = useState<any | null>(null);
   const [userToEdit, setUserToEdit] = useState<any | null>(null);
   const [editName, setEditName] = useState('');
@@ -2039,6 +1950,18 @@ const UsersView: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
   const pageSize = 5;
+
+  const toggleParentExpand = (parentId: string | number) => {
+    setExpandedParentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(parentId)) {
+        next.delete(parentId);
+      } else {
+        next.add(parentId);
+      }
+      return next;
+    });
+  };
 
   const fetchUsers = useCallback(async (page: number, search: string) => {
     setLoading(true);
@@ -2208,115 +2131,145 @@ const UsersView: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                users.map((u) => (
-                  <React.Fragment key={u.id}>
-                    <tr className="hover:bg-amber-50/30 transition-colors">
-                      <td className="px-6 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-yellow-500 flex items-center justify-center text-white font-black text-sm shadow-xs flex-shrink-0">
-                            {(u.name || u.username || 'U').charAt(0).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-stone-800 truncate">{u.name || u.username}</p>
-                            <p className="text-xs text-stone-400 truncate">{u.email || u.username}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-3.5">
-                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getRoleBadgeStyle(u.roleName || u.role)}`}>
-                          {u.role || u.roleName || 'User'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3.5 hidden sm:table-cell">
-                        <span className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-1 rounded-full ${u.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${u.isActive !== false ? 'bg-emerald-500' : 'bg-stone-400'}`} />
-                          {u.isActive !== false ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3.5 text-stone-500 text-xs hidden md:table-cell">
-                        {formatJoinedDate(u.createdAt)}
-                      </td>
-                      <td className="px-6 py-3.5">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(u)}
-                            title="Edit user"
-                            aria-label="Edit user"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { setUserToDelete(u); setActionError(''); }}
-                            title="Delete user"
-                            aria-label="Delete user"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {u.linkedStudents?.map((student: any, index: number) => (
-                      <tr key={student.id} className="bg-pink-50/20 hover:bg-pink-50/40 transition-colors">
-                        <td className="px-6 py-2.5">
-                          <div className="relative flex items-center gap-3 pl-10 sm:pl-12">
-                            <span
-                              aria-hidden="true"
-                              className={`absolute left-3 top-0 w-px bg-pink-200 sm:left-4 ${index === u.linkedStudents.length - 1 ? 'h-1/2' : 'h-full'}`}
-                            />
-                            <span aria-hidden="true" className="absolute left-3 top-1/2 h-px w-5 bg-pink-200 sm:left-4 sm:w-6" />
-                            <div className="w-7 h-7 rounded-lg bg-pink-100 flex items-center justify-center text-pink-700 font-black text-xs shadow-xs flex-shrink-0">
-                              {student.avatar || (student.name ? student.name.charAt(0).toUpperCase() : 'S')}
+                users.map((u) => {
+                  const hasLinkedStudents = Boolean(u.linkedStudents && u.linkedStudents.length > 0);
+                  const isExpanded = expandedParentIds.has(u.id);
+
+                  return (
+                    <React.Fragment key={u.id}>
+                      <tr
+                        onClick={() => hasLinkedStudents && toggleParentExpand(u.id)}
+                        className={`transition-colors ${hasLinkedStudents ? 'cursor-pointer hover:bg-amber-50/40' : 'hover:bg-amber-50/20'}`}
+                      >
+                        <td className="px-6 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            {hasLinkedStudents ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleParentExpand(u.id);
+                                }}
+                                title={isExpanded ? 'Collapse children' : 'Expand children'}
+                                className="p-1 -ml-1.5 rounded-lg text-stone-400 hover:text-amber-700 hover:bg-amber-100/60 transition-all cursor-pointer"
+                              >
+                                <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-90 text-amber-600' : 'text-stone-400'}`} />
+                              </button>
+                            ) : (
+                              <div className="w-2.5" />
+                            )}
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-yellow-500 flex items-center justify-center text-white font-black text-sm shadow-xs flex-shrink-0">
+                              {(u.name || u.username || 'U').charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <p className="min-w-0 truncate text-xs font-semibold text-stone-700">{student.name}</p>
-                              <p className="text-[10px] text-stone-400 truncate">
-                                {student.classGrade ? `${student.classGrade} • ` : ''}{student.targetBoard || student.username || ''}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-stone-800 truncate">{u.name || u.username}</p>
+                                {hasLinkedStudents && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100/80 text-amber-800 border border-amber-200/70">
+                                    {u.linkedStudents.length} {u.linkedStudents.length === 1 ? 'child' : 'children'}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-stone-400 truncate">{u.email || u.username}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-2.5">
-                          <span className="rounded-lg border border-pink-200 bg-pink-100 px-2.5 py-0.5 text-[11px] font-bold text-pink-800">Student</span>
-                        </td>
-                        <td className="px-6 py-2.5 hidden sm:table-cell">
-                          <span className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-0.5 rounded-full ${student.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${student.isActive !== false ? 'bg-emerald-500' : 'bg-stone-400'}`} />
-                            {student.isActive !== false ? 'Active' : 'Inactive'}
+                        <td className="px-6 py-3.5">
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getRoleBadgeStyle(u.roleName || u.role)}`}>
+                            {u.role || u.roleName || 'User'}
                           </span>
                         </td>
-                        <td className="px-6 py-2.5 text-stone-500 text-xs hidden md:table-cell">
-                          {formatJoinedDate(student.createdAt)}
+                        <td className="px-6 py-3.5 hidden sm:table-cell">
+                          <span className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-1 rounded-full ${u.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${u.isActive !== false ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                            {u.isActive !== false ? 'Active' : 'Inactive'}
+                          </span>
                         </td>
-                        <td className="px-6 py-2.5">
+                        <td className="px-6 py-3.5 text-stone-500 text-xs hidden md:table-cell">
+                          {formatJoinedDate(u.createdAt)}
+                        </td>
+                        <td className="px-6 py-3.5" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-2">
                             <button
                               type="button"
-                              onClick={() => openEditModal({ ...student, role: 'Student', roleName: 'STUDENT', parentId: u.id })}
-                              title="Edit student"
-                              aria-label="Edit student"
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer"
+                              onClick={() => openEditModal(u)}
+                              title="Edit user"
+                              aria-label="Edit user"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer"
                             >
-                              <Edit className="w-3.5 h-3.5" />
+                              <Edit className="w-4 h-4" />
                             </button>
                             <button
                               type="button"
-                              onClick={() => { setUserToDelete({ ...student, role: 'Student', roleName: 'STUDENT', parentId: u.id }); setActionError(''); }}
-                              title="Delete student"
-                              aria-label="Delete student"
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer"
+                              onClick={() => { setUserToDelete(u); setActionError(''); }}
+                              title="Delete user"
+                              aria-label="Delete user"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  </React.Fragment>
-                ))
+                      {isExpanded && u.linkedStudents?.map((student: any, index: number) => (
+                        <tr key={student.id} className="bg-pink-50/25 hover:bg-pink-50/45 transition-colors">
+                          <td className="px-6 py-2.5">
+                            <div className="relative flex items-center gap-3 pl-10 sm:pl-12">
+                              <span
+                                aria-hidden="true"
+                                className={`absolute left-3 top-0 w-px bg-pink-200 sm:left-4 ${index === u.linkedStudents.length - 1 ? 'h-1/2' : 'h-full'}`}
+                              />
+                              <span aria-hidden="true" className="absolute left-3 top-1/2 h-px w-5 bg-pink-200 sm:left-4 sm:w-6" />
+                              <div className="w-7 h-7 rounded-lg bg-pink-100 flex items-center justify-center text-pink-700 font-black text-xs shadow-xs flex-shrink-0">
+                                {student.avatar || (student.name ? student.name.charAt(0).toUpperCase() : 'S')}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="min-w-0 truncate text-xs font-semibold text-stone-700">{student.name}</p>
+                                <p className="text-[10px] text-stone-400 truncate">
+                                  {student.classGrade ? `${student.classGrade} • ` : ''}{student.targetBoard || student.username || ''}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-2.5">
+                            <span className="rounded-lg border border-pink-200 bg-pink-100 px-2.5 py-0.5 text-[11px] font-bold text-pink-800">Student</span>
+                          </td>
+                          <td className="px-6 py-2.5 hidden sm:table-cell">
+                            <span className={`flex items-center gap-1.5 text-xs font-bold w-fit px-2.5 py-0.5 rounded-full ${student.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-stone-100 text-stone-500'}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${student.isActive !== false ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                              {student.isActive !== false ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-2.5 text-stone-500 text-xs hidden md:table-cell">
+                            {formatJoinedDate(student.createdAt)}
+                          </td>
+                          <td className="px-6 py-2.5">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal({ ...student, role: 'Student', roleName: 'STUDENT', parentId: u.id })}
+                                title="Edit student"
+                                aria-label="Edit student"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors cursor-pointer"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setUserToDelete({ ...student, role: 'Student', roleName: 'STUDENT', parentId: u.id }); setActionError(''); }}
+                                title="Delete student"
+                                aria-label="Delete student"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -2352,8 +2305,8 @@ const UsersView: React.FC = () => {
                         onClick={() => setCurrentPage(pageNum)}
                         disabled={loading}
                         className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${currentPage === pageNum
-                            ? 'bg-stone-900 text-white shadow-2xs'
-                            : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
+                          ? 'bg-stone-900 text-white shadow-2xs'
+                          : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-50'
                           }`}
                       >
                         {pageNum}
@@ -2391,6 +2344,14 @@ const UsersView: React.FC = () => {
             <p className="mt-3 text-sm font-medium text-stone-600">
               Are you sure you want to delete <span className="font-bold text-stone-800">"{userToDelete.name || userToDelete.username}"</span>?
             </p>
+            {userToDelete.linkedStudents && userToDelete.linkedStudents.length > 0 && (
+              <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-xs text-amber-800 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  This parent account is mapped to <strong className="font-bold">{userToDelete.linkedStudents.length} student(s)</strong>. Deleting this parent will permanently delete all associated student profiles and their exam data from the database.
+                </span>
+              </div>
+            )}
             {actionError && <p className="mt-3 text-xs font-semibold text-red-600">{actionError}</p>}
             <div className="mt-6 flex justify-end gap-2">
               <button
@@ -2487,11 +2448,10 @@ const UsersView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setEditIsActive(true)}
-                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      editIsActive
+                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${editIsActive
                         ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs'
                         : 'bg-white border-stone-200 text-stone-500 hover:bg-stone-50'
-                    }`}
+                      }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${editIsActive ? 'bg-emerald-500' : 'bg-stone-300'}`} />
                     Active
@@ -2499,11 +2459,10 @@ const UsersView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setEditIsActive(false)}
-                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      !editIsActive
+                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${!editIsActive
                         ? 'bg-rose-50 border-rose-300 text-rose-800 shadow-2xs'
                         : 'bg-white border-stone-200 text-stone-500 hover:bg-stone-50'
-                    }`}
+                      }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${!editIsActive ? 'bg-rose-500' : 'bg-stone-300'}`} />
                     Inactive
@@ -3743,6 +3702,7 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
                 <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Author</th>
                 <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Category</th>
                 <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Status</th>
+                <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Views</th>
                 <th className="text-left px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Date</th>
                 <th className="text-right px-6 py-4 text-xs font-black uppercase tracking-widest text-stone-400">Actions</th>
               </tr>
@@ -3750,7 +3710,7 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
             <tbody className="divide-y divide-stone-50">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-stone-400 font-medium">
+                  <td colSpan={7} className="px-6 py-10 text-center text-stone-400 font-medium">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
                       <span> </span>
@@ -3759,7 +3719,7 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
                 </tr>
               ) : blogs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-stone-400 font-medium">
+                  <td colSpan={7} className="px-6 py-10 text-center text-stone-400 font-medium">
                     <p className="font-semibold text-stone-600 mb-1">No blogs found in MySQL</p>
                     <p className="text-xs">Click "Add Blog" above to create and publish your first post.</p>
                   </td>
@@ -3780,6 +3740,12 @@ const ManageBlogsView: React.FC<{ setActiveView: (v: AdminView) => void }> = ({ 
                           }`}
                       >
                         {b.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-stone-100 text-stone-700 border border-stone-200/80">
+                        <Eye className="w-3.5 h-3.5 text-stone-400" />
+                        {Number(b.sharesCount ?? b.shares_count ?? 0).toLocaleString()}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-stone-500 text-xs">{b.date}</td>
@@ -4221,11 +4187,10 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
       {/* Toast Notification */}
       {toast && (
         <div
-          className={`p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-xl border backdrop-blur-md animate-in fade-in duration-300 ${
-            toast.type === 'success'
+          className={`p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-xl border backdrop-blur-md animate-in fade-in duration-300 ${toast.type === 'success'
               ? 'bg-emerald-500/90 text-white border-emerald-400'
               : 'bg-rose-500/90 text-white border-rose-400'
-          }`}
+            }`}
         >
           {toast.type === 'success' ? (
             <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
@@ -4300,11 +4265,10 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
                     <td className="px-6 py-4 text-stone-600 font-medium">{c.count}</td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                          c.isActive
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${c.isActive
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : 'bg-rose-50 text-rose-700 border-rose-200'
-                        }`}
+                          }`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${c.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                         {c.status}
@@ -4358,11 +4322,10 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
               <button
                 key={pNum}
                 onClick={() => setCurrentPage(pNum)}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
-                  currentPage === pNum
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${currentPage === pNum
                     ? 'bg-stone-900 text-white shadow-xs'
                     : 'border border-stone-200 text-stone-600 hover:bg-stone-50'
-                }`}
+                  }`}
               >
                 {pNum}
               </button>
@@ -4537,7 +4500,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, user }) => {
       const next = !prev;
       try {
         localStorage.setItem('sahajpath_admin_sidebar_collapsed', String(next));
-      } catch {}
+      } catch { }
       return next;
     });
   };

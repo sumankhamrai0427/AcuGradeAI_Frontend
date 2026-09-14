@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SAMPLE_BLOG_POSTS } from '../data/initialData';
 import { BlogPost } from '../types';
-import { BookOpen, Calendar, Clock, Tag, User, ArrowRight, Sparkles } from 'lucide-react';
+import { BookOpen, Calendar, Tag, User, ArrowRight, Sparkles } from 'lucide-react';
 
 export const BlogSection: React.FC = () => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
@@ -20,11 +20,6 @@ export const BlogSection: React.FC = () => {
           <div className="flex items-center gap-2 mb-3">
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-yellow-50 text-yellow-700 border border-yellow-300">
               {selectedPost.category}
-            </span>
-            <span className="text-xs text-stone-400">•</span>
-            <span className="text-xs text-stone-500 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              {selectedPost.readTime}
             </span>
           </div>
 
@@ -93,10 +88,6 @@ export const BlogSection: React.FC = () => {
               <div className="flex items-center justify-between mb-3">
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-yellow-50 text-yellow-700 border border-yellow-300">
                   {post.category}
-                </span>
-                <span className="text-[11px] text-stone-400 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {post.readTime}
                 </span>
               </div>
 

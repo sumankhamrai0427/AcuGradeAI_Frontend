@@ -3,7 +3,6 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   GraduationCap,
   ArrowLeft,
-  Clock,
   Calendar,
   Tag,
   ArrowRight,
@@ -143,17 +142,6 @@ const ArticleDetail: React.FC<{ post: BlogPostData; allPosts: BlogPostData[]; on
   const prevPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
   const nextPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
 
-  // Calculate dynamic reading time based on total word count
-  const readingTime = useMemo(() => {
-    const raw = [
-      post.title,
-      post.introduction,
-      ...(Array.isArray(post.content) ? post.content : [post.content || ''])
-    ].join(' ').replace(/<[^>]+>/g, ' ').trim();
-    const words = raw.split(/\s+/).filter(Boolean).length;
-    return Math.max(1, Math.ceil(words / 180));
-  }, [post]);
-
   // Robust formatted published date
   const formattedDate = useMemo(() => {
     try {
@@ -170,7 +158,7 @@ const ArticleDetail: React.FC<{ post: BlogPostData; allPosts: BlogPostData[]; on
     setTimeout(() => setToastMessage(null), 3200);
   };
 
-  const handleShare = async (platform: 'facebook' | 'twitter' | 'linkedin' | 'whatsapp' | 'native') => {
+  const handleShare = async (platform: 'facebook' | 'linkedin' | 'whatsapp' | 'native') => {
     const url = window.location.href;
     const title = post.title || 'Check out this article on SahajPath';
 
@@ -184,9 +172,6 @@ const ArticleDetail: React.FC<{ post: BlogPostData; allPosts: BlogPostData[]; on
     switch (platform) {
       case 'facebook':
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'width=620,height=480,noopener,noreferrer');
-        break;
-      case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank', 'width=620,height=480,noopener,noreferrer');
         break;
       case 'linkedin':
         window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'width=620,height=520,noopener,noreferrer');
@@ -240,16 +225,11 @@ const ArticleDetail: React.FC<{ post: BlogPostData; allPosts: BlogPostData[]; on
               {/* Title */}
               <h1 className="text-3xl sm:text-4xl font-black text-stone-900 leading-tight mb-4">{post.heading || post.title}</h1>
 
-              {/* Meta: Author, Date & Reading Time */}
+              {/* Meta: Author & Date */}
               <div className="flex flex-wrap items-center gap-y-2 gap-x-2.5 text-sm text-stone-500 mb-6 font-medium">
                 <span>By <span className="text-stone-800 font-bold">{post.author}</span></span>
                 <span className="text-stone-300">•</span>
                 <span>{formattedDate}</span>
-                <span className="text-stone-300">•</span>
-                <span className="flex items-center gap-1 text-stone-600 bg-stone-100 px-2 py-0.5 rounded-md text-xs font-semibold">
-                  <Clock className="w-3.5 h-3.5 text-stone-500" />
-                  {readingTime} min read
-                </span>
               </div>
 
               {/* Share Row */}
@@ -264,15 +244,6 @@ const ArticleDetail: React.FC<{ post: BlogPostData; allPosts: BlogPostData[]; on
                     className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#1877F2] text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-2xs cursor-pointer"
                   >
                     <span className="text-sm font-bold font-serif">f</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleShare('twitter')}
-                    title="Share on X (Twitter)"
-                    aria-label="Share on X"
-                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-black text-white hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-2xs cursor-pointer"
-                  >
-                    <span className="text-xs font-bold font-sans">X</span>
                   </button>
                   <button
                     type="button"
@@ -302,14 +273,6 @@ const ArticleDetail: React.FC<{ post: BlogPostData; allPosts: BlogPostData[]; on
                     <Share2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-
-                {/* Share Count Indicator */}
-                {sharesCount > 0 && (
-                  <span className="text-xs font-bold text-stone-600 bg-stone-50 border border-stone-200 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    {sharesCount} {sharesCount === 1 ? 'Share' : 'Shares'}
-                  </span>
-                )}
 
                 {/* Toast message */}
                 {toastMessage && (

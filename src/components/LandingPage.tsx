@@ -227,6 +227,120 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     },
   };
 
+  // Simple Word Builder Game State & Logic (For 5th Class Students)
+  const EASY_WORDS = [
+    {
+      word: 'SOLAR',
+      logo: '☀️',
+      hint: 'It shines bright in the sky!',
+      mascotMsg: 'Hey Little Explorer! Can you build the word for Sun Power?',
+      secretHint: 'Starts with S... It creates clean energy from sunlight!',
+      gradient: 'from-amber-400 via-orange-400 to-yellow-500',
+      badgeBg: 'bg-amber-100 text-amber-800 border-amber-300'
+    },
+    {
+      word: 'EARTH',
+      logo: '🌍',
+      hint: 'Our beautiful home planet!',
+      mascotMsg: 'We all live here! Can you spell our home planet?',
+      secretHint: 'Starts with E... It has oceans, trees, and air to breathe!',
+      gradient: 'from-emerald-400 via-teal-500 to-green-500',
+      badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-300'
+    },
+    // {
+    //   word: 'ROBOT',
+    //   logo: '🤖',
+    //   hint: 'Beep-boop! A smart helper machine!',
+    //   mascotMsg: 'Beep Boop! Spell the word for a smart metal helper!',
+    //   secretHint: 'Starts with R... It works on electricity and code!',
+    //   gradient: 'from-cyan-400 via-blue-500 to-indigo-500',
+    //   badgeBg: 'bg-cyan-100 text-cyan-800 border-cyan-300'
+    // },
+    {
+      word: 'GRAVITY',
+      logo: '🍏',
+      hint: 'Invisible force pulling everything down!',
+      mascotMsg: 'Why do objects fall down and not float up? Spell the magic force!',
+      secretHint: 'Starts with G... Sir Isaac Newton discovered it with an apple!',
+      gradient: 'from-amber-500 via-orange-500 to-red-500',
+      badgeBg: 'bg-amber-100 text-amber-900 border-amber-300'
+    },
+    {
+      word: 'SPACE',
+      logo: '🚀',
+      hint: 'Full of moon and glowing stars!',
+      mascotMsg: 'Ready for a rocket trip? Build the word for the universe!',
+      secretHint: 'Starts with S... It is dark, quiet, and full of stars!',
+      gradient: 'from-purple-500 via-pink-500 to-indigo-600',
+      badgeBg: 'bg-purple-100 text-purple-800 border-purple-300'
+    },
+    {
+      word: 'BRAIN',
+      logo: '🧠',
+      hint: 'Your super-smart thinking cap!',
+      mascotMsg: 'Use your thinking cap to spell this super-computer body part!',
+      secretHint: 'Starts with B... It helps you learn, dream, and play!',
+      gradient: 'from-rose-400 via-pink-500 to-red-500',
+      badgeBg: 'bg-rose-100 text-rose-800 border-rose-300'
+    },
+  ];
+
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [userLetters, setUserLetters] = useState<string[]>([]);
+  const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
+  const [isWordComplete, setIsWordComplete] = useState(false);
+  const [showSecretHint, setShowSecretHint] = useState(false);
+
+  const activeWordObj = EASY_WORDS[currentWordIndex];
+
+  const loadWord = (index: number) => {
+    const word = EASY_WORDS[index].word;
+    setUserLetters([]);
+    setIsWordComplete(false);
+    setShowSecretHint(false);
+
+    const lettersArr = word.split('');
+    const extraLetters = ['X', 'Z', 'M', 'K', 'L', 'P'];
+    const combined = [...lettersArr, extraLetters[Math.floor(Math.random() * extraLetters.length)]];
+
+    for (let i = combined.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [combined[i], combined[j]] = [combined[j], combined[i]];
+    }
+
+    setShuffledOptions(combined);
+  };
+
+  useEffect(() => {
+    loadWord(currentWordIndex);
+  }, [currentWordIndex]);
+
+  const handleLetterClick = (letter: string) => {
+    if (isWordComplete) return;
+
+    const targetWord = activeWordObj.word;
+    const nextIndex = userLetters.length;
+
+    if (targetWord[nextIndex] === letter) {
+      const updated = [...userLetters, letter];
+      setUserLetters(updated);
+
+      if (updated.length === targetWord.length) {
+        setIsWordComplete(true);
+      }
+    }
+  };
+
+  const nextWord = () => {
+    const nextIdx = (currentWordIndex + 1) % EASY_WORDS.length;
+    setCurrentWordIndex(nextIdx);
+  };
+
+  const resetCurrentWord = () => {
+    loadWord(currentWordIndex);
+  };
+
+  const supportComposeUrl = 'https://mail.google.com/mail/u/0/?fs=1&to=25punamgode@gmail.com&tf=cm';
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 overflow-x-hidden">
       <style>{`
@@ -665,8 +779,153 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </section>
+
+      {/* ==================== 2-COLUMN WORD BUILDER SECTION ==================== */}
+      <section className="py-14 bg-amber-50/60 relative relative z-20 font-sans select-none px-4">
+
+        {/* Background Soft Glows */}
+        <div className="absolute top-5 left-5 w-72 h-72 bg-yellow-200/50 rounded-full blur-3xl animate-pulse pointer-events-none" />
+        <div className="absolute bottom-5 right-5 w-80 h-80 bg-orange-200/50 rounded-full blur-3xl animate-pulse delay-700 pointer-events-none" />
+
+        <div className="max-w-4xl mx-auto relative z-10">
+
+          {/* Section Heading */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-200/60 border border-amber-300 text-amber-900 text-xs font-black mb-2 shadow-sm animate-bounce">
+              <span>✨</span> Magic Word Arena
+            </div>
+            <h2 className="text-2xl md:text-3xl font-black text-slate-800">
+              Read Clues & Build Words 🚀
+            </h2>
+          </div>
+
+          {/* 2-COLUMN GRID SYSTEM (LEFT CLUE + RIGHT GAME) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+
+            {/* LEFT SIDE: CUTE CLUE CARD & MASCOT LOGO */}
+            <div className="bg-gradient-to-br from-amber-100/80 via-orange-50/70 to-amber-50/90 backdrop-blur-xl border border-amber-200/90 rounded-3xl p-5 shadow-md flex flex-col justify-between relative overflow-hidden">
+
+              {/* Mascot Dialogue Header */}
+              <div className="flex items-start gap-3 mb-4">
+                <div className="bg-white/90 border border-amber-200/80 rounded-2xl rounded-tl-none p-3 shadow-sm flex-1">
+                  <p className="text-sm md:text-base font-extrabold text-slate-800 leading-snug">
+                    {isWordComplete ? "Awesome! You nailed it! Click Next to try another one! 🎉" : activeWordObj.mascotMsg}
+                  </p>
+                </div>
+              </div>
+
+              {/* Stylized Logo Badge Box (No Broken Images) */}
+              <div className={`relative my-2 py-6 rounded-2xl bg-gradient-to-r ${activeWordObj.gradient} shadow-inner flex flex-col items-center justify-center text-white border border-white/40`}>
+                <div className="text-5xl drop-shadow-md mb-2 animate-pulse">
+                  {activeWordObj.logo}
+                </div>
+                <span className="text-xs font-black tracking-wider bg-black/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-sm text-center">
+                  {activeWordObj.hint}
+                </span>
+              </div>
+
+              {/* Secret Hint Revealer Button */}
+              <div className="mt-3">
+                {!showSecretHint ? (
+                  <button
+                    onClick={() => setShowSecretHint(true)}
+                    className="w-full bg-white/80 hover:bg-white text-amber-900 border border-amber-300 text-[11px] font-black py-2 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>💡</span> Need Extra Clue?
+                  </button>
+                ) : (
+                  <div className="bg-amber-200/70 border border-amber-300 rounded-xl p-2.5 text-center animate-fade-in">
+                    <p className="text-[11px] font-black text-amber-950">
+                      {activeWordObj.secretHint}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* RIGHT SIDE: GAME BOARD */}
+            <div className="bg-white/90 backdrop-blur-xl border border-amber-200/80 rounded-3xl p-6 shadow-[0_15px_35px_rgba(251,191,36,0.15)] flex flex-col justify-between">
+
+              <div>
+                {/* Top Game Bar */}
+                <div className="flex items-center justify-between pb-3 mb-4 border-b border-amber-100">
+                  <span className="text-xs font-black text-amber-900 tracking-wider flex items-center gap-1 uppercase">
+                    <span>🎮</span> Word Board
+                  </span>
+
+                  <button
+                    onClick={resetCurrentWord}
+                    className="text-[11px] font-bold text-amber-700 hover:text-amber-900 bg-amber-100 hover:bg-amber-200 px-3 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🔄</span> Reset
+                  </button>
+                </div>
+
+                {/* Target Word Slots */}
+                <div className="text-center my-10">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-10">
+                    Tap correct letters in order
+                  </p>
+
+                  <div className="flex items-center justify-center gap-2">
+                    {activeWordObj.word.split('').map((char, idx) => {
+                      const filledChar = userLetters[idx];
+                      return (
+                        <div
+                          key={idx}
+                          className={`w-10 h-11 rounded-xl flex items-center justify-center text-lg font-black transition-all duration-300 border ${filledChar
+                            ? 'bg-gradient-to-tr from-amber-400 to-orange-400 text-white border-amber-300 shadow-md scale-105'
+                            : 'bg-slate-100/80 border-slate-200 text-slate-300'
+                            }`}
+                        >
+                          {filledChar || '_'}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Option Letters OR Success Screen */}
+              {!isWordComplete ? (
+                <div className="mt-2">
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {shuffledOptions.map((letter, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleLetterClick(letter)}
+                        className="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-amber-50 hover:from-amber-100 hover:to-orange-100 border border-amber-200/80 text-amber-900 font-black text-base shadow-sm hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+                      >
+                        {letter}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-2 animate-bounce">
+                  <div className="text-sm font-black text-emerald-600 mb-3">
+                    🎉 Super Star! Word Completed! 🌟
+                  </div>
+                  <button
+                    onClick={nextWord}
+                    className="bg-gradient-to-r from-emerald-400 to-teal-500 hover:opacity-90 text-white font-black text-xs px-6 py-2.5 rounded-2xl shadow-md active:scale-95 transition-all cursor-pointer tracking-wider"
+                  >
+                    Next Challenge ➡️
+                  </button>
+                </div>
+              )}
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+
       {/* PERSONALIZATION EXAMPLE */}
-      <section id="personalization" className="py-20 bg-white">
+      <section id="personalization" className="py-20 bg-white relative z-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto reveal-on-scroll">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-bold">
@@ -1187,12 +1446,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <p className="mt-6 text-stone-300 max-w-xl mx-auto text-lg font-medium">
             Start with an assessment and let Sahaj<span className="text-yellow-500">Path</span> guide the next step.
           </p>
-          <button
-            onClick={() => openAuth('register')}
+          <a
+            href={supportComposeUrl}
+            target="_blank"
+            rel="noreferrer"
             className="mt-10 px-8 py-4 rounded-[1.25rem] bg-white text-stone-900 font-black inline-flex items-center gap-2 hover:scale-105 hover:bg-stone-50 transition-all duration-300 shadow-xl shadow-white/10"
           >
-            Get Started <ArrowRight className="w-5 h-5" />
-          </button>
+            Get Support <ArrowRight className="w-5 h-5" />
+          </a>
+          <div className="mt-3 leading-tight">
+            <a href={supportComposeUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-yellow-400 hover:text-yellow-300 hover:underline">Support@sahajpath.com</a>
+          </div>
         </div>
       </section>
 
