@@ -891,7 +891,7 @@ export const AcademicsHub: React.FC = () => {
                         </button>
                         <button
                           onClick={() => handleDeleteQuestion(q.id)}
-                          className="p-1.5 hover:bg-rose-50 rounded-lg text-stone-400 hover:text-rose-600 transition-colors"
+                          className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center"
                           title="Deactivate Question"
                         >
                           <Trash2 className="w-4 h-4" />

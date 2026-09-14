@@ -288,10 +288,10 @@ export const SuperAdminPanel: React.FC<SuperAdminPanelProps> = ({
 
                   <button
                     onClick={() => handleDeleteRunbook(rb.id)}
-                    className="p-2 rounded-xl border border-stone-200 text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                    className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center"
                     title="Delete Runbook Node"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
 

@@ -3,7 +3,6 @@ import {
   Sparkles,
   Database,
   FileText,
-  UploadCloud,
   CheckCircle2,
   AlertCircle,
   Trash2,
@@ -488,8 +487,23 @@ export const AiRagHub: React.FC = () => {
                 </div>
               </div>
 
-              {/* PDF Dropzone & Selected File Display */}
-              <div className="space-y-2">
+              {/* PDF Dropzone */}
+              <div className="relative border-2 border-dashed border-stone-300 rounded-2xl p-6 text-center hover:border-yellow-400 transition-colors bg-stone-50/50">
+                {uploadFile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUploadFile(null);
+                      const input = document.getElementById('pdf-upload-input') as HTMLInputElement;
+                      if (input) input.value = '';
+                    }}
+                    className="absolute top-3 right-3 text-stone-400 hover:text-rose-500 hover:rotate-90 hover:scale-110 transition-all duration-500 ease-out cursor-pointer z-10 animate-in fade-in duration-300 p-0.5"
+                    title="Remove selected file"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
                 <input
                   type="file"
                   id="pdf-upload-input"
@@ -497,68 +511,16 @@ export const AiRagHub: React.FC = () => {
                   onChange={(e) => e.target.files && setUploadFile(e.target.files[0])}
                   className="hidden"
                 />
-
-                {!uploadFile ? (
-                  <label
-                    htmlFor="pdf-upload-input"
-                    className="border-2 border-dashed border-stone-300 hover:border-yellow-400 bg-stone-50/60 hover:bg-yellow-50/30 rounded-2xl p-6 text-center transition-all cursor-pointer block group"
+                <label htmlFor="pdf-upload-input" className="cursor-pointer space-y-2 block">
+                  <FileText className="w-8 h-8 mx-auto text-yellow-600 animate-bounce" />
+                  <p
+                    className="text-xs font-bold text-stone-800 break-all px-2 max-w-full"
+                    title={uploadFile ? uploadFile.name : undefined}
                   >
-                    <div className="w-12 h-12 mx-auto mb-2.5 rounded-2xl bg-yellow-100/80 text-yellow-700 flex items-center justify-center group-hover:scale-110 transition-transform shadow-2xs">
-                      <UploadCloud className="w-6 h-6" />
-                    </div>
-                    <p className="text-xs font-bold text-stone-800">
-                      Click to select Textbook PDF
-                    </p>
-                    <p className="text-[11px] text-stone-400 font-medium mt-0.5">
-                      Supports PDF documents up to 50MB
-                    </p>
-                  </label>
-                ) : (
-                  <div className="p-3.5 rounded-2xl bg-stone-50/90 border border-stone-200/90 shadow-2xs space-y-2.5">
-                    <div className="flex items-start justify-between gap-2.5">
-                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                        <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 border border-rose-200/80 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                          <FileText className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className="text-xs font-bold text-stone-900 break-all leading-snug line-clamp-3"
-                            title={uploadFile.name}
-                          >
-                            {uploadFile.name}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-stone-500 font-semibold">
-                              {(uploadFile.size / (1024 * 1024)).toFixed(2)} MB
-                            </span>
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              Ready to Index
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUploadFile(null);
-                          const input = document.getElementById('pdf-upload-input') as HTMLInputElement;
-                          if (input) input.value = '';
-                        }}
-                        className="p-1 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0 cursor-pointer"
-                        title="Remove selected file"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <label
-                      htmlFor="pdf-upload-input"
-                      className="block text-center py-1 text-[11px] font-bold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer border-t border-stone-200/60 pt-2"
-                    >
-                      Choose a different PDF
-                    </label>
-                  </div>
-                )}
+                    {uploadFile ? uploadFile.name : 'Click to select Textbook PDF'}
+                  </p>
+                  <p className="text-[10px] text-stone-400 font-medium">Supports PDF textbooks up to 50MB</p>
+                </label>
               </div>
 
               <button
@@ -640,7 +602,7 @@ export const AiRagHub: React.FC = () => {
 
                       <button
                         onClick={() => handleDeleteDoc(doc.id)}
-                        className="p-1.5 hover:bg-rose-50 text-stone-400 hover:text-rose-600 rounded-lg transition-colors"
+                        className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
                         title="Remove Document"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -865,7 +827,7 @@ export const AiRagHub: React.FC = () => {
                           </div>
                           <button
                             onClick={() => handleRemoveGeneratedQuestion(idx)}
-                            className="p-1 text-stone-400 hover:text-rose-600 transition-colors"
+                            className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
                             title="Remove this question"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

@@ -2204,7 +2204,7 @@ const UsersView: React.FC = () => {
                               onClick={() => { setUserToDelete(u); setActionError(''); }}
                               title="Delete user"
                               aria-label="Delete user"
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer"
+                              className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -2259,7 +2259,7 @@ const UsersView: React.FC = () => {
                                 onClick={() => { setUserToDelete({ ...student, role: 'Student', roleName: 'STUDENT', parentId: u.id }); setActionError(''); }}
                                 title="Delete student"
                                 aria-label="Delete student"
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors cursor-pointer"
+                                className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -3385,12 +3385,12 @@ const CoursesView: React.FC = () => {
                     onClick={() => handleDeleteCourse(c.id, c.chapterName || c.subject)}
                     disabled={deletingId === c.id}
                     title="Delete Chapter"
-                    className="p-2 rounded-xl border border-stone-200 bg-white hover:bg-rose-50 text-stone-400 hover:text-rose-600 transition-all shadow-2xs disabled:opacity-50 cursor-pointer"
+                    className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center justify-center"
                   >
                     {deletingId === c.id ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />
+                      <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
                     ) : (
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     )}
                   </button>
                 </div>
@@ -4291,7 +4291,7 @@ const CategoryView: React.FC<{ setActiveView: (v: string) => void }> = () => {
                           type="button"
                           onClick={() => promptDeleteCategory(c)}
                           title="Delete Category"
-                          className="p-2 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-xl transition-all cursor-pointer active:scale-95"
+                          className="p-1.5 bg-rose-50/80 text-rose-400 hover:bg-rose-100 hover:text-rose-500 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
