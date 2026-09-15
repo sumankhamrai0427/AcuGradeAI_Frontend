@@ -169,6 +169,8 @@ export default function App() {
   const [preloadedExam, setPreloadedExam] = useState<Exam | null>(null);
   const [arenaPresetSubject, setArenaPresetSubject] = useState<Subject | undefined>(undefined);
   const [arenaPresetTopic, setArenaPresetTopic] = useState<string | undefined>(undefined);
+  const [schedulerPresetSubject, setSchedulerPresetSubject] = useState<string | undefined>(undefined);
+  const [schedulerPresetTopic, setSchedulerPresetTopic] = useState<string | undefined>(undefined);
   const personaMenuRef = useRef<HTMLDivElement>(null);
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
@@ -1203,6 +1205,13 @@ export default function App() {
                         setActiveChildId(cId);
                         setActiveTab('arena');
                       }}
+                      onScheduleExam={(config) => {
+                        setActiveSubmissionReport(null);
+                        setActiveChildId(config.childId);
+                        setSchedulerPresetSubject(config.subject);
+                        setSchedulerPresetTopic(config.topic);
+                        setActiveTab('schedule-exam');
+                      }}
                       onOpenAddChildModal={() => setShowAddChildModal(true)}
                       examHistory={examHistory}
                       onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
@@ -1263,6 +1272,8 @@ export default function App() {
                     onChildSelect={setActiveChildId}
                     onViewSubmissionReport={(submission) => setActiveSubmissionReport(submission)}
                     onNavigateToArena={() => setActiveTab('arena')}
+                    presetSubject={schedulerPresetSubject}
+                    presetTopic={schedulerPresetTopic}
                   />
                 )}
 
@@ -1380,7 +1391,7 @@ export default function App() {
       />
 
       {/* Floating AI Chat Widget - Hidden during live exams to prevent cheating */}
-      {activeTab !== 'exam' && (
+      {activeTab !== 'arena' && activeTab !== 'exam' && activeTab !== 'kids-arena' && (
         <AIChatWidget
           activeChild={activeChild}
           childrenList={parentAccount?.children || []}

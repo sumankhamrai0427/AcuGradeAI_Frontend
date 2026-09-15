@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Board,
   ClassGrade,
@@ -25,7 +25,8 @@ import {
   Layers,
   Award,
   Zap,
-  CalendarClock
+  CalendarClock,
+  Loader2
 } from 'lucide-react';
 import ApiServices from '../services/ApiServices';
 
@@ -109,6 +110,8 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
   const [selectedSubject, setSelectedSubject] = useState<Subject>(presetSubject || 'Mathematics');
   const [selectedDifficulty, setSelectedDifficulty] = useState<ExamDifficulty>(presetDifficulty || 'medium');
   const [activeTopic, setActiveTopic] = useState<string | null>(presetTopic || null);
+
+  const hasAutoStartedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (presetSubject) {
@@ -239,12 +242,13 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
       if (!activeChildId) return;
 
       const isAssignedTest = Boolean(startAssigned && assignedExam);
-      const targetSub = isAssignedTest ? (assignedExam.subject as Subject) : selectedSubject;
+      const targetSub = isAssignedTest ? (assignedExam.subject as Subject) : (presetSubject || selectedSubject);
       const targetDiff = isAssignedTest ? (assignedExam.difficulty as ExamDifficulty) : selectedDifficulty;
       const targetQCount = isAssignedTest ? (assignedExam.questionCount || 10) : blueprint.questionCount;
       const targetDuration = isAssignedTest ? (assignedExam.timeLimitMinutes || 15) : blueprint.durationMinutes;
 
       const targetScheduledId = isAssignedTest ? assignedExam?.id : undefined;
+      const targetTopic = isAssignedTest ? assignedExam?.chapterTopic : (presetTopic || activeTopic || undefined);
 
       const { exam } = await ApiServices.generateExam({
         studentId: activeChildId,
@@ -255,7 +259,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
         questionCount: targetQCount,
         timeLimitMinutes: targetDuration,
         scheduledExamId: targetScheduledId,
-        chapterTopic: activeTopic || (isAssignedTest ? assignedExam?.chapterTopic : undefined),
+        chapterTopic: targetTopic,
       });
 
       if (targetScheduledId) {
@@ -274,6 +278,20 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
       setGenerationStep('');
     }
   };
+
+  // Auto-launch targeted remedial sprint immediately when navigated from dashboard weak topics
+  useEffect(() => {
+    if (
+      presetTopic &&
+      hasAutoStartedRef.current !== presetTopic &&
+      !activeExam &&
+      !isGenerating &&
+      activeChildId
+    ) {
+      hasAutoStartedRef.current = presetTopic;
+      handleStartExam(false);
+    }
+  }, [presetTopic, activeChildId, activeExam, isGenerating]);
 
   const handleSelectAnswer = (questionId: string, answerValue: string) => {
     setAnswers((prev) => ({
@@ -324,6 +342,29 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Dedicated Loading State while auto-generating remedial sprint
+  if (isGenerating) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-in fade-in zoom-in-95 duration-200">
+        <div className="bg-white rounded-3xl border border-stone-200/80 shadow-xl p-8 sm:p-12 relative overflow-hidden">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mx-auto mb-5 shadow-xs animate-bounce">
+            🎯
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-stone-900 mb-2">
+            Launching Targeted Remedial Sprint
+          </h2>
+          <p className="text-sm font-semibold text-amber-800 mb-6 bg-amber-50 py-1.5 px-4 rounded-full border border-amber-200/60 inline-block">
+            {presetTopic || activeTopic ? `Topic: ${presetTopic || activeTopic}` : 'Adaptive Diagnostic Exam'}
+          </p>
+          <div className="flex items-center justify-center gap-2.5 text-xs text-stone-500 font-medium">
+            <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+            <span>{generationStep || 'Retrieving Board Syllabus & RAG Runbook Nodes...'}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // If in active exam mode
   if (activeExam) {

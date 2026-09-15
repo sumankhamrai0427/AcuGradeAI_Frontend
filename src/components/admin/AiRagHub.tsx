@@ -531,7 +531,7 @@ export const AiRagHub: React.FC = () => {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-white shadow-xs">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-stone-900">Curriculum RAG & Question Synthesis Hub</h1>
+            <h1 className="text-xl font-bold text-stone-900">Curriculum & Question Synthesis Hub</h1>
           </div>
           <p className="text-xs text-stone-600 pl-11">
             Official NCERT & Board textbook ingestion engine
@@ -568,14 +568,8 @@ export const AiRagHub: React.FC = () => {
               }`}
           >
             <Cpu className="w-4 h-4 text-yellow-600" />
-            AI Query Playground
+            Query Playground
           </button>
-        </div>
-
-        {/* Vector Store Status Badge */}
-        <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 bg-stone-50 px-3 py-1.5 rounded-xl border border-stone-200/80">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>ChromaDB Vector Store: Active</span>
         </div>
       </div>
 
@@ -616,7 +610,7 @@ export const AiRagHub: React.FC = () => {
 
         <div className="bg-white p-5 rounded-3xl border border-stone-200/80 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">K-Graph Runbooks</span>
+            <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Runbooks</span>
             <BookOpen className="w-4 h-4 text-amber-600" />
           </div>
           <p className="text-2xl font-black text-stone-900">{ragStatus?.total_runbooks || 0}</p>

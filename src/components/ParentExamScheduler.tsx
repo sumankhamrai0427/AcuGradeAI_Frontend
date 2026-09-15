@@ -30,6 +30,8 @@ interface ParentExamSchedulerProps {
   onChildSelect?: (childId: string) => void;
   onViewSubmissionReport?: (submission: ExamSubmission) => void;
   onNavigateToArena?: () => void;
+  presetSubject?: string;
+  presetTopic?: string;
 }
 
 const DIFFICULTY_OPTIONS: Array<{ value: 'simple' | 'medium' | 'hard'; label: string; desc: string; color: string }> = [
@@ -43,6 +45,8 @@ export const ParentExamScheduler: React.FC<ParentExamSchedulerProps> = ({
   activeChildId,
   onChildSelect,
   onViewSubmissionReport,
+  presetSubject,
+  presetTopic,
 }) => {
   const [scheduledExams, setScheduledExams] = useState<ScheduledExam[]>([]);
   const [isLoadingList, setIsLoadingList] = useState(true);
@@ -60,13 +64,34 @@ export const ParentExamScheduler: React.FC<ParentExamSchedulerProps> = ({
     ? CLASS_SUBJECTS_MAP[activeChild.classGrade]
     : ['Mathematics', 'Science', 'English', 'Social Studies', 'Computer Science', 'Logical Reasoning'];
 
-  const [subject, setSubject] = useState<string>('');
-  const [chapterTopic, setChapterTopic] = useState<string>('');
+  const [subject, setSubject] = useState<string>(presetSubject || '');
+  const [chapterTopic, setChapterTopic] = useState<string>(presetTopic || '');
   const [difficulty, setDifficulty] = useState<'simple' | 'medium' | 'hard'>('medium');
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [timeLimitMinutes, setTimeLimitMinutes] = useState<number>(10);
   const [dueDate, setDueDate] = useState<string>('');
   const [parentInstructions, setParentInstructions] = useState<string>('');
+
+  // Sync active student from props
+  useEffect(() => {
+    if (activeChildId) {
+      setSelectedStudentId(activeChildId);
+    }
+  }, [activeChildId]);
+
+  // Sync pre-selected subject from parent recommendations
+  useEffect(() => {
+    if (presetSubject) {
+      setSubject(presetSubject);
+    }
+  }, [presetSubject]);
+
+  // Sync pre-selected chapter / topic from parent recommendations
+  useEffect(() => {
+    if (presetTopic !== undefined) {
+      setChapterTopic(presetTopic);
+    }
+  }, [presetTopic]);
 
   const isKidGrade = ['Class 1', 'Class 2', 'Class 3', 'Class 4', '1', '2', '3', '4'].some(c =>
     (activeChild?.classGrade || '').includes(c)

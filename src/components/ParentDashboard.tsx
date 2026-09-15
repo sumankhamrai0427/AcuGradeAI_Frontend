@@ -48,6 +48,7 @@ interface ParentDashboardProps {
   onChildSelect: (childId: string) => void;
   onLaunchExamForChild: (childId: string) => void;
   onOpenAddChildModal: () => void;
+  onScheduleExam?: (config: { childId: string; subject: Subject; topic: string }) => void;
   examHistory?: ExamSubmission[];
   onViewSubmissionReport?: (submission: ExamSubmission) => void;
   onUpdateChild?: (updatedChild: ChildAccount) => void;
@@ -65,6 +66,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
   onChildSelect,
   onLaunchExamForChild,
   onOpenAddChildModal,
+  onScheduleExam,
   examHistory = [],
   onViewSubmissionReport,
   onUpdateChild,
@@ -355,35 +357,111 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
     }
   }, [weakTopics, strongTopics, examHistory, activeChild]);
 
-  // Dynamic Recommended Exams with Case-Insensitive Subject Resolution
-  const dynamicRecommendations = useMemo(() => {
-    const grade = activeChild?.classGrade || 'Class 10';
-    const board = (activeChild?.targetBoard || 'CBSE').toUpperCase();
+  // Dynamic Student-Wise Recommendations for All Children in Parent Account
+  const studentWiseRecommendations = useMemo(() => {
+    const childrenList = parentAccount?.children || [];
+    if (childrenList.length === 0) return [];
 
-    const weakEntries = Object.entries(activeTopicMastery)
-      .sort((a, b) => Number(a[1]) - Number(b[1]));
+    const subjectIcon = (sub: Subject) => {
+      switch (sub) {
+        case 'Mathematics': return '🧮';
+        case 'Physics': return '⚡';
+        case 'Chemistry': return '🧪';
+        case 'Biology': return '🧬';
+        case 'Science': return '🔬';
+        case 'Social Studies': return '🏛️';
+        case 'English': return '📘';
+        case 'Computer Science': return '💻';
+        case 'Logical Reasoning': return '🧩';
+        default: return '📝';
+      }
+    };
 
-    if (weakEntries.length > 0) {
-      return weakEntries.slice(0, 3).map(([topicName], idx) => {
-        const resolvedSub = resolveSubjectForTopic(topicName, idx === 0 ? 'Mathematics' : idx === 1 ? 'Physics' : 'English');
-        const diff: ExamDifficulty = idx === 0 ? 'hard' : idx === 1 ? 'medium' : 'simple';
-        const diffLabel = idx === 0 ? 'Hard' : idx === 1 ? 'Medium' : 'Easy';
-        const diffColor = idx === 0 ? 'bg-red-100 text-red-700' : idx === 1 ? 'bg-teal-100 text-teal-700' : 'bg-yellow-100 text-yellow-700';
+    return childrenList.map((child) => {
+      const childSubs = examHistory.filter(
+        (e) => e.studentId === child.id || (e as any).childId === child.id
+      );
+      const childMastery = child.topicMastery || {};
+      const masteryEntries = Object.entries(childMastery).sort(
+        (a, b) => Number(a[1]) - Number(b[1])
+      );
+
+      if (masteryEntries.length > 0 && Number(masteryEntries[0][1]) < 70) {
+        const [weakTopic] = masteryEntries[0];
+        const resolvedSub = resolveSubjectForTopic(weakTopic, 'Mathematics');
+        const lastSub = childSubs.find(
+          (s) => s.examTitle?.toLowerCase().includes(weakTopic.toLowerCase()) || s.subject === resolvedSub
+        );
+        const subScore = lastSub ? (lastSub.marksObtained ?? (lastSub as any).score) : undefined;
+        const totalMarks = lastSub?.totalMarks || 15;
+        const reason = subScore !== undefined
+          ? `Scored ${subScore}/${totalMarks} in recent sprint • Needs remedial focus`
+          : `Targeted remedial practice recommended for syllabus mastery`;
 
         return {
+          childId: child.id,
+          childName: child.name,
+          avatar: child.avatar || '👦',
+          classGrade: child.classGrade,
+          targetBoard: child.targetBoard,
           subject: resolvedSub,
-          topic: topicName,
-          difficulty: diff,
-          tag: `${board} • ${grade}`,
-          badgeColor: diffColor,
-          badgeText: diffLabel,
+          topic: weakTopic,
+          difficulty: 'medium' as ExamDifficulty,
+          reason,
+          icon: subjectIcon(resolvedSub),
         };
-      });
-    }
+      }
 
-    // No exams taken yet or no weak topics
-    return [];
-  }, [activeChild, activeTopicMastery]);
+      if (childSubs.length > 0) {
+        const sortedByScore = [...childSubs].sort(
+          (a, b) => {
+            const scoreA = a.marksObtained ?? (a as any).score ?? 0;
+            const scoreB = b.marksObtained ?? (b as any).score ?? 0;
+            return (scoreA / (a.totalMarks || 1)) - (scoreB / (b.totalMarks || 1));
+          }
+        );
+        const worstExam = sortedByScore[0];
+        const resolvedSub = resolveSubjectForTopic(
+          worstExam.examTitle,
+          (worstExam.subject as Subject) || 'Mathematics'
+        );
+        const worstScore = worstExam.marksObtained ?? (worstExam as any).score ?? 0;
+        const totalM = worstExam.totalMarks || 15;
+        const pct = Math.round((worstScore / totalM) * 100);
+
+        return {
+          childId: child.id,
+          childName: child.name,
+          avatar: child.avatar || '👦',
+          classGrade: child.classGrade,
+          targetBoard: child.targetBoard,
+          subject: resolvedSub,
+          topic: worstExam.examTitle,
+          difficulty: (worstExam.difficulty || 'medium') as ExamDifficulty,
+          reason: `Scored ${worstScore}/${totalM} (${pct}%) • Targeted practice suggested`,
+          icon: subjectIcon(resolvedSub),
+        };
+      }
+
+      // Default when no exams taken yet
+      const defaultSub: Subject =
+        child.classGrade?.includes('11') || child.classGrade?.includes('12')
+          ? 'Physics'
+          : 'Mathematics';
+      return {
+        childId: child.id,
+        childName: child.name,
+        avatar: child.avatar || '👦',
+        classGrade: child.classGrade,
+        targetBoard: child.targetBoard,
+        subject: defaultSub,
+        topic: 'Foundational Diagnostic Sprint',
+        difficulty: 'simple' as ExamDifficulty,
+        reason: 'No diagnostic exam taken yet • 10-mark sprint recommended',
+        icon: subjectIcon(defaultSub),
+      };
+    });
+  }, [parentAccount?.children, examHistory]);
 
 
 
@@ -790,19 +868,65 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
         {/* Recommended Next Steps */}
         <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs flex flex-col relative overflow-hidden group hover:shadow-md transition-shadow">
           <div className="absolute -right-10 -top-10 w-40 h-40 bg-orange-300 rounded-full blur-3xl opacity-10 group-hover:opacity-20 pointer-events-none transition-opacity"></div>
-          <h2 className="font-bold text-base text-stone-900 mb-4 relative z-10">Recommended Next Steps</h2>
-          <div className={`flex-1 space-y-3 relative z-10 ${dynamicRecommendations.length === 0 ? 'flex items-center justify-center' : ''}`}>
-            {dynamicRecommendations.length > 0 ? (
-              dynamicRecommendations.slice(0, 2).map((rec, idx) => (
-                <div key={idx} className="flex items-center p-3 rounded-xl border border-stone-100 bg-stone-50">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-stone-900 mb-0.5 flex items-center gap-1.5">
-                      {idx === 0 ? '📘' : '🧮'} Practice {rec.subject}
-                    </span>
-                    <span className="text-[10px] text-stone-500 font-medium">
-                      {idx === 0 ? 'Improve accuracy in this topic.' : 'Ready to try the next difficulty level.'}
-                    </span>
+          
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <div>
+              <h2 className="font-bold text-base text-stone-900">Recommended Next Steps</h2>
+              <p className="text-[11px] text-stone-500 font-medium">Personalized AI recommendations per student</p>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200/60">
+              {studentWiseRecommendations.length} {studentWiseRecommendations.length === 1 ? 'Student' : 'Students'}
+            </span>
+          </div>
+
+          <div className={`flex-1 space-y-3 relative z-10 ${studentWiseRecommendations.length === 0 ? 'flex items-center justify-center' : ''}`}>
+            {studentWiseRecommendations.length > 0 ? (
+              studentWiseRecommendations.map((rec) => (
+                <div
+                  key={rec.childId}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl border border-stone-100 bg-stone-50/80 hover:bg-white hover:border-yellow-200 hover:shadow-xs transition-all gap-3"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-white border border-stone-200 shadow-2xs flex items-center justify-center text-lg shrink-0">
+                      {rec.avatar}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                        <span className="text-xs font-bold text-stone-900">
+                          {rec.childName}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 font-semibold">
+                          {rec.classGrade} • {rec.targetBoard}
+                        </span>
+                      </div>
+                      
+                      <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5 truncate">
+                        <span>{rec.icon}</span> Practice {rec.topic.length > 35 ? rec.topic.slice(0, 35) + '...' : rec.topic}
+                      </span>
+                      <span className="text-[10px] text-stone-500 font-medium mt-0.5">
+                        {rec.reason}
+                      </span>
+                    </div>
                   </div>
+
+                  <button
+                    onClick={() => {
+                      if (onScheduleExam) {
+                        onScheduleExam({
+                          childId: rec.childId,
+                          subject: rec.subject,
+                          topic: rec.topic === 'Foundational Diagnostic Sprint' ? '' : rec.topic
+                        });
+                      } else {
+                        onChildSelect(rec.childId);
+                        navigate('/schedule-exam');
+                      }
+                    }}
+                    className="self-end sm:self-center px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-bold text-[11px] shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                    title={`Schedule test for ${rec.childName}`}
+                  >
+                    <Zap className="w-3.5 h-3.5" /> Assign Test
+                  </button>
                 </div>
               ))
             ) : (
