@@ -23,17 +23,13 @@ import {
   BookmarkCheck
 } from 'lucide-react';
 import ApiServices from '../../services/ApiServices';
-import { Board, ClassGrade, Subject } from '../../types';
+import { Board, ClassGrade, Subject, BOARD_CLASSES_MAP, CLASS_SUBJECTS_MAP } from '../../types';
 
-const BOARDS: Board[] = ['CBSE', 'ICSE', 'ISC', 'UK-Cambridge', 'NCERT', 'NEET', 'IIT'];
-const GRADES: ClassGrade[] = [
-  'Class 5', 'Class 6', 'Class 7', 'Class 8',
-  'Class 9', 'Class 10', 'Class 11', 'Class 12'
-];
-const SUBJECTS: Subject[] = [
-  'Mathematics', 'Physics', 'Chemistry', 'Biology',
-  'Science', 'Social Studies', 'English', 'Computer Science', 'Logical Reasoning'
-];
+interface MasterBoard {
+  id: number;
+  name: string;
+  description?: string;
+}
 
 interface RagDocument {
   id: string;
@@ -83,12 +79,107 @@ export const AiRagHub: React.FC = () => {
   const [ragStatus, setRagStatus] = useState<RagStatusData | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
 
+  // Master Data Dynamic State (from DB /api/v1/master/board_class_dropdown)
+  const [activeBoards, setActiveBoards] = useState<MasterBoard[]>([]);
+  const [boardClassesMap, setBoardClassesMap] = useState<Record<string, string[]>>(BOARD_CLASSES_MAP);
+  const [isLoadingMasters, setIsLoadingMasters] = useState(false);
+
   // Ingestion Form State
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [selectedBoard, setSelectedBoard] = useState<Board>('CBSE');
-  const [selectedGrade, setSelectedGrade] = useState<ClassGrade>('Class 10');
-  const [selectedSubject, setSelectedSubject] = useState<Subject>('Mathematics');
+  const [selectedBoard, setSelectedBoard] = useState<string>('CBSE');
+  const [selectedGrade, setSelectedGrade] = useState<string>('Class 10');
+  const [selectedSubject, setSelectedSubject] = useState<string>('Mathematics');
   const [uploading, setUploading] = useState(false);
+
+  // Dynamic allowed classes strictly determined by Board mapping
+  const availableClasses: string[] = (boardClassesMap && boardClassesMap[selectedBoard]) || BOARD_CLASSES_MAP[selectedBoard] || [
+    'Class 5', 'Class 6', 'Class 7', 'Class 8',
+    'Class 9', 'Class 10', 'Class 11', 'Class 12'
+  ];
+
+  // Dynamic allowed subjects strictly determined by Class Grade mapping
+  const availableSubjects: string[] = CLASS_SUBJECTS_MAP[selectedGrade] || [
+    'Mathematics', 'Physics', 'Chemistry', 'Biology',
+    'Science', 'Social Studies', 'English', 'Computer Science', 'Logical Reasoning'
+  ];
+
+  // Real-time metadata mismatch detection from filename
+  const detectedMeta = React.useMemo(() => {
+    if (!uploadFile) return null;
+    const fn = uploadFile.name.replace(/[-_.]/g, ' ').toLowerCase();
+    let board: string | undefined;
+    if (/\bcbse\b/.test(fn)) board = 'CBSE';
+    else if (/\bicse\b/.test(fn)) board = 'ICSE';
+    else if (/\bisc\b/.test(fn)) board = 'ISC';
+    else if (/\bwbbse\b/.test(fn) || /\bwb\b/.test(fn)) board = 'WBBSE';
+    else if (/\bwbchse\b/.test(fn)) board = 'WBCHSE';
+    else if (/\bcambridge\b/.test(fn) || /\bigcse\b/.test(fn)) board = 'UK-Cambridge';
+    else if (/\bncert\b/.test(fn)) board = 'NCERT';
+    else if (/\bneet\b/.test(fn)) board = 'NEET';
+    else if (/\biit\b/.test(fn) || /\bjee\b/.test(fn)) board = 'IIT';
+
+    let classGrade: string | undefined;
+    for (let i = 12; i >= 1; i--) {
+      const roman = i === 12 ? 'xii' : i === 11 ? 'xi' : i === 10 ? 'x' : i === 9 ? 'ix' : i === 8 ? 'viii' : i === 7 ? 'vii' : i === 6 ? 'vi' : i === 5 ? 'v' : i === 4 ? 'iv' : i === 3 ? 'iii' : i === 2 ? 'ii' : 'i';
+      const pattern = new RegExp(`(?:class|grade|std)[_\\s-]*(?:${i}|${roman})\\b`, 'i');
+      if (pattern.test(fn)) {
+        classGrade = `Class ${i}`;
+        break;
+      }
+    }
+
+    let subject: string | undefined;
+    if (/\b(?:math|maths|mathematics|calculus|algebra|geometry)\b/.test(fn)) subject = 'Mathematics';
+    else if (/\bphysics\b/.test(fn)) subject = 'Physics';
+    else if (/\bchemistry\b/.test(fn)) subject = 'Chemistry';
+    else if (/\bbiology\b/.test(fn)) subject = 'Biology';
+    else if (/\bscience\b/.test(fn)) subject = 'Science';
+    else if (/\b(?:social|history|geography|civics|economics|sst)\b/.test(fn)) subject = 'Social Studies';
+    else if (/\b(?:english|grammar|literature)\b/.test(fn)) subject = 'English';
+    else if (/\b(?:computer|coding|python|informatics)\b/.test(fn)) subject = 'Computer Science';
+
+    return { board, classGrade, subject };
+  }, [uploadFile]);
+
+  const isBoardMismatch = Boolean(
+    detectedMeta?.board &&
+    detectedMeta.board !== selectedBoard &&
+    !(detectedMeta.board === 'NCERT' && selectedBoard === 'CBSE') &&
+    !(detectedMeta.board === 'CBSE' && selectedBoard === 'NCERT')
+  );
+
+  const isClassMismatch = Boolean(
+    detectedMeta?.classGrade &&
+    detectedMeta.classGrade !== selectedGrade
+  );
+
+  const isSubjectMismatch = Boolean(
+    detectedMeta?.subject &&
+    detectedMeta.subject !== selectedSubject &&
+    !(selectedSubject === 'Science' && ['Physics', 'Chemistry', 'Biology'].includes(detectedMeta.subject))
+  );
+
+  const hasFilenameMismatch = Boolean(uploadFile && (isBoardMismatch || isClassMismatch || isSubjectMismatch));
+
+  const handleBoardChange = (newBoard: string) => {
+    setSelectedBoard(newBoard);
+    const validClasses = (boardClassesMap && boardClassesMap[newBoard]) || BOARD_CLASSES_MAP[newBoard] || ['Class 10'];
+    const newClass = validClasses.includes(selectedGrade) ? selectedGrade : (validClasses[0] || 'Class 10');
+    setSelectedGrade(newClass);
+
+    const validSubjects = CLASS_SUBJECTS_MAP[newClass] || ['Mathematics'];
+    if (!validSubjects.includes(selectedSubject as any)) {
+      setSelectedSubject(validSubjects[0] || 'Mathematics');
+    }
+  };
+
+  const handleGradeChange = (newGrade: string) => {
+    setSelectedGrade(newGrade);
+    const validSubjects = CLASS_SUBJECTS_MAP[newGrade] || ['Mathematics'];
+    if (!validSubjects.includes(selectedSubject as any)) {
+      setSelectedSubject(validSubjects[0] || 'Mathematics');
+    }
+  };
 
   // Playground State
   const [testQuery, setTestQuery] = useState('');
@@ -161,9 +252,46 @@ export const AiRagHub: React.FC = () => {
     }
   };
 
+  const fetchMasterDropdowns = async () => {
+    setIsLoadingMasters(true);
+    try {
+      const res = await ApiServices.getBoardClassDropdown();
+      const fetchedBoards: MasterBoard[] = res?.boards || res?.data?.boards || [];
+      const fetchedMap = res?.boardClassesMap || res?.data?.boardClassesMap || BOARD_CLASSES_MAP;
+
+      if (fetchedBoards.length > 0) {
+        setActiveBoards(fetchedBoards);
+        setSelectedBoard((prev) => {
+          const match = fetchedBoards.find(b => b.name === prev);
+          const boardName = match ? prev : fetchedBoards[0].name;
+
+          const validClasses = fetchedMap[boardName] || BOARD_CLASSES_MAP[boardName] || ['Class 10'];
+          setSelectedGrade((prevGrade) => {
+            const gradeName = validClasses.includes(prevGrade) ? prevGrade : (validClasses[0] || 'Class 10');
+            const validSubjects = CLASS_SUBJECTS_MAP[gradeName] || ['Mathematics'];
+            setSelectedSubject((prevSub) => {
+              return validSubjects.includes(prevSub as any) ? prevSub : (validSubjects[0] || 'Mathematics');
+            });
+            return gradeName;
+          });
+
+          return boardName;
+        });
+      }
+      if (fetchedMap) {
+        setBoardClassesMap(fetchedMap);
+      }
+    } catch (err) {
+      console.warn('Failed to load active master board/class dropdowns:', err);
+    } finally {
+      setIsLoadingMasters(false);
+    }
+  };
+
   useEffect(() => {
     fetchRagStatus();
     fetchCurriculumTopics();
+    fetchMasterDropdowns();
   }, []);
 
   const handleUploadPdf = async (e: React.FormEvent) => {
@@ -243,10 +371,14 @@ export const AiRagHub: React.FC = () => {
     setGenInstructions('');
 
     // Pre-select matching topic based on doc subject/board if available
+    const docBoard = (doc.board || '').toLowerCase().trim();
+    const docGrade = (doc.classGrade || '').toLowerCase().trim();
+    const docSubject = (doc.subject || '').toLowerCase().trim();
+
     const matched = flatTopics.find(
-      t => t.boardName.toLowerCase() === (doc.board || '').toLowerCase() &&
-        t.className.toLowerCase() === (doc.classGrade || '').toLowerCase() &&
-        t.subjectName.toLowerCase() === (doc.subject || '').toLowerCase()
+      t => (!docBoard || t.boardName.toLowerCase().trim() === docBoard) &&
+        (!docGrade || t.className.toLowerCase().trim() === docGrade) &&
+        (!docSubject || t.subjectName.toLowerCase().trim() === docSubject)
     ) || flatTopics[0];
 
     if (matched) {
@@ -254,6 +386,23 @@ export const AiRagHub: React.FC = () => {
     }
     setGeneratorModalOpen(true);
   };
+
+  // Filter topics for the active doc in the question generator modal
+  const modalDisplayTopics = React.useMemo(() => {
+    if (!activeDocForGen) return flatTopics;
+    const docBoard = (activeDocForGen.board || '').toLowerCase().trim();
+    const docGrade = (activeDocForGen.classGrade || '').toLowerCase().trim();
+    const docSubject = (activeDocForGen.subject || '').toLowerCase().trim();
+
+    const matching = flatTopics.filter(t => {
+      const bMatch = !docBoard || t.boardName.toLowerCase().trim() === docBoard;
+      const cMatch = !docGrade || t.className.toLowerCase().trim() === docGrade;
+      const sMatch = !docSubject || t.subjectName.toLowerCase().trim() === docSubject;
+      return bMatch && cMatch && sMatch;
+    });
+
+    return matching.length > 0 ? matching : flatTopics;
+  }, [flatTopics, activeDocForGen]);
 
   // Trigger AI Question Generation
   const handleGenerateQuestions = async () => {
@@ -454,13 +603,26 @@ export const AiRagHub: React.FC = () => {
 
             <form onSubmit={handleUploadPdf} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">Board</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-stone-700">Board</label>
+                  {isLoadingMasters && <span className="text-[10px] text-amber-600 animate-pulse font-medium">Syncing active boards...</span>}
+                </div>
                 <select
                   value={selectedBoard}
-                  onChange={(e) => setSelectedBoard(e.target.value as Board)}
-                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
+                  onChange={(e) => handleBoardChange(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-yellow-400"
                 >
-                  {BOARDS.map(b => <option key={b} value={b}>{b}</option>)}
+                  {activeBoards.length > 0 ? (
+                    activeBoards.map(b => (
+                      <option key={b.id || b.name} value={b.name}>
+                        {b.name} {b.description ? `(${b.description})` : ''}
+                      </option>
+                    ))
+                  ) : (
+                    Object.keys(BOARD_CLASSES_MAP).map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -469,20 +631,24 @@ export const AiRagHub: React.FC = () => {
                   <label className="block text-xs font-bold text-stone-700 mb-1">Class</label>
                   <select
                     value={selectedGrade}
-                    onChange={(e) => setSelectedGrade(e.target.value as ClassGrade)}
-                    className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
+                    onChange={(e) => handleGradeChange(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-yellow-400"
                   >
-                    {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                    {availableClasses.map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-700 mb-1">Subject</label>
                   <select
                     value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value as Subject)}
-                    className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-800"
+                    onChange={(e) => setSelectedSubject(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-semibold text-stone-800 focus:outline-hidden focus:border-yellow-400"
                   >
-                    {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                    {availableSubjects.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -523,6 +689,23 @@ export const AiRagHub: React.FC = () => {
                 </label>
               </div>
 
+              {/* Filename & Selection Mismatch Alert Banner */}
+              {hasFilenameMismatch && (
+                <div className="p-3.5 bg-amber-50/90 border border-amber-300 rounded-2xl flex items-start gap-2.5 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-950 space-y-0.5">
+                    <p className="font-bold text-amber-900">Curriculum Mismatch Warning</p>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      Selected file indicates: <span className="font-bold underline">{detectedMeta?.board || 'Any'} &bull; {detectedMeta?.classGrade || 'Any'} &bull; {detectedMeta?.subject || 'Any'}</span>
+                      , but dropdown is currently set to <span className="font-bold">{selectedBoard} &bull; {selectedGrade} &bull; {selectedSubject}</span>.
+                    </p>
+                    <p className="text-[10px] text-amber-700 font-medium">
+                      Please adjust the Board, Class, and Subject dropdowns manually to match your file before uploading.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={!uploadFile || uploading}
@@ -536,7 +719,7 @@ export const AiRagHub: React.FC = () => {
                 ) : (
                   <>
                     <Zap className="w-4 h-4" />
-                    Process & Index into ChromaDB
+                    Process & Index
                   </>
                 )}
               </button>
@@ -793,11 +976,11 @@ export const AiRagHub: React.FC = () => {
                       <select
                         value={selectedTargetTopicId || ''}
                         onChange={(e) => setSelectedTargetTopicId(Number(e.target.value))}
-                        className="px-3 py-1.5 bg-yellow-50/80 border border-yellow-300/80 rounded-xl text-xs font-bold text-stone-800 max-w-xs truncate"
+                        className="px-3 py-1.5 bg-yellow-50/80 border border-yellow-300/80 rounded-xl text-xs font-bold text-stone-800 max-w-xs truncate focus:outline-hidden"
                       >
-                        {flatTopics.map(t => (
+                        {modalDisplayTopics.map(t => (
                           <option key={t.id} value={t.id}>
-                            {t.boardName} &bull; {t.className} &bull; {t.subjectName} &bull; {t.name}
+                            {t.boardName} &bull; {t.className} &bull; {t.subjectName} &bull; {t.chapterName ? `${t.chapterName} - ` : ''}{t.name}
                           </option>
                         ))}
                       </select>
