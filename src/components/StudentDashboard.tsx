@@ -4,6 +4,7 @@ import {
   ExamSubmission,
   LearningPathNode,
   Badge,
+  Subject,
 } from '../types';
 import { ScheduledExam } from '../types/api';
 import ApiServices from '../services/ApiServices';
@@ -49,7 +50,7 @@ interface StudentDashboardProps {
   examHistory: ExamSubmission[];
   learningNodes?: LearningPathNode[];
   allBadges?: Badge[];
-  onNavigateToArena: () => void;
+  onNavigateToArena: (config?: { subject?: Subject; topic?: string }) => void;
   onNavigateToLearningPath: () => void;
   onNavigateToGamification: () => void;
   onNavigateToFunZone: () => void;
@@ -674,19 +675,45 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
               {/* Needs Attention */}
               <div className="space-y-2 pt-2 border-t border-stone-100">
-                <div className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
-                  <span>📌</span> Needs Revision ({weakTopics.length})
+                <div className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <span>📌</span> Needs Revision ({weakTopics.length})
+                  </span>
+                  <span className="text-[9px] font-medium text-stone-400">Click to practice</span>
                 </div>
                 {weakTopics.length > 0 ? (
                   <div className="space-y-1.5">
-                    {weakTopics.map(({ topic, score }) => (
-                      <div key={topic} className="flex items-center justify-between p-2 rounded-xl bg-rose-50/60 border border-rose-100 text-xs">
-                        <span className="font-bold text-stone-800 truncate max-w-[160px]" title={topic}>{topic}</span>
-                        <span className="text-[10px] font-bold text-rose-700 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full shrink-0">
-                          {score >= 60 ? '📈 Developing' : '🎯 Needs Practice'}
-                        </span>
-                      </div>
-                    ))}
+                    {weakTopics.map(({ topic, score }) => {
+                      const inferSubject = (topicName: string): Subject => {
+                        const t = (topicName || '').toLowerCase();
+                        if (/histor|civic|democra|geog|social|sst|govern|politic|map|judiciar/i.test(t)) return 'Social Studies';
+                        if (/math|algebra|calculus|trigono|arithmetic|fraction|geometr|equation|probab|statistic|bodmas|number/i.test(t)) return 'Mathematics';
+                        if (/python|oop|sql|data struct|algorithm|stack|queue|comput|code|cyber|network/i.test(t)) return 'Computer Science';
+                        if (/chemi|reaction|kinetics|solution|acid|base|organic|polymer|electrochem|compound/i.test(t)) return 'Chemistry';
+                        if (/physic|motion|force|optics|electric|magnet|gravity|light|sound|energy|thermodynam/i.test(t)) return 'Physics';
+                        if (/bio|cell|plant|animal|reproduct|genetic|dna|organism|ecolog|evolut|human/i.test(t)) return 'Biology';
+                        if (/gramm|tense|voice|idiom|speech|letter|clause|poem|liter|synonym|english/i.test(t)) return 'English';
+                        if (/reason|analogy|series|pattern|logic|puzzle/i.test(t)) return 'Logical Reasoning';
+                        return 'Science';
+                      };
+
+                      return (
+                        <div
+                          key={topic}
+                          onClick={() => onNavigateToArena({ subject: inferSubject(topic), topic })}
+                          className="flex items-center justify-between p-2 rounded-xl bg-rose-50/60 hover:bg-rose-100/90 border border-rose-100 hover:border-rose-300 text-xs transition-all cursor-pointer group shadow-2xs hover:shadow-xs"
+                          title={`Click to start targeted remedial sprint on: ${topic}`}
+                        >
+                          <div className="flex items-center gap-1.5 truncate max-w-[150px]">
+                            <Target className="w-3.5 h-3.5 text-rose-500 shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="font-bold text-stone-800 truncate">{topic}</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-rose-700 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full shrink-0 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+                            {score >= 60 ? '📈 Practice' : '🎯 Sprint'}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : strongTopics.length > 0 ? (
                   <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 text-xs text-emerald-800 font-semibold flex items-center gap-1.5">
@@ -700,12 +727,28 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
 
             <button
-              onClick={onNavigateToArena}
+              onClick={() => {
+                if (weakTopics.length > 0) {
+                  const targetTopic = weakTopics[0].topic;
+                  const t = (targetTopic || '').toLowerCase();
+                  let sub: Subject = 'Science';
+                  if (/histor|civic|democra|geog|social|sst/i.test(t)) sub = 'Social Studies';
+                  else if (/math|algebra|calculus|trigono|fraction|geometr|equation/i.test(t)) sub = 'Mathematics';
+                  else if (/python|oop|sql|data struct|algorithm|comput/i.test(t)) sub = 'Computer Science';
+                  else if (/chemi|reaction|kinetics|solution/i.test(t)) sub = 'Chemistry';
+                  else if (/physic|motion|force|optics|electric/i.test(t)) sub = 'Physics';
+                  else if (/bio|cell|plant|animal|genetic/i.test(t)) sub = 'Biology';
+                  else if (/gramm|tense|voice|english/i.test(t)) sub = 'English';
+                  onNavigateToArena({ subject: sub, topic: targetTopic });
+                } else {
+                  onNavigateToArena();
+                }
+              }}
               className="w-full mt-3 py-3 bg-stone-900 hover:bg-stone-800 text-white text-xs sm:text-sm font-bold rounded-2xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
             >
               {weakTopics.length > 0 ? (
                 <>
-                  <Target className="w-4 h-4 text-rose-400" /> Improve Weak Areas
+                  <Target className="w-4 h-4 text-rose-400" /> Improve Weak Areas ({weakTopics[0].topic.slice(0, 18)}...)
                 </>
               ) : (
                 <>

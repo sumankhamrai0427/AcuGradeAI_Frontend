@@ -36,6 +36,7 @@ interface ExamArenaProps {
   onChildSelect: (childId: string) => void;
   presetSubject?: Subject;
   presetDifficulty?: ExamDifficulty;
+  presetTopic?: string;
   initialExam?: Exam | null;
   onClearInitialExam?: () => void;
 }
@@ -92,6 +93,9 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
   activePersona = 'parent',
   onChildSelect,
   onExamComplete,
+  presetSubject,
+  presetDifficulty,
+  presetTopic,
   initialExam,
   onClearInitialExam,
 }) => {
@@ -102,8 +106,21 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
   // Config State
   const [selectedBoard, setSelectedBoard] = useState<Board>(activeChild?.targetBoard || 'CBSE');
   const [selectedGrade, setSelectedGrade] = useState<ClassGrade>(activeChild?.classGrade || 'Class 10');
-  const [selectedSubject, setSelectedSubject] = useState<Subject>('Mathematics');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<ExamDifficulty>('medium');
+  const [selectedSubject, setSelectedSubject] = useState<Subject>(presetSubject || 'Mathematics');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<ExamDifficulty>(presetDifficulty || 'medium');
+  const [activeTopic, setActiveTopic] = useState<string | null>(presetTopic || null);
+
+  useEffect(() => {
+    if (presetSubject) {
+      setSelectedSubject(presetSubject);
+    }
+  }, [presetSubject]);
+
+  useEffect(() => {
+    if (presetTopic) {
+      setActiveTopic(presetTopic);
+    }
+  }, [presetTopic]);
 
   const [assignedExam, setAssignedExam] = useState<any>(null);
 
@@ -238,7 +255,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
         questionCount: targetQCount,
         timeLimitMinutes: targetDuration,
         scheduledExamId: targetScheduledId,
-        chapterTopic: isAssignedTest ? assignedExam?.chapterTopic : undefined,
+        chapterTopic: activeTopic || (isAssignedTest ? assignedExam?.chapterTopic : undefined),
       });
 
       if (targetScheduledId) {
@@ -692,6 +709,33 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             </div>
           )}
 
+          {activeTopic && (
+            <div className="md:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-950 shadow-2xs animate-in fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center font-bold text-lg shadow-xs shrink-0">
+                  🎯
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-md">
+                      Targeted Remedial Sprint
+                    </span>
+                    <span className="text-xs font-bold text-stone-700">({selectedSubject})</span>
+                  </div>
+                  <p className="text-sm font-black text-stone-900 mt-0.5">Focus Topic: {activeTopic}</p>
+                  <p className="text-[11px] text-rose-700">Adaptive exam calibrated to strengthen and master this specific topic.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTopic(null)}
+                className="text-xs font-bold text-stone-600 hover:text-stone-900 bg-white/80 hover:bg-white border border-rose-200 px-3 py-1.5 rounded-xl transition-all cursor-pointer shrink-0"
+              >
+                Clear & Reset
+              </button>
+            </div>
+          )}
+
           {isStudentPersona ? (
             /* Student View: Auto-locked Enrolled Syllabus Banner */
             <div className="md:col-span-2 bg-gradient-to-r from-yellow-50/90 via-amber-50/70 to-yellow-50/90 rounded-2xl p-4 sm:p-5 border border-yellow-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
@@ -861,7 +905,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             ) : (
               <>
                 <Play className="w-4 h-4 fill-stone-900" />
-                <span>{blueprint.buttonText}</span>
+                <span>{activeTopic ? `Start Remedial Sprint: ${activeTopic}` : blueprint.buttonText}</span>
               </>
             )}
           </button>

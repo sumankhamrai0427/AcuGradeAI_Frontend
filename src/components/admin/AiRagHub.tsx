@@ -558,7 +558,7 @@ export const AiRagHub: React.FC = () => {
               }`}
           >
             <Database className="w-4 h-4 text-yellow-600" />
-            PDF & Vector Ingestion
+            Curriculum & Vector Ingestion
           </button>
           <button
             onClick={() => setActiveTab('playground')}
@@ -632,8 +632,8 @@ export const AiRagHub: React.FC = () => {
           {/* Left Column: Upload Form */}
           <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-stone-200/80 shadow-xs space-y-5">
             <div>
-              <h2 className="text-base font-black text-stone-900">Ingest Curriculum PDF</h2>
-              <p className="text-xs text-stone-400">Upload chapters to extract chunks, vectorize, and generate examination questions</p>
+              <h2 className="text-base font-black text-stone-900">Ingest Curriculum Materials</h2>
+              <p className="text-xs text-stone-400">Upload textbooks, lesson notes, and curriculum guides to extract chunks, vectorize, and generate examination questions</p>
             </div>
 
             <form onSubmit={handleUploadPdf} className="space-y-4">
@@ -688,7 +688,7 @@ export const AiRagHub: React.FC = () => {
                 </div>
               </div>
 
-              {/* PDF Dropzone */}
+              {/* Multi-Format Document Dropzone */}
               <div className="relative border-2 border-dashed border-stone-300 rounded-2xl p-6 text-center hover:border-yellow-400 transition-colors bg-stone-50/50">
                 {uploadFile && (
                   <button
@@ -696,7 +696,7 @@ export const AiRagHub: React.FC = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       setUploadFile(null);
-                      const input = document.getElementById('pdf-upload-input') as HTMLInputElement;
+                      const input = document.getElementById('curriculum-upload-input') as HTMLInputElement;
                       if (input) input.value = '';
                     }}
                     className="absolute top-3 right-3 text-stone-400 hover:text-rose-500 hover:rotate-90 hover:scale-110 transition-all duration-500 ease-out cursor-pointer z-10 animate-in fade-in duration-300 p-0.5"
@@ -707,20 +707,34 @@ export const AiRagHub: React.FC = () => {
                 )}
                 <input
                   type="file"
-                  id="pdf-upload-input"
-                  accept=".pdf"
+                  id="curriculum-upload-input"
+                  accept=".pdf,.docx,.doc,.rtf,.txt,.csv"
                   onChange={(e) => e.target.files && setUploadFile(e.target.files[0])}
                   className="hidden"
                 />
-                <label htmlFor="pdf-upload-input" className="cursor-pointer space-y-2 block">
-                  <FileText className="w-8 h-8 mx-auto text-yellow-600 animate-bounce" />
+                <label htmlFor="curriculum-upload-input" className="cursor-pointer space-y-2 block">
+                  <div className="w-10 h-10 mx-auto rounded-2xl bg-amber-100 flex items-center justify-center text-yellow-700">
+                    {uploadFile ? (
+                      uploadFile.name.endsWith('.docx') || uploadFile.name.endsWith('.doc') ? (
+                        <span className="text-xl">📘</span>
+                      ) : uploadFile.name.endsWith('.rtf') ? (
+                        <span className="text-xl">📝</span>
+                      ) : uploadFile.name.endsWith('.txt') ? (
+                        <span className="text-xl">📄</span>
+                      ) : (
+                        <span className="text-xl">📕</span>
+                      )
+                    ) : (
+                      <FileText className="w-6 h-6 text-yellow-600 animate-bounce" />
+                    )}
+                  </div>
                   <p
                     className="text-xs font-bold text-stone-800 break-all px-2 max-w-full"
                     title={uploadFile ? uploadFile.name : undefined}
                   >
-                    {uploadFile ? uploadFile.name : 'Click to select Textbook PDF'}
+                    {uploadFile ? uploadFile.name : 'Click to select Textbook or Notes'}
                   </p>
-                  <p className="text-[10px] text-stone-400 font-medium">Supports PDF textbooks up to 50MB</p>
+                  <p className="text-[10px] text-stone-400 font-medium">Supports PDF, Word (.docx/.doc), RTF, TXT up to 50MB</p>
                 </label>
               </div>
 
@@ -766,7 +780,7 @@ export const AiRagHub: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div>
                 <h2 className="text-base font-black text-stone-900">Vector Repository Documents</h2>
-                <p className="text-xs text-stone-400">PDFs parsed into ChromaDB vector chunks with 1-click Question Synthesis</p>
+                <p className="text-xs text-stone-400">Curriculum materials parsed into ChromaDB vector chunks with 1-click Question Synthesis</p>
               </div>
               <button
                 onClick={fetchRagStatus}
@@ -784,8 +798,8 @@ export const AiRagHub: React.FC = () => {
             ) : !ragStatus?.documents || ragStatus.documents.length === 0 ? (
               <div className="py-20 text-center text-stone-400 space-y-2">
                 <Database className="w-12 h-12 mx-auto text-stone-300" />
-                <p className="text-sm font-bold text-stone-600">No PDFs ingested in ChromaDB yet.</p>
-                <p className="text-xs text-stone-400">Upload your first chapter PDF on the left to start vectorizing.</p>
+                <p className="text-sm font-bold text-stone-600">No documents ingested in ChromaDB yet.</p>
+                <p className="text-xs text-stone-400">Upload your first chapter textbook or notes on the left to start vectorizing.</p>
               </div>
             ) : (
               <div className="divide-y divide-stone-100">

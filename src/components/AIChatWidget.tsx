@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { MessageSquare, X, Send, Bot, User, Loader2, RotateCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { MessageSquare, X, Send, Bot, User, Loader2, RotateCw, RotateCcw } from 'lucide-react';
 import ApiServices from '../services/ApiServices';
 
 interface AIChatWidgetProps {
@@ -17,30 +17,13 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild, childre
   const [apiSuggestions, setApiSuggestions] = useState<string[]>([]);
   const [isRefreshingSuggestions, setIsRefreshingSuggestions] = useState(false);
 
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const isStudent = propIsStudent ?? (role === 'student');
   const studentFirstName = activeChild?.name ? activeChild.name.split(' ')[0] : 'there';
 
-  const fetchSuggestions = useCallback(async () => {
-    setIsRefreshingSuggestions(true);
-    try {
-      const res = await ApiServices.getChatSuggestions();
-      if (res && res.suggestions && Array.isArray(res.suggestions) && res.suggestions.length > 0) {
-        setApiSuggestions(res.suggestions);
-      }
-    } catch (e) {
-      console.warn("Failed to fetch suggestions from API, falling back to local pool", e);
-    } finally {
-      setIsRefreshingSuggestions(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchSuggestions();
-    }
-  }, [isOpen, fetchSuggestions]);
-
-  useEffect(() => {
+  const resetInitialGreeting = useCallback(() => {
     if (isStudent) {
       setMessages([
         {
@@ -66,7 +49,66 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild, childre
         }
       ]);
     }
-  }, [activeChild, isStudent, role, studentFirstName]);
+  }, [isStudent, role, studentFirstName]);
+
+  const fetchSuggestions = useCallback(async () => {
+    setIsRefreshingSuggestions(true);
+    try {
+      const res = await ApiServices.getChatSuggestions();
+      if (res && res.suggestions && Array.isArray(res.suggestions) && res.suggestions.length > 0) {
+        setApiSuggestions(res.suggestions);
+      }
+    } catch (e) {
+      console.warn("Failed to fetch suggestions from API, falling back to local pool", e);
+    } finally {
+      setIsRefreshingSuggestions(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchSuggestions();
+    }
+  }, [isOpen, fetchSuggestions]);
+
+  // Session-based reset on child or persona profile switch
+  useEffect(() => {
+    resetInitialGreeting();
+  }, [activeChild?.id, resetInitialGreeting]);
+
+  // Auto-scroll to latest query / response
+  useEffect(() => {
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isLoading, isOpen]);
+
+  // Click-Outside & Escape Key Collapse Handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (widgetRef.current && !widgetRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
 
   const hasTakenExams = (activeChild?.totalExamsTaken || activeChild?.recentExams?.length || 0) > 0;
 
@@ -98,13 +140,16 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild, childre
     dynamicParentFallback = [
       `How is ${name1} progressing overall?`,
       `Which topics does ${name1} need more attention on?`,
-      `How is ${name2} performing in recent tests?`,
-      `What should ${name2} practice next to improve?`
+      `How is ${name2} performing in recent practice tests?`,
+      `Can you give me a comparative overview of both children?`
     ];
   } else {
+    const firstNames = children.slice(0, 3).map((c: any) => c.name ? c.name.split(' ')[0] : 'child');
     dynamicParentFallback = [
-      ...children.slice(0, 3).map(c => `How is ${c.name ? c.name.split(' ')[0] : 'Student'} progressing overall?`),
-      `What should my children practice next to improve?`
+      `How are my children performing overall?`,
+      `Which child needs the most focus this week?`,
+      `Show me a quick summary for ${firstNames.join(', ')}`,
+      `What are the upcoming topics my children should practice?`
     ];
   }
 
@@ -171,7 +216,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild, childre
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div ref={widgetRef} className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {isOpen && (
         <div className="bg-white border border-stone-200 shadow-2xl rounded-2xl w-80 sm:w-96 h-[28rem] mb-4 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div className="bg-gradient-to-r from-yellow-500 to-amber-500 p-4 text-white flex justify-between items-center shadow-xs">
@@ -188,9 +233,26 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild, childre
                 </p>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-1 rounded-full cursor-pointer">
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              {messages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={resetInitialGreeting}
+                  className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-1.5 rounded-full cursor-pointer active:scale-95"
+                  title="Clear conversation"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-1.5 rounded-full cursor-pointer active:scale-95"
+                title="Close (Esc)"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-stone-50 custom-scrollbar">
@@ -246,6 +308,9 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild, childre
                 </div>
               </div>
             )}
+
+            {/* Auto-scroll target anchor */}
+            <div ref={messagesEndRef} />
           </div>
 
           <form onSubmit={handleSend} className="p-3 bg-white border-t border-stone-100 flex gap-2 items-center">
@@ -259,7 +324,7 @@ export const AIChatWidget: React.FC<AIChatWidgetProps> = ({ activeChild, childre
             <button
               type="submit"
               disabled={!inputText.trim() || isLoading}
-              className="bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 text-white w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors shadow-xs cursor-pointer"
+              className="bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 text-white w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors shadow-xs cursor-pointer active:scale-95"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 ml-0.5" />}
             </button>

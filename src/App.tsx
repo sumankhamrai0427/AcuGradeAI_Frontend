@@ -167,6 +167,8 @@ export default function App() {
   const [showQuickTestChildModal, setShowQuickTestChildModal] = useState(false);
   const [isQuickTestLoading, setIsQuickTestLoading] = useState(false);
   const [preloadedExam, setPreloadedExam] = useState<Exam | null>(null);
+  const [arenaPresetSubject, setArenaPresetSubject] = useState<Subject | undefined>(undefined);
+  const [arenaPresetTopic, setArenaPresetTopic] = useState<string | undefined>(undefined);
   const personaMenuRef = useRef<HTMLDivElement>(null);
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
@@ -297,22 +299,16 @@ export default function App() {
         setNotifications(res.notifications || []);
         setUnreadNotifCount(res.unreadCount || 0);
       }
-      // Silently refresh parent data & child reports in the background so all tables/cards stay live
-      if (authRole === 'parent') {
-        loadParentAndChildren().catch(() => {});
-      } else if (authRole === 'student') {
-        loadStudentData().catch(() => {});
-      }
     } catch (err) {
       // Quietly ignore network/auth errors on background poll
     }
-  }, [authRole, loadParentAndChildren, loadStudentData]);
+  }, [authRole]);
 
-  // Real-Time Notification Polling (every 15 seconds)
+  // Real-Time Notification Polling (Optimized: every 60 seconds lightweight check)
   useEffect(() => {
     if (!authRole) return;
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
+    const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
   }, [authRole, fetchNotifications]);
 
@@ -585,6 +581,7 @@ export default function App() {
       }
       await loadGamification();
       if (activeChildId) await loadLearningPath(activeChildId);
+      fetchNotifications().catch(() => {});
     } catch {
       // Non-fatal — the report itself already rendered from the submit
       // response; a stale sidebar stat will self-correct on next navigation.
@@ -941,8 +938,12 @@ export default function App() {
               <div className="relative" ref={notificationMenuRef}>
                 <button
                   onClick={() => {
-                    setShowNotificationMenu((prev) => !prev);
+                    const willOpen = !showNotificationMenu;
+                    setShowNotificationMenu(willOpen);
                     setShowPersonaMenu(false);
+                    if (willOpen) {
+                      fetchNotifications();
+                    }
                   }}
                   className="relative p-2 rounded-full hover:bg-stone-100 text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
                   title="Notifications"
@@ -1213,8 +1214,10 @@ export default function App() {
                       examHistory={examHistory}
                       learningNodes={learningNodes}
                       allBadges={badges}
-                      onNavigateToArena={() => {
+                      onNavigateToArena={(config) => {
                         setActiveSubmissionReport(null);
+                        setArenaPresetSubject(config?.subject);
+                        setArenaPresetTopic(config?.topic);
                         setActiveTab('arena');
                       }}
                       onNavigateToLearningPath={() => {
@@ -1299,6 +1302,7 @@ export default function App() {
                       onExamComplete={handleExamComplete}
                       initialExam={preloadedExam}
                       onClearInitialExam={() => setPreloadedExam(null)}
+                      presetSubject={arenaPresetSubject}
                     />
                   ) : (
                     <ExamArena
@@ -1309,6 +1313,8 @@ export default function App() {
                       onExamComplete={handleExamComplete}
                       initialExam={preloadedExam}
                       onClearInitialExam={() => setPreloadedExam(null)}
+                      presetSubject={arenaPresetSubject}
+                      presetTopic={arenaPresetTopic}
                     />
                   )
                 )}
@@ -1373,13 +1379,15 @@ export default function App() {
         parentEmail={currentParentAccount?.email}
       />
 
-      {/* Floating AI Chat Widget */}
-      <AIChatWidget
-        activeChild={activeChild}
-        childrenList={parentAccount?.children || []}
-        isStudent={isStudentSession || activePersona === 'child'}
-        role={isStudentSession || activePersona === 'child' ? 'student' : 'parent'}
-      />
+      {/* Floating AI Chat Widget - Hidden during live exams to prevent cheating */}
+      {activeTab !== 'exam' && (
+        <AIChatWidget
+          activeChild={activeChild}
+          childrenList={parentAccount?.children || []}
+          isStudent={isStudentSession || activePersona === 'child'}
+          role={isStudentSession || activePersona === 'child' ? 'student' : 'parent'}
+        />
+      )}
     </div>
   );
 }
