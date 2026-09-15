@@ -207,36 +207,116 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
     : `Syllabus calibration ready for ${targetBoard}`;
 
   // Helper: Case-insensitive semantic classifier to map concepts/topics to their accurate Academic Subjects
-  const resolveSubjectForTopic = (topicName: string, fallbackSubject: Subject = 'Mathematics'): Subject => {
+  const resolveSubjectForTopic = (
+    topicName: string,
+    fallbackSubject: Subject = 'Science',
+    classGrade?: string
+  ): Subject => {
     const t = (topicName || '').toLowerCase().trim();
-    if (t.includes('computer') || t.includes('code') || t.includes('coding') || t.includes('python') || t.includes('java') || t.includes('algorithm') || t.includes('software') || t.includes('database') || t.includes('sql') || t.includes('programming') || t.includes('cyber') || t.includes('network') || t.includes('binary')) {
+    const isPrimary = ['class 1', 'class 2', 'class 3', 'class 4', 'class 5', '1', '2', '3', '4', '5'].some(
+      (c) => (classGrade || '').toLowerCase().includes(c)
+    );
+
+    if (
+      t.includes('computer') || t.includes('code') || t.includes('coding') ||
+      t.includes('python') || t.includes('java') || t.includes('algorithm') ||
+      t.includes('software') || t.includes('database') || t.includes('sql') ||
+      t.includes('programming') || t.includes('cyber') || t.includes('network') ||
+      t.includes('binary')
+    ) {
       return 'Computer Science';
     }
-    if (t.includes('history') || t.includes('civic') || t.includes('geography') || t.includes('political') || t.includes('social') || t.includes('economics') || t.includes('resource') || t.includes('constitution') || t.includes('heritage')) {
+
+    if (
+      t.includes('history') || t.includes('civic') || t.includes('geography') ||
+      t.includes('political') || t.includes('social') || t.includes('economics') ||
+      t.includes('resource') || t.includes('constitution') || t.includes('heritage') ||
+      t.includes('democracy') || t.includes('election') || t.includes('governance') ||
+      t.includes('judiciary') || t.includes('monument')
+    ) {
       return 'Social Studies';
     }
-    if (t.includes('english') || t.includes('grammar') || t.includes('reading') || t.includes('comprehension') || t.includes('syntax') || t.includes('vocabulary') || t.includes('composition') || t.includes('literature') || t.includes('prose') || t.includes('poetry') || t.includes('essay')) {
+
+    if (
+      t.includes('english') || t.includes('grammar') || t.includes('reading') ||
+      t.includes('comprehension') || t.includes('syntax') || t.includes('vocabulary') ||
+      t.includes('composition') || t.includes('literature') || t.includes('prose') ||
+      t.includes('poetry') || t.includes('essay') || t.includes('tense') ||
+      t.includes('voice') || t.includes('speech') || t.includes('clause') ||
+      t.includes('synonym') || t.includes('antonym')
+    ) {
       return 'English';
     }
-    if (t.includes('optic') || t.includes('light') || t.includes('electric') || t.includes('circuit') || t.includes('magnetic') || t.includes('motion') || t.includes('force') || t.includes('gravity') || t.includes('physics') || t.includes('energy') || t.includes('wave') || t.includes('sound') || t.includes('thermo') || t.includes('current') || t.includes('ray')) {
-      return 'Physics';
-    }
-    if (t.includes('chemical') || t.includes('reaction') || t.includes('acid') || t.includes('base') || t.includes('salt') || t.includes('carbon') || t.includes('periodic') || t.includes('metal') || t.includes('molecule') || t.includes('atom') || t.includes('chemistry') || t.includes('compound') || t.includes('bonding') || t.includes('stoichiometry')) {
-      return 'Chemistry';
-    }
-    if (t.includes('life') || t.includes('process') || t.includes('heredity') || t.includes('evolution') || t.includes('cell') || t.includes('bio') || t.includes('organism') || t.includes('reproduction') || t.includes('plant') || t.includes('animal') || t.includes('ecology') || t.includes('respiration') || t.includes('photosynthesis')) {
-      return 'Biology';
-    }
-    if (t.includes('pattern') || t.includes('series') || t.includes('logical') || t.includes('reasoning') || t.includes('syllogism') || t.includes('puzzle') || t.includes('spatial') || t.includes('analogy') || t.includes('blood relation') || t.includes('direction sense')) {
-      return 'Logical Reasoning';
-    }
-    if (t.includes('quadratic') || t.includes('polynomial') || t.includes('equation') || t.includes('trig') || t.includes('arithmetic') || t.includes('algebra') || t.includes('math') || t.includes('geometry') || t.includes('triangle') || t.includes('circle') || t.includes('coordinate') || t.includes('calculus') || t.includes('number') || t.includes('sign') || t.includes('numerical') || t.includes('fraction') || t.includes('probability') || t.includes('statistics')) {
+
+    if (
+      t.includes('quadratic') || t.includes('polynomial') || t.includes('equation') ||
+      t.includes('trig') || t.includes('arithmetic') || t.includes('algebra') ||
+      t.includes('math') || t.includes('geometry') || t.includes('triangle') ||
+      t.includes('circle') || t.includes('coordinate') || t.includes('calculus') ||
+      t.includes('number') || t.includes('sign') || t.includes('numerical') ||
+      t.includes('fraction') || t.includes('probability') || t.includes('statistics') ||
+      t.includes('addition') || t.includes('subtraction') || t.includes('multiplication') ||
+      t.includes('division') || t.includes('bodmas') || t.includes('percentage') ||
+      t.includes('ratio') || t.includes('proportion') || t.includes('mensuration')
+    ) {
       return 'Mathematics';
     }
-    if (t.includes('science')) {
+
+    if (
+      t.includes('pattern') || t.includes('series') || t.includes('logical') ||
+      t.includes('reasoning') || t.includes('syllogism') || t.includes('puzzle') ||
+      t.includes('spatial') || t.includes('analogy') || t.includes('blood relation') ||
+      t.includes('direction sense')
+    ) {
+      return 'Logical Reasoning';
+    }
+
+    // Biology / Environmental / Animals / Plants / Nutrition keywords
+    if (
+      t.includes('herbivore') || t.includes('carnivore') || t.includes('omnivore') ||
+      t.includes('animal') || t.includes('plant') || t.includes('food') ||
+      t.includes('nutrition') || t.includes('diet') || t.includes('habitat') ||
+      t.includes('ecosystem') || t.includes('living') || t.includes('organism') ||
+      t.includes('cell') || t.includes('tissue') || t.includes('species') ||
+      t.includes('reproduction') || t.includes('photosynthesis') || t.includes('respiration') ||
+      t.includes('digestion') || t.includes('body') || t.includes('seed') ||
+      t.includes('leaf') || t.includes('root') || t.includes('heredity') ||
+      t.includes('evolution') || t.includes('ecology') || t.includes('microorganism') ||
+      t.includes('bacteria') || t.includes('virus') || t.includes('fungi')
+    ) {
+      return isPrimary ? 'Science' : 'Biology';
+    }
+
+    // Chemistry keywords
+    if (
+      t.includes('chemical') || t.includes('reaction') || t.includes('acid') ||
+      t.includes('base') || t.includes('salt') || t.includes('carbon') ||
+      t.includes('periodic') || t.includes('metal') || t.includes('non-metal') ||
+      t.includes('molecule') || t.includes('atom') || t.includes('chemistry') ||
+      t.includes('compound') || t.includes('bonding') || t.includes('stoichiometry') ||
+      t.includes('matter') || t.includes('state of matter') || t.includes('solution')
+    ) {
+      return isPrimary ? 'Science' : 'Chemistry';
+    }
+
+    // Physics keywords
+    if (
+      t.includes('optic') || t.includes('light') || t.includes('electric') ||
+      t.includes('circuit') || t.includes('magnetic') || t.includes('magnet') ||
+      t.includes('motion') || t.includes('force') || t.includes('gravity') ||
+      t.includes('physics') || t.includes('energy') || t.includes('wave') ||
+      t.includes('sound') || t.includes('thermo') || t.includes('heat') ||
+      t.includes('current') || t.includes('ray') || t.includes('friction') ||
+      t.includes('work') || t.includes('power') || t.includes('pressure')
+    ) {
+      return isPrimary ? 'Science' : 'Physics';
+    }
+
+    if (t.includes('science') || t.includes('evs') || t.includes('environmental') || t.includes('water') || t.includes('air') || t.includes('soil') || t.includes('weather') || t.includes('season') || t.includes('solar') || t.includes('planet')) {
       return 'Science';
     }
-    return fallbackSubject;
+
+    return isPrimary ? 'Science' : fallbackSubject;
   };
 
   // Genesis Timestamp of the Parent Account / Learning Journey
@@ -388,7 +468,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
       if (masteryEntries.length > 0 && Number(masteryEntries[0][1]) < 70) {
         const [weakTopic] = masteryEntries[0];
-        const resolvedSub = resolveSubjectForTopic(weakTopic, 'Mathematics');
+        const resolvedSub = resolveSubjectForTopic(weakTopic, 'Science', child.classGrade);
         const lastSub = childSubs.find(
           (s) => s.examTitle?.toLowerCase().includes(weakTopic.toLowerCase()) || s.subject === resolvedSub
         );
@@ -423,7 +503,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
         const worstExam = sortedByScore[0];
         const resolvedSub = resolveSubjectForTopic(
           worstExam.examTitle,
-          (worstExam.subject as Subject) || 'Mathematics'
+          (worstExam.subject as Subject) || 'Science',
+          child.classGrade
         );
         const worstScore = worstExam.marksObtained ?? (worstExam as any).score ?? 0;
         const totalM = worstExam.totalMarks || 15;
@@ -614,8 +695,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                   <span
                     key={day}
                     className={`w-2 h-2 rounded-full transition-all ${isActive
-                        ? 'bg-rose-500 shadow-2xs scale-110'
-                        : 'bg-rose-200/80'
+                      ? 'bg-rose-500 shadow-2xs scale-110'
+                      : 'bg-rose-200/80'
                       }`}
                     title={`Day ${day}`}
                   />
@@ -868,11 +949,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
         {/* Recommended Next Steps */}
         <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs flex flex-col relative overflow-hidden group hover:shadow-md transition-shadow">
           <div className="absolute -right-10 -top-10 w-40 h-40 bg-orange-300 rounded-full blur-3xl opacity-10 group-hover:opacity-20 pointer-events-none transition-opacity"></div>
-          
+
           <div className="flex items-center justify-between mb-4 relative z-10">
             <div>
               <h2 className="font-bold text-base text-stone-900">Recommended Next Steps</h2>
-              <p className="text-[11px] text-stone-500 font-medium">Personalized AI recommendations per student</p>
+              <p className="text-[11px] text-stone-500 font-medium">Personalized recommendations per student</p>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200/60">
               {studentWiseRecommendations.length} {studentWiseRecommendations.length === 1 ? 'Student' : 'Students'}
@@ -899,7 +980,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                           {rec.classGrade} • {rec.targetBoard}
                         </span>
                       </div>
-                      
+
                       <span className="text-xs font-bold text-stone-800 flex items-center gap-1.5 truncate">
                         <span>{rec.icon}</span> Practice {rec.topic.length > 35 ? rec.topic.slice(0, 35) + '...' : rec.topic}
                       </span>
@@ -1028,11 +1109,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
 
       {/* 4. STUDENT-WISE PROGRESS / READINESS MODAL */}
       {activeModalMetric && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
           onClick={() => setActiveModalMetric(null)}
         >
-          <div 
+          <div
             className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 animate-in fade-in zoom-in-95 duration-150 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
@@ -1040,12 +1121,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-stone-100">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${
-                  activeModalMetric === 'progress' 
-                    ? 'bg-emerald-100 text-emerald-800' 
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${activeModalMetric === 'progress'
+                    ? 'bg-emerald-100 text-emerald-800'
                     : activeModalMetric === 'streak'
-                    ? 'bg-rose-100 text-rose-800'
-                    : 'bg-blue-100 text-blue-800'
+                      ? 'bg-rose-100 text-rose-800'
+                      : 'bg-blue-100 text-blue-800'
                   }`}>
                   {activeModalMetric === 'progress' ? (
                     <TrendingUp className="w-5 h-5" />
@@ -1057,11 +1137,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-stone-900">
-                    {activeModalMetric === 'progress' 
-                      ? 'Student-Wise Overall Progress' 
+                    {activeModalMetric === 'progress'
+                      ? 'Student-Wise Overall Progress'
                       : activeModalMetric === 'streak'
-                      ? 'Student-Wise Learning Streak'
-                      : 'Student-Wise Exam Readiness'}
+                        ? 'Student-Wise Learning Streak'
+                        : 'Student-Wise Exam Readiness'}
                   </h3>
                   <p className="text-xs text-stone-500">
                     {activeModalMetric === 'progress'
@@ -1069,12 +1149,12 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                         ? `Diagnostic learning progress for ${childrenMetrics[0]?.child.name || 'student'}.`
                         : `Individual learning progress for all ${totalChildren} children. Tap to view profile.`)
                       : activeModalMetric === 'streak'
-                      ? (totalChildren === 1
-                        ? `Daily learning streak and practice consistency for ${childrenMetrics[0]?.child.name || 'student'}.`
-                        : `Individual daily learning streaks for all ${totalChildren} children. Tap to view profile.`)
-                      : (totalChildren === 1
-                        ? `Exam & board readiness evaluation for ${childrenMetrics[0]?.child.name || 'student'}.`
-                        : `Individual exam readiness for all ${totalChildren} children. Tap to view profile.`)}
+                        ? (totalChildren === 1
+                          ? `Daily learning streak and practice consistency for ${childrenMetrics[0]?.child.name || 'student'}.`
+                          : `Individual daily learning streaks for all ${totalChildren} children. Tap to view profile.`)
+                        : (totalChildren === 1
+                          ? `Exam & board readiness evaluation for ${childrenMetrics[0]?.child.name || 'student'}.`
+                          : `Individual exam readiness for all ${totalChildren} children. Tap to view profile.`)}
                   </p>
                 </div>
               </div>
@@ -1179,9 +1259,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                               return (
                                 <span
                                   key={day}
-                                  className={`w-2 h-2 rounded-full transition-all ${
-                                    isActive ? 'bg-rose-500 shadow-2xs scale-110' : 'bg-rose-200/80'
-                                  }`}
+                                  className={`w-2 h-2 rounded-full transition-all ${isActive ? 'bg-rose-500 shadow-2xs scale-110' : 'bg-rose-200/80'
+                                    }`}
                                   title={`Day ${day}`}
                                 />
                               );
@@ -1192,9 +1271,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                         <div className="space-y-1 mt-2">
                           <div className="w-full h-2 bg-stone-200 rounded-full overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all ${
-                                activeModalMetric === 'progress' ? 'bg-emerald-500' : 'bg-blue-500'
-                              }`}
+                              className={`h-full rounded-full transition-all ${activeModalMetric === 'progress' ? 'bg-emerald-500' : 'bg-blue-500'
+                                }`}
                               style={{ width: `${Math.min(100, Math.max(5, scorePct))}%` }}
                             />
                           </div>
