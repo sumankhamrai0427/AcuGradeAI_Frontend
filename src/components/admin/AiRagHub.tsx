@@ -327,7 +327,7 @@ export const AiRagHub: React.FC = () => {
       }
     } catch (err: any) {
       console.error('PDF upload error:', err);
-      showNotify('error', err?.response?.data?.error?.message || 'Failed to ingest PDF');
+      showNotify('error', err?.message || err?.response?.data?.error?.message || 'Failed to ingest PDF');
     } finally {
       setUploading(false);
     }
@@ -375,11 +375,31 @@ export const AiRagHub: React.FC = () => {
     const docGrade = (doc.classGrade || '').toLowerCase().trim();
     const docSubject = (doc.subject || '').toLowerCase().trim();
 
-    const matched = flatTopics.find(
+    // 1. Exact match (Board + Class + Subject) or Science alias match
+    let matched = flatTopics.find(
       t => (!docBoard || t.boardName.toLowerCase().trim() === docBoard) &&
         (!docGrade || t.className.toLowerCase().trim() === docGrade) &&
-        (!docSubject || t.subjectName.toLowerCase().trim() === docSubject)
-    ) || flatTopics[0];
+        (!docSubject || t.subjectName.toLowerCase().trim() === docSubject ||
+          (docSubject === 'science' && ['physics', 'chemistry', 'biology', 'science', 'physical science', 'life science'].includes(t.subjectName.toLowerCase().trim())))
+    );
+
+    // 2. Fallback: match Board + Class
+    if (!matched && docBoard && docGrade) {
+      matched = flatTopics.find(
+        t => t.boardName.toLowerCase().trim() === docBoard &&
+          t.className.toLowerCase().trim() === docGrade
+      );
+    }
+
+    // 3. Fallback: match Board only
+    if (!matched && docBoard) {
+      matched = flatTopics.find(
+        t => t.boardName.toLowerCase().trim() === docBoard
+      );
+    }
+
+    // 4. Ultimate fallback
+    matched = matched || flatTopics[0];
 
     if (matched) {
       setSelectedTargetTopicId(matched.id);
@@ -394,12 +414,27 @@ export const AiRagHub: React.FC = () => {
     const docGrade = (activeDocForGen.classGrade || '').toLowerCase().trim();
     const docSubject = (activeDocForGen.subject || '').toLowerCase().trim();
 
-    const matching = flatTopics.filter(t => {
+    // 1. Exact match or Science alias match
+    let matching = flatTopics.filter(t => {
       const bMatch = !docBoard || t.boardName.toLowerCase().trim() === docBoard;
       const cMatch = !docGrade || t.className.toLowerCase().trim() === docGrade;
-      const sMatch = !docSubject || t.subjectName.toLowerCase().trim() === docSubject;
+      const sMatch = !docSubject || t.subjectName.toLowerCase().trim() === docSubject ||
+        (docSubject === 'science' && ['physics', 'chemistry', 'biology', 'science', 'physical science', 'life science'].includes(t.subjectName.toLowerCase().trim()));
       return bMatch && cMatch && sMatch;
     });
+
+    // 2. Fallback: match Board + Class
+    if (matching.length === 0 && docBoard && docGrade) {
+      matching = flatTopics.filter(
+        t => t.boardName.toLowerCase().trim() === docBoard &&
+          t.className.toLowerCase().trim() === docGrade
+      );
+    }
+
+    // 3. Fallback: match Board only
+    if (matching.length === 0 && docBoard) {
+      matching = flatTopics.filter(t => t.boardName.toLowerCase().trim() === docBoard);
+    }
 
     return matching.length > 0 ? matching : flatTopics;
   }, [flatTopics, activeDocForGen]);
@@ -499,7 +534,7 @@ export const AiRagHub: React.FC = () => {
             <h1 className="text-xl font-bold text-stone-900">Curriculum RAG & Question Synthesis Hub</h1>
           </div>
           <p className="text-xs text-stone-600 pl-11">
-            Official NCERT & Board textbook ingestion engine. Generates semantic chunks into ChromaDB and auto-synthesizes exam questions into <code className="bg-yellow-200/60 px-1 rounded font-mono text-[11px]">question_master</code>.
+            Official NCERT & Board textbook ingestion engine
           </p>
         </div>
         <button
