@@ -22,6 +22,7 @@ import {
   Award,
   Star,
   Smile,
+  Loader2,
 } from 'lucide-react';
 import ApiServices from '../services/ApiServices';
 
@@ -183,7 +184,6 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
   const handleSubmitExam = async () => {
     if (!activeExam || isSubmitting) return;
     setIsSubmitting(true);
-    setShowConfirmSubmit(false);
 
     const totalSecondsSpent = (activeExam.timeLimitMinutes || 10) * 60 - timeRemainingSeconds;
     const sanitizedTime = Math.max(10, totalSecondsSpent);
@@ -270,6 +270,7 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
       setActiveExam(null);
     } finally {
       setIsSubmitting(false);
+      setShowConfirmSubmit(false);
     }
   };
 
@@ -508,15 +509,25 @@ export const KidsExamArena: React.FC<KidsExamArenaProps> = ({
 
               <div className="flex flex-col gap-3">
                 <button
+                  id="confirm-kids-submit-btn"
                   disabled={isSubmitting}
                   onClick={handleSubmitExam}
-                  className="w-full px-6 py-4 rounded-full bg-emerald-400 hover:bg-emerald-500 border-4 border-emerald-500 text-white text-xl font-black shadow-lg hover:scale-105 transition-all disabled:opacity-60"
+                  className="w-full px-6 py-3.5 rounded-full bg-emerald-400 hover:bg-emerald-500 border-4 border-emerald-500 text-white text-lg font-black shadow-lg hover:scale-105 transition-all disabled:opacity-85 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 whitespace-nowrap"
                 >
-                  {isSubmitting ? 'Checking Answers...' : "Yes, Let's Go! 🚀"}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin text-white shrink-0" />
+                      <span>Checking Answers...</span>
+                    </>
+                  ) : (
+                    "Yes, Let's Go! 🚀"
+                  )}
                 </button>
                 <button
+                  id="cancel-kids-submit-btn"
+                  disabled={isSubmitting}
                   onClick={() => setShowConfirmSubmit(false)}
-                  className="w-full px-6 py-4 rounded-full bg-stone-100 hover:bg-stone-200 border-4 border-stone-200 text-stone-600 text-xl font-black hover:scale-105 transition-all"
+                  className="w-full px-6 py-4 rounded-full bg-stone-100 hover:bg-stone-200 border-4 border-stone-200 text-stone-600 text-xl font-black hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Wait, go back!
                 </button>

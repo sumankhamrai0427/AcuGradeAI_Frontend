@@ -122,18 +122,6 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <button
-              id="nav-ptc-btn"
-              onClick={() => setCurrentView('ptc-hub')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                currentView === 'ptc-hub'
-                  ? 'bg-yellow-50 text-yellow-700 font-semibold'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
-              }`}
-            >
-              <span>Parent-Teacher Hub</span>
-            </button>
-
-            <button
               id="nav-dashboard-btn"
               onClick={() => setCurrentView('parent-dashboard')}
               className={`px-2.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
@@ -290,15 +278,6 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
             >
               Leaderboard & Badges
-            </button>
-            <button
-              onClick={() => {
-                setCurrentView('ptc-hub');
-                setMobileMenuOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-700 hover:bg-stone-100"
-            >
-              Parent-Teacher Academic Bridge
             </button>
             <button
               onClick={() => {

@@ -527,7 +527,7 @@ export default function App() {
     } else if (upperRole === 'STUDENT') {
       navigate('/dashboard', { replace: true });
     } else if (upperRole === 'TEACHER') {
-      navigate('/ptc', { replace: true });
+      navigate('/dashboard', { replace: true });
     } else if (upperRole === 'ADMIN') {
       navigate('/admin/dashboard', { replace: true });
     }
@@ -1182,10 +1182,6 @@ export default function App() {
                   setActiveSubmissionReport(null);
                   setActiveTab('learning-path');
                 }}
-                onNavigateToPTC={() => {
-                  setActiveSubmissionReport(null);
-                  setActiveTab('ptc');
-                }}
                 onNavigateToFunZone={() => {
                   setActiveSubmissionReport(null);
                   setActiveTab('fun-zone');
@@ -1344,15 +1340,6 @@ export default function App() {
                     allBadges={badges}
                     leaderboard={leaderboard}
                     activePersona={activePersona}
-                  />
-                )}
-
-                {activeTab === 'ptc' && activeChild && (
-                  <ParentTeacherCommunication
-                    parentAccount={parentAccount || { id: '', name: '', email: '', role: 'parent', children: [] }}
-                    activeChild={activeChild}
-                    recentSubmissions={examHistory}
-                    onViewSubmissionReport={(sub) => setActiveSubmissionReport(sub)}
                   />
                 )}
 

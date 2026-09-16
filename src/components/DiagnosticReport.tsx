@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { ExamSubmission, QuestionEvaluation } from '../types';
-import { 
-  Award, 
-  CheckCircle2, 
-  XCircle, 
-  TrendingUp, 
-  BookOpen, 
-  ExternalLink, 
-  ArrowRight, 
-  RotateCcw, 
-  Printer, 
-  Sparkles, 
-  AlertCircle, 
-  ChevronDown, 
-  ChevronUp, 
-  Clock, 
+import {
+  Award,
+  CheckCircle2,
+  XCircle,
+  TrendingUp,
+  BookOpen,
+  ExternalLink,
+  ArrowRight,
+  RotateCcw,
+  Printer,
+  Sparkles,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Clock,
   Layers,
   HeartHandshake,
   Compass,
@@ -30,7 +30,6 @@ interface DiagnosticReportProps {
   onRetakeOrNextExam: (board: string, classGrade: string, subject: string, difficulty: string) => void;
   onBackToDashboard: () => void;
   onNavigateToLearningPath?: () => void;
-  onNavigateToPTC?: () => void;
   onNavigateToFunZone?: () => void;
 }
 
@@ -39,11 +38,10 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
   onRetakeOrNextExam,
   onBackToDashboard,
   onNavigateToLearningPath,
-  onNavigateToPTC,
   onNavigateToFunZone
 }) => {
   const evaluations: QuestionEvaluation[] = submission?.evaluations || [];
-  
+
   const analysis = submission?.analysis || {
     overallBand: 'Proficient' as const,
     masteryScorePercentage: (submission?.marksObtained || 0) * 10,
@@ -117,7 +115,7 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
           onClick={onBackToDashboard}
           className="text-xs font-semibold text-stone-600 hover:text-stone-900 flex items-center gap-1.5"
         >
-          ← Back to Parent & Child Dashboard
+          ← Back to Dashboard
         </button>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -128,16 +126,6 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
             >
               <Compass className="w-3.5 h-3.5 text-yellow-600" />
               <span>Adaptive Learning Path</span>
-            </button>
-          )}
-
-          {onNavigateToPTC && (
-            <button
-              onClick={onNavigateToPTC}
-              className="px-3.5 py-1.5 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
-            >
-              <Share2 className="w-3.5 h-3.5 text-stone-500" />
-              <span>Share with Teacher</span>
             </button>
           )}
 
@@ -223,13 +211,12 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
             <div className="h-10 w-px bg-stone-200" />
 
             <div>
-              <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold ${
-                accuracyPct >= 80
+              <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold ${accuracyPct >= 80
                   ? 'bg-yellow-100 text-yellow-800'
                   : accuracyPct >= 50
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-rose-100 text-rose-800'
-              }`}>
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-rose-100 text-rose-800'
+                }`}>
                 {accuracyPct >= 80 ? 'Master 🏆' : accuracyPct >= 50 ? 'Proficient ⭐' : 'Developing 🎈'}
               </span>
               <div className="text-[11px] text-stone-500 mt-1 flex items-center gap-1">
@@ -291,13 +278,12 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
                     <div className="flex items-center justify-between gap-4 mb-2">
                       <span className="font-semibold text-xs text-stone-900">{kNode.topic}</span>
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
-                          isMastered 
-                            ? 'bg-yellow-100 text-yellow-800' 
-                            : isReinforce 
-                            ? 'bg-amber-100 text-amber-800' 
-                            : 'bg-rose-100 text-rose-800'
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${isMastered
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : isReinforce
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}>
                           {kNode.status.replace('_', ' ')}
                         </span>
                         <span className="text-xs font-bold text-stone-700">{kNode.masteryPercentage}%</span>
@@ -306,10 +292,9 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
 
                     {/* Progress Bar */}
                     <div className="w-full h-2 bg-stone-200 rounded-full overflow-hidden mb-2">
-                      <div 
-                        className={`h-full rounded-full transition-all ${
-                          isMastered ? 'bg-yellow-500' : isReinforce ? 'bg-amber-500' : 'bg-rose-500'
-                        }`}
+                      <div
+                        className={`h-full rounded-full transition-all ${isMastered ? 'bg-yellow-500' : isReinforce ? 'bg-amber-500' : 'bg-rose-500'
+                          }`}
                         style={{ width: `${Math.min(100, Math.max(10, kNode.masteryPercentage))}%` }}
                       />
                     </div>
@@ -423,198 +408,248 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
         <div className="space-y-4 print:hidden">
           {evaluations.length > 0 ? (
             evaluations.map((eq) => {
-            const isExpanded = !!expandedQuestions[eq.questionId];
-            return (
-              <div
-                key={eq.questionId}
-                className={`rounded-2xl border transition-all ${
-                  eq.isCorrect 
-                    ? 'border-emerald-200 bg-emerald-50/20' 
-                    : 'border-rose-200 bg-rose-50/20'
-                }`}
-              >
-                {/* Accordion Bar */}
+              const isExpanded = !!expandedQuestions[eq.questionId];
+              return (
                 <div
-                  onClick={() => toggleQuestionExpand(eq.questionId)}
-                  className="p-4 sm:p-5 flex items-center justify-between cursor-pointer select-none"
+                  key={eq.questionId}
+                  className={`rounded-2xl border transition-all ${eq.isCorrect
+                      ? 'border-emerald-200 bg-emerald-50/20'
+                      : 'border-rose-200 bg-rose-50/20'
+                    }`}
                 >
-                  <div className="flex items-center gap-3 pr-4">
-                    {eq.isCorrect ? (
-                      <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
-                        ✓
-                      </div>
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs shrink-0">
-                        ✗
-                      </div>
-                    )}
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-xs sm:text-sm text-stone-900">
-                          Q{eq.questionNumber}.
-                        </span>
-                        <span className="text-xs sm:text-sm text-stone-800 line-clamp-1 font-medium">
-                          {eq.questionText}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1 text-[11px] text-stone-500">
-                        <span className="uppercase font-semibold">{eq.type}</span>
-                        <span>•</span>
-                        <span>{eq.topic}</span>
-                        <span>•</span>
-                        <span className={eq.isCorrect ? 'text-emerald-700 font-semibold' : 'text-rose-600 font-semibold'}>
-                          {eq.marksAwarded} / {(eq as any).questionMarks || (eq.isCorrect ? eq.marksAwarded : 1)} {((eq as any).questionMarks || (eq.isCorrect ? eq.marksAwarded : 1)) > 1 ? 'Marks' : 'Mark'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold hidden sm:inline-block ${
-                      eq.isCorrect ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'
-                    }`}>
-                      {eq.isCorrect ? `Correct (+${eq.marksAwarded}.0)` : 'Incorrect (0.0)'}
-                    </span>
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
-                  </div>
-                </div>
-
-                {/* Expanded Details */}
-                {isExpanded && (
-                  <div className="px-4 sm:px-6 pb-6 pt-2 border-t border-stone-100/80 bg-white/70 rounded-b-2xl space-y-4">
-                    {/* Full Question Text */}
-                    <div className="text-xs sm:text-sm text-stone-900 whitespace-pre-line leading-relaxed font-medium bg-stone-50 p-3 rounded-xl">
-                      {eq.questionText}
-                    </div>
-
-                    {/* Options (if MCQ/Logical) */}
-                    {eq.options && eq.options.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {eq.options.map((opt, oIdx) => {
-                          const optStr = (opt || '').trim();
-                          const optLetter = optStr.charAt(0).toUpperCase();
-                          const cleanOptText = optStr.replace(/^(?:option\s+)?\(?[A-Da-d]\)?[\).\:\-]?\s*/i, '').trim();
-                          const optBody = cleanOptText.toLowerCase();
-                          const cleanCorrect = (eq.correctAnswer || '').trim().toLowerCase();
-                          const cleanStudent = (eq.studentAnswer || '').trim().toLowerCase();
-
-                          const isCorrectOpt = Boolean(
-                            eq.correctAnswer && (
-                              eq.correctAnswer.toUpperCase() === optLetter ||
-                              eq.correctAnswer.toUpperCase() === String.fromCharCode(65 + oIdx) ||
-                              optStr.toUpperCase().startsWith(eq.correctAnswer.toUpperCase()) ||
-                              (optBody && optBody === cleanCorrect) ||
-                              (cleanCorrect.length > 3 && optBody.includes(cleanCorrect)) ||
-                              (cleanCorrect.length > 3 && cleanCorrect.includes(optBody))
-                            )
-                          );
-                          const isStudentOpt = Boolean(
-                            eq.studentAnswer && (
-                              eq.studentAnswer.toUpperCase() === optLetter ||
-                              eq.studentAnswer.toUpperCase() === String.fromCharCode(65 + oIdx) ||
-                              optStr.toUpperCase().startsWith(eq.studentAnswer.toUpperCase()) ||
-                              (optBody && optBody === cleanStudent) ||
-                              optStr.toLowerCase() === cleanStudent
-                            )
-                          );
-
-                          return (
-                            <div
-                              key={oIdx}
-                              className={`p-2.5 rounded-xl border text-xs transition-all ${
-                                isCorrectOpt
-                                  ? 'bg-emerald-50 border-emerald-400 text-emerald-950 font-bold shadow-2xs ring-1 ring-emerald-300/40'
-                                  : isStudentOpt
-                                  ? 'bg-rose-50 border-rose-300 text-rose-950 font-medium'
-                                  : 'bg-stone-50/50 border-stone-200 text-stone-600'
-                              }`}
-                            >
-                              <span className="font-bold mr-1.5">{String.fromCharCode(65 + oIdx)}.</span>
-                              {cleanOptText || opt}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Answers Comparison */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className={`p-3 rounded-xl border ${
-                        eq.isCorrect 
-                          ? 'border-emerald-300 bg-emerald-50/40' 
-                          : 'border-rose-200 bg-rose-50/40'
-                      }`}>
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
-                          Candidate Selected Answer:
-                        </span>
-                        <span className={`text-xs sm:text-sm font-bold ${eq.isCorrect ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          {eq.studentAnswer || '(No answer selected)'}
-                        </span>
-                      </div>
-
-                      <div className="p-3 rounded-xl border border-emerald-400 bg-emerald-50/90 shadow-2xs">
-                        <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
-                          Verified Correct Answer:
-                        </span>
-                        <span className="text-xs sm:text-sm font-black text-emerald-950">
-                          {eq.correctAnswer}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Misconception Identified */}
-                    {eq.misconceptionIdentified && (
-                      <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950">
-                        <strong className="font-bold text-amber-900">Misconception Identified: </strong>
-                        {eq.misconceptionIdentified}
-                      </div>
-                    )}
-
-                    {/* Step-by-Step AI Explanation */}
-                    <div className="p-4 rounded-xl bg-yellow-50/50 border border-yellow-200 text-xs text-yellow-950 space-y-1">
-                      <div className="font-bold text-yellow-900 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-yellow-600" />
-                        Step-by-Step AI Derivation & Concept Explanation:
-                      </div>
-                      <p className="leading-relaxed whitespace-pre-line text-stone-800">{eq.explanation}</p>
-                    </div>
-
-                    {/* Question Reference Links */}
-                    {eq.referenceLinks && eq.referenceLinks.length > 0 && (
-                      <div className="pt-2">
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block mb-2">
-                          Direct Study & Syllabus References for this Topic:
-                        </span>
-                        <div className="space-y-1.5">
-                          {eq.referenceLinks.map((ref, rIdx) => (
-                            <a
-                              key={rIdx}
-                              href={ref.url}
-                              target="_blank"
-                              rel="noreferrer noopener"
-                              className="flex items-center justify-between p-2.5 rounded-xl border border-stone-200 bg-white hover:border-yellow-300 hover:bg-yellow-50/30 transition-all text-xs group"
-                            >
-                              <div className="flex items-center gap-2">
-                                <BookOpen className="w-3.5 h-3.5 text-yellow-600" />
-                                <span className="font-semibold text-stone-900 group-hover:text-yellow-600">{ref.title}</span>
-                                <span className="text-[10px] text-stone-400">({ref.source})</span>
-                              </div>
-                              <ExternalLink className="w-3.5 h-3.5 text-stone-400 group-hover:text-yellow-600" />
-                            </a>
-                          ))}
+                  {/* Accordion Bar */}
+                  <div
+                    onClick={() => toggleQuestionExpand(eq.questionId)}
+                    className="p-4 sm:p-5 flex items-center justify-between cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-3 pr-4">
+                      {eq.isCorrect ? (
+                        <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+                          ✓
+                        </div>
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs shrink-0">
+                          ✗
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-xs sm:text-sm text-stone-900">
+                            Q{eq.questionNumber}.
+                          </span>
+                          <span className="text-xs sm:text-sm text-stone-800 line-clamp-1 font-medium">
+                            {eq.questionText}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 text-[11px] text-stone-500">
+                          <span className="uppercase font-semibold">{eq.type}</span>
+                          <span>•</span>
+                          <span>{eq.topic}</span>
+                          <span>•</span>
+                          <span className={eq.marksAwarded >= ((eq as any).questionMarks || 1) ? 'text-emerald-700 font-semibold' : eq.marksAwarded > 0 ? 'text-amber-700 font-semibold' : 'text-rose-600 font-semibold'}>
+                            {eq.marksAwarded} / {(eq as any).questionMarks || 1} {((eq as any).questionMarks || 1) > 1 ? 'Marks' : 'Mark'}
+                          </span>
                         </div>
                       </div>
-                    )}
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold hidden sm:inline-block ${eq.marksAwarded >= ((eq as any).questionMarks || 1)
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          : eq.marksAwarded > 0
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            : 'bg-rose-100 text-rose-800 border border-rose-200'
+                        }`}>
+                        {eq.marksAwarded >= ((eq as any).questionMarks || 1)
+                          ? `Correct (+${eq.marksAwarded})`
+                          : eq.marksAwarded > 0
+                            ? `Partial Credit (+${eq.marksAwarded})`
+                            : 'Incorrect (0.0)'}
+                      </span>
+                      {isExpanded ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
+                    </div>
                   </div>
-                )}
-              </div>
-            );
-          })
-        ) : (
-          <div className="py-8 text-center text-stone-400 text-xs bg-stone-50 rounded-2xl border border-stone-100">
-            Itemized question breakdown will be synchronized with the diagnostic Knowledge Graph.
-          </div>
-        )}
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="px-4 sm:px-6 pb-6 pt-2 border-t border-stone-100/80 bg-white/70 rounded-b-2xl space-y-4">
+                      {/* Full Question Text */}
+                      <div className="text-xs sm:text-sm text-stone-900 whitespace-pre-line leading-relaxed font-medium bg-stone-50 p-3 rounded-xl">
+                        {eq.questionText}
+                      </div>
+
+                      {/* Options (if MCQ/Logical) */}
+                      {eq.options && eq.options.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {eq.options.map((opt, oIdx) => {
+                            const optStr = (opt || '').trim();
+                            const optLetter = optStr.charAt(0).toUpperCase();
+                            const cleanOptText = optStr.replace(/^(?:option\s+)?\(?[A-Da-d]\)?[\).\:\-]?\s*/i, '').trim();
+                            const optBody = cleanOptText.toLowerCase();
+                            const cleanCorrect = (eq.correctAnswer || '').trim().toLowerCase();
+                            const cleanStudent = (eq.studentAnswer || '').trim().toLowerCase();
+
+                            const isCorrectOpt = Boolean(
+                              eq.correctAnswer && (
+                                eq.correctAnswer.toUpperCase() === optLetter ||
+                                eq.correctAnswer.toUpperCase() === String.fromCharCode(65 + oIdx) ||
+                                optStr.toUpperCase().startsWith(eq.correctAnswer.toUpperCase()) ||
+                                (optBody && optBody === cleanCorrect) ||
+                                (cleanCorrect.length > 3 && optBody.includes(cleanCorrect)) ||
+                                (cleanCorrect.length > 3 && cleanCorrect.includes(optBody))
+                              )
+                            );
+                            const isStudentOpt = Boolean(
+                              eq.studentAnswer && (
+                                eq.studentAnswer.toUpperCase() === optLetter ||
+                                eq.studentAnswer.toUpperCase() === String.fromCharCode(65 + oIdx) ||
+                                optStr.toUpperCase().startsWith(eq.studentAnswer.toUpperCase()) ||
+                                (optBody && optBody === cleanStudent) ||
+                                (cleanStudent.length > 3 && optBody.includes(cleanStudent)) ||
+                                (cleanStudent.length > 3 && cleanStudent.includes(optBody)) ||
+                                optStr.toLowerCase() === cleanStudent
+                              )
+                            );
+
+                            return (
+                              <div
+                                key={oIdx}
+                                className={`p-2.5 rounded-xl border text-xs leading-snug transition-all ${isCorrectOpt
+                                    ? 'bg-emerald-50 border-emerald-400 text-emerald-950 font-bold shadow-2xs ring-1 ring-emerald-300/40'
+                                    : isStudentOpt
+                                      ? 'bg-rose-50 border-rose-300 text-rose-950 font-medium'
+                                      : 'bg-stone-50/50 border-stone-200 text-stone-600'
+                                  }`}
+                              >
+                                <span className="font-bold mr-1.5">{String.fromCharCode(65 + oIdx)}.</span>
+                                {cleanOptText || opt}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Answers Comparison */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className={`p-3 rounded-xl border ${eq.marksAwarded >= ((eq as any).questionMarks || 1)
+                            ? 'border-emerald-300 bg-emerald-50/40'
+                            : eq.marksAwarded > 0
+                              ? 'border-amber-300 bg-amber-50/40'
+                              : 'border-rose-200 bg-rose-50/40'
+                          }`}>
+                          <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block">
+                            Candidate Submitted Answer:
+                          </span>
+                          <span className={`text-xs sm:text-sm font-bold ${eq.marksAwarded >= ((eq as any).questionMarks || 1)
+                              ? 'text-emerald-700'
+                              : eq.marksAwarded > 0
+                                ? 'text-amber-800'
+                                : 'text-rose-600'
+                            }`}>
+                            {eq.studentAnswer || '(No answer selected)'}
+                          </span>
+                        </div>
+
+                        <div className="p-3 rounded-xl border border-emerald-400 bg-emerald-50/90 shadow-2xs">
+                          <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
+                            Verified Model Answer / Solution:
+                          </span>
+                          <span className="text-xs sm:text-sm font-black text-emerald-950">
+                            {eq.correctAnswer}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Teacher Constructive Feedback */}
+                      {eq.feedback && (
+                        <div className="p-3.5 rounded-xl bg-blue-50/80 border border-blue-200 text-xs text-blue-950 flex items-start gap-2.5">
+                          <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                          <div>
+                            <strong className="font-bold text-blue-900 block mb-0.5">Teacher Evaluation & Rubric Feedback:</strong>
+                            <span className="leading-relaxed text-blue-950">{eq.feedback}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Keyword Analytics (Concepts captured vs Missing) */}
+                      {((eq.matchedKeywords && eq.matchedKeywords.length > 0) || (eq.missedKeywords && eq.missedKeywords.length > 0)) && (
+                        <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 text-xs space-y-2">
+                          {eq.matchedKeywords && eq.matchedKeywords.length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-emerald-800 text-[11px] uppercase">Key Concepts Captured:</span>
+                              {eq.matchedKeywords.map((kw, kIdx) => (
+                                <span key={kIdx} className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 text-[11px] font-medium border border-emerald-200">
+                                  ✓ {kw}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {eq.missedKeywords && eq.missedKeywords.length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-amber-800 text-[11px] uppercase">Points to Reinforce:</span>
+                              {eq.missedKeywords.map((kw, kIdx) => (
+                                <span key={kIdx} className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[11px] font-medium border border-amber-200">
+                                  + {kw}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Misconception Identified */}
+                      {eq.misconceptionIdentified && (
+                        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950">
+                          <strong className="font-bold text-amber-900">Misconception Identified: </strong>
+                          {eq.misconceptionIdentified}
+                        </div>
+                      )}
+
+                      {/* Step-by-Step AI Explanation */}
+                      <div className="p-4 rounded-xl bg-yellow-50/50 border border-yellow-200 text-xs text-yellow-950 space-y-1">
+                        <div className="font-bold text-yellow-900 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-yellow-600" />
+                          Step-by-Step AI Derivation & Concept Explanation:
+                        </div>
+                        <p className="leading-relaxed whitespace-pre-line text-stone-800">{eq.explanation}</p>
+                      </div>
+
+                      {/* Question Reference Links */}
+                      {eq.referenceLinks && eq.referenceLinks.length > 0 && (
+                        <div className="pt-2">
+                          <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block mb-2">
+                            Direct Study & Syllabus References for this Topic:
+                          </span>
+                          <div className="space-y-1.5">
+                            {eq.referenceLinks.map((ref, rIdx) => (
+                              <a
+                                key={rIdx}
+                                href={ref.url}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className="flex items-center justify-between p-2.5 rounded-xl border border-stone-200 bg-white hover:border-yellow-300 hover:bg-yellow-50/30 transition-all text-xs group"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <BookOpen className="w-3.5 h-3.5 text-yellow-600" />
+                                  <span className="font-semibold text-stone-900 group-hover:text-yellow-600">{ref.title}</span>
+                                  <span className="text-[10px] text-stone-400">({ref.source})</span>
+                                </div>
+                                <ExternalLink className="w-3.5 h-3.5 text-stone-400 group-hover:text-yellow-600" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div className="py-8 text-center text-stone-400 text-xs bg-stone-50 rounded-2xl border border-stone-100">
+              Itemized question breakdown will be synchronized with the diagnostic Knowledge Graph.
+            </div>
+          )}
         </div>
 
         {/* Dedicated Print-Only Full-Width Question Items */}
@@ -627,10 +662,17 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
                     <span>Q{eq.questionNumber}. </span>
                     <span>{eq.questionText}</span>
                   </div>
-                  <span className={`px-2 py-0.5 rounded text-[10.5px] font-bold shrink-0 ml-2 ${
-                    eq.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                  }`}>
-                    {eq.isCorrect ? `✓ Correct (+${eq.marksAwarded})` : `✗ Incorrect (0/${(eq as any).questionMarks || 1})`}
+                  <span className={`px-2 py-0.5 rounded text-[10.5px] font-bold shrink-0 ml-2 ${eq.marksAwarded >= ((eq as any).questionMarks || 1)
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : eq.marksAwarded > 0
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-rose-100 text-rose-800'
+                    }`}>
+                    {eq.marksAwarded >= ((eq as any).questionMarks || 1)
+                      ? `✓ Correct (+${eq.marksAwarded})`
+                      : eq.marksAwarded > 0
+                        ? `⚡ Partial (+${eq.marksAwarded}/${(eq as any).questionMarks || 1})`
+                        : `✗ Incorrect (0/${(eq as any).questionMarks || 1})`}
                   </span>
                 </div>
 
@@ -664,13 +706,12 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
                         )
                       );
                       return (
-                        <div key={idx} className={`px-2 py-0.5 rounded border ${
-                          isCorrectOpt
+                        <div key={idx} className={`px-2 py-0.5 rounded border ${isCorrectOpt
                             ? 'border-emerald-500 bg-emerald-50 font-bold text-emerald-900'
                             : isStudentOpt
-                            ? 'border-rose-400 bg-rose-50 text-rose-900'
-                            : 'border-stone-200 text-stone-600'
-                        }`}>
+                              ? 'border-rose-400 bg-rose-50 text-rose-900'
+                              : 'border-stone-200 text-stone-600'
+                          }`}>
                           <span className="font-bold mr-1">{String.fromCharCode(65 + idx)}.</span>
                           {cleanOptText || opt}
                         </div>

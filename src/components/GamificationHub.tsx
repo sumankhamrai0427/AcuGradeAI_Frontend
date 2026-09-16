@@ -71,13 +71,32 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
 
   // Dynamic Rank in Leaderboard Cohort
   const currentStudentRank = React.useMemo(() => {
-    const myEntry = leaderboard.find(e => e.studentId === activeChild.id || e.isCurrentStudent);
-    if (myEntry) {
-      return myEntry.rank === 1 ? '#1 Rank' : myEntry.rank <= 3 ? `Top #${myEntry.rank}` : `Rank #${myEntry.rank}`;
+    if (isStudentPersona) {
+      // Cohort: same Target Board and Class Grade
+      const cohortStudents = leaderboard.filter(
+        (e) => e.targetBoard === activeChild.targetBoard && e.classGrade === activeChild.classGrade
+      );
+      const myCohortIndex = cohortStudents.findIndex(
+        (e) => e.studentId === activeChild.id || e.isCurrentStudent
+      );
+      if (myCohortIndex !== -1) {
+        const rank = myCohortIndex + 1;
+        return rank === 1 ? '#1 Rank' : rank <= 3 ? `Top #${rank}` : `Rank #${rank}`;
+      }
+      return cohortStudents.length > 0 ? '#1 Rank' : '#1 Rank';
+    } else {
+      // Global Persona (Parent viewing across all students)
+      const myIndex = leaderboard.findIndex(
+        (e) => e.studentId === activeChild.id || e.isCurrentStudent
+      );
+      if (myIndex !== -1) {
+        const rank = myIndex + 1;
+        return rank === 1 ? '#1 Rank' : rank <= 3 ? `Top #${rank}` : `Rank #${rank}`;
+      }
+      const total = leaderboard.length;
+      return total > 0 ? `Rank #${Math.min(total, 1)}` : 'Calibrating';
     }
-    const total = leaderboard.length;
-    return total > 0 ? `Rank #${Math.min(total, 1)}` : 'Calibrating';
-  }, [leaderboard, activeChild.id]);
+  }, [leaderboard, activeChild.id, activeChild.targetBoard, activeChild.classGrade, isStudentPersona]);
 
   // Filter leaderboard
   const filteredLeaderboard = leaderboard.filter((entry) => {
@@ -265,6 +284,7 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
                     <option value="CBSE">CBSE</option>
                     <option value="ICSE">ICSE</option>
                     <option value="ISC">ISC</option>
+                    <option value="WBBSE">WBBSE</option>
                     <option value="UK-Cambridge">UK-Cambridge</option>
                     <option value="NCERT">NCERT</option>
                     <option value="NEET">NEET</option>
@@ -281,6 +301,10 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
                     className="px-2.5 py-1.5 rounded-lg border border-stone-200 text-xs bg-white text-stone-800 focus:outline-hidden focus:ring-1 focus:ring-yellow-500"
                   >
                     <option value="all">All Classes</option>
+                    <option value="Class 1">Class 1</option>
+                    <option value="Class 2">Class 2</option>
+                    <option value="Class 3">Class 3</option>
+                    <option value="Class 4">Class 4</option>
                     <option value="Class 5">Class 5</option>
                     <option value="Class 6">Class 6</option>
                     <option value="Class 7">Class 7</option>
@@ -303,10 +327,11 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
           <div className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden">
             <div className="divide-y divide-stone-100">
               {filteredLeaderboard.map((entry, index) => {
-                const isTop1 = entry.rank === 1;
-                const isTop2 = entry.rank === 2;
-                const isTop3 = entry.rank === 3;
-                const isSelf = entry.isCurrentStudent;
+                const displayRank = index + 1;
+                const isTop1 = displayRank === 1;
+                const isTop2 = displayRank === 2;
+                const isTop3 = displayRank === 3;
+                const isSelf = entry.isCurrentStudent || entry.studentId === activeChild.id;
 
                 return (
                   <div
@@ -332,7 +357,7 @@ export const GamificationHub: React.FC<GamificationHubProps> = ({
                           </span>
                         ) : (
                           <span className="font-bold text-xs text-stone-400">
-                            #{entry.rank}
+                            #{displayRank}
                           </span>
                         )}
                       </div>

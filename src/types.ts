@@ -130,9 +130,13 @@ export interface QuestionEvaluation {
   studentAnswer: string;
   correctAnswer: string;
   isCorrect: boolean;
-  marksAwarded: number; // 0 or 1
+  marksAwarded: number; // e.g. 0, 0.5, 1, 1.5, 2
+  questionMarks?: number;
   explanation: string;
   misconceptionIdentified?: string;
+  feedback?: string;
+  matchedKeywords?: string[];
+  missedKeywords?: string[];
   referenceLinks: ReferenceLink[];
   topic: string;
 }

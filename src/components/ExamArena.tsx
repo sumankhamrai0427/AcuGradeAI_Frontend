@@ -236,7 +236,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
 
   const handleStartExam = async (startAssigned: boolean = false) => {
     setIsGenerating(true);
-    setGenerationStep('Retrieving Board Syllabus & RAG Runbook Nodes...');
+    setGenerationStep(presetTopic ? `Building Remedial Sprint for ${presetTopic}...` : 'Generating Diagnostic Exam...');
 
     try {
       if (!activeChildId) return;
@@ -310,7 +310,6 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
   const handleSubmitExam = async () => {
     if (!activeExam || isSubmitting) return;
     setIsSubmitting(true);
-    setShowConfirmSubmit(false);
 
     const totalSecondsSpent = (activeExam.timeLimitMinutes || 15) * 60 - timeRemainingSeconds;
     const scheduledIdToSubmit = (activeExam as any).scheduledExamId || (activeExam as any).scheduled_exam_id || undefined;
@@ -333,6 +332,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
       console.error('Error evaluating exam:', err);
     } finally {
       setIsSubmitting(false);
+      setShowConfirmSubmit(false);
       setActiveExam(null);
     }
   };
@@ -343,8 +343,8 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Dedicated Loading State while auto-generating remedial sprint
-  if (isGenerating) {
+  // Dedicated Loading State ONLY while auto-generating targeted remedial sprint from Topic Master / Weak Topics
+  if (isGenerating && presetTopic) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-in fade-in zoom-in-95 duration-200">
         <div className="bg-white rounded-3xl border border-stone-200/80 shadow-xl p-8 sm:p-12 relative overflow-hidden">
@@ -355,7 +355,7 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
             Launching Targeted Remedial Sprint
           </h2>
           <p className="text-sm font-semibold text-amber-800 mb-6 bg-amber-50 py-1.5 px-4 rounded-full border border-amber-200/60 inline-block">
-            {presetTopic || activeTopic ? `Topic: ${presetTopic || activeTopic}` : 'Adaptive Diagnostic Exam'}
+            Topic: {presetTopic}
           </p>
           <div className="flex items-center justify-center gap-2.5 text-xs text-stone-500 font-medium">
             <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
@@ -648,8 +648,9 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   id="cancel-submit-modal-btn"
+                  disabled={isSubmitting}
                   onClick={() => setShowConfirmSubmit(false)}
-                  className="px-4 py-2 rounded-xl border border-stone-200 text-xs sm:text-sm font-semibold text-stone-700 hover:bg-stone-50"
+                  className="px-4 py-2 rounded-xl border border-stone-200 text-xs sm:text-sm font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Continue Test
                 </button>
@@ -657,9 +658,16 @@ export const ExamArena: React.FC<ExamArenaProps> = ({
                   id="confirm-submit-exam-btn"
                   disabled={isSubmitting}
                   onClick={handleSubmitExam}
-                  className="px-5 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs sm:text-sm font-semibold shadow-xs disabled:opacity-60"
+                  className="px-5 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-stone-900 text-xs sm:text-sm font-semibold shadow-xs disabled:opacity-75 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {isSubmitting ? 'Evaluating Answers ...' : 'Yes, Submit & View Analytics'}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-stone-900" />
+                      <span>Evaluating Answers ...</span>
+                    </>
+                  ) : (
+                    'Yes, Submit & View Analytics'
+                  )}
                 </button>
               </div>
             </div>

@@ -1,37 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  ChildAccount, 
-  ScienceJokeOrAnecdote, 
-  BrainBreakGameType 
+import {
+  ChildAccount,
+  ScienceJokeOrAnecdote,
+  BrainBreakGameType
 } from '../types';
-import { 
-  FUN_ANECDOTES_AND_JOKES, 
-  generateMathProblem, 
-  SpeedMathProblem, 
-  MEMORY_CARD_PAIRS, 
-  MemoryCard, 
-  SCRAMBLE_WORDS, 
-  ScienceScrambleWord 
+import {
+  FUN_ANECDOTES_AND_JOKES,
+  generateMathProblem,
+  SpeedMathProblem,
+  MEMORY_CARD_PAIRS,
+  MemoryCard,
+  SCRAMBLE_WORDS,
+  ScienceScrambleWord
 } from '../data/funData';
-import { 
-  Sparkles, 
-  Smile, 
-  Zap, 
-  Trophy, 
-  RotateCcw, 
-  Flame, 
-  Heart, 
-  HelpCircle, 
-  Check, 
-  Clock, 
-  Play, 
-  Volume2, 
-  VolumeX, 
-  Shuffle, 
-  BookOpen, 
-  Award, 
-  Brain, 
-  Compass, 
+import {
+  Sparkles,
+  Smile,
+  Zap,
+  Trophy,
+  RotateCcw,
+  Flame,
+  Heart,
+  HelpCircle,
+  Check,
+  Clock,
+  Play,
+  Volume2,
+  VolumeX,
+  Shuffle,
+  BookOpen,
+  Award,
+  Brain,
+  Compass,
   ChevronRight,
   Wind
 } from 'lucide-react';
@@ -483,11 +483,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
           <div className="flex items-center gap-3 self-start md:self-auto shrink-0 flex-wrap">
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`p-2.5 rounded-xl border backdrop-blur-xs transition-colors flex items-center gap-1.5 text-xs font-semibold ${
-                soundEnabled 
-                  ? 'bg-white/20 border-white/30 text-white hover:bg-white/30' 
+              className={`p-2.5 rounded-xl border backdrop-blur-xs transition-colors flex items-center gap-1.5 text-xs font-semibold ${soundEnabled
+                  ? 'bg-white/20 border-white/30 text-white hover:bg-white/30'
                   : 'bg-white/10 border-white/20 text-white/60 hover:bg-white/20'
-              }`}
+                }`}
               title={soundEnabled ? 'Mute Game Sounds' : 'Enable Game Sounds'}
             >
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
@@ -500,7 +499,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
                 className="px-4 py-2.5 rounded-xl bg-white text-yellow-700 font-bold text-xs hover:bg-yellow-50 shadow-sm transition-all flex items-center gap-2"
               >
                 <Play className="w-4 h-4 text-yellow-600 fill-yellow-600" />
-                <span>Ready for 10-Mark Exam</span>
+                <span>Ready for Exams</span>
               </button>
             )}
           </div>
@@ -531,11 +530,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
         <button
           id="btn-tab-anecdotes"
           onClick={() => { triggerSound('click'); setActiveTab('anecdote-vault'); }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-            activeTab === 'anecdote-vault'
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'anecdote-vault'
               ? 'bg-yellow-400 text-stone-900 shadow-xs'
               : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
-          }`}
+            }`}
         >
           <span>😄</span>
           <span>The Chuckle Lab & Stories</span>
@@ -544,11 +542,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
         <button
           id="btn-tab-speed-math"
           onClick={() => { triggerSound('click'); setActiveTab('speed-math'); }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-            activeTab === 'speed-math'
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'speed-math'
               ? 'bg-yellow-400 text-stone-900 shadow-xs'
               : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
-          }`}
+            }`}
         >
           <span>⚡</span>
           <span>Speed Math Duel</span>
@@ -557,11 +554,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
         <button
           id="btn-tab-memory"
           onClick={() => { triggerSound('click'); setActiveTab('memory-match'); }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-            activeTab === 'memory-match'
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'memory-match'
               ? 'bg-yellow-400 text-stone-900 shadow-xs'
               : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
-          }`}
+            }`}
         >
           <span>🃏</span>
           <span>Concept Memory Flip</span>
@@ -570,11 +566,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
         <button
           id="btn-tab-scramble"
           onClick={() => { triggerSound('click'); setActiveTab('word-scramble'); }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-            activeTab === 'word-scramble'
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'word-scramble'
               ? 'bg-yellow-400 text-stone-900 shadow-xs'
               : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
-          }`}
+            }`}
         >
           <span>🧩</span>
           <span>Science Mystery Scramble</span>
@@ -583,11 +578,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
         <button
           id="btn-tab-breathing"
           onClick={() => { triggerSound('click'); setActiveTab('particle-pop'); }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
-            activeTab === 'particle-pop'
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${activeTab === 'particle-pop'
               ? 'bg-yellow-400 text-stone-900 shadow-xs'
               : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
-          }`}
+            }`}
         >
           <span>🧘</span>
           <span>2-Min Mind Reset</span>
@@ -656,11 +650,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
                 <button
                   key={cat}
                   onClick={() => { triggerSound('click'); setAnecdoteCategory(cat); }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-colors ${
-                    anecdoteCategory === cat
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-colors ${anecdoteCategory === cat
                       ? 'bg-stone-900 text-white'
                       : 'bg-white border border-stone-200 text-stone-600 hover:bg-stone-100'
-                  }`}
+                    }`}
                 >
                   {cat === 'all' ? 'All Stories & Jokes' : cat === 'anecdote' ? 'Historical Blunders' : cat === 'joke' ? 'School & Science Puns' : cat === 'fact' ? 'Wacky Facts' : 'Brain Riddles'}
                 </button>
@@ -678,7 +671,7 @@ export const FunZone: React.FC<FunZoneProps> = ({
               const likes = likesMap[item.id] !== undefined ? likesMap[item.id] : item.likesCount;
 
               return (
-                <div 
+                <div
                   key={item.id}
                   className="bg-white rounded-2xl border border-stone-200 p-5 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between"
                 >
@@ -687,12 +680,11 @@ export const FunZone: React.FC<FunZoneProps> = ({
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">{item.funReactionEmoji}</span>
                         <div>
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                            item.category === 'anecdote' ? 'bg-amber-100 text-amber-800' :
-                            item.category === 'joke' ? 'bg-pink-100 text-pink-800' :
-                            item.category === 'fact' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-teal-100 text-teal-800'
-                          }`}>
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${item.category === 'anecdote' ? 'bg-amber-100 text-amber-800' :
+                              item.category === 'joke' ? 'bg-pink-100 text-pink-800' :
+                                item.category === 'fact' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-teal-100 text-teal-800'
+                            }`}>
                             {item.subject} • {item.category}
                           </span>
                           <h4 className="font-bold text-sm text-stone-900 mt-1">{item.title}</h4>
@@ -780,11 +772,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
                   key={tier}
                   disabled={mathGameActive}
                   onClick={() => { triggerSound('click'); setMathLevel(tier); }}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold capitalize transition-colors ${
-                    mathLevel === tier
+                  className={`px-3 py-1 rounded-xl text-xs font-bold capitalize transition-colors ${mathLevel === tier
                       ? 'bg-yellow-400 text-stone-900'
                       : 'bg-stone-100 text-stone-600 hover:bg-stone-200 disabled:opacity-50'
-                  }`}
+                    }`}
                 >
                   {tier}
                 </button>
@@ -844,11 +835,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
               </div>
 
               {/* Problem Card */}
-              <div className={`p-8 rounded-3xl text-center border-2 transition-all ${
-                mathFeedback === 'correct' ? 'bg-yellow-50 border-yellow-400' :
-                mathFeedback === 'wrong' ? 'bg-red-50 border-red-400' :
-                'bg-stone-50 border-stone-200'
-              }`}>
+              <div className={`p-8 rounded-3xl text-center border-2 transition-all ${mathFeedback === 'correct' ? 'bg-yellow-50 border-yellow-400' :
+                  mathFeedback === 'wrong' ? 'bg-red-50 border-red-400' :
+                    'bg-stone-50 border-stone-200'
+                }`}>
                 <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">Calculate Rapidly:</span>
                 <div className="text-4xl sm:text-5xl font-mono font-extrabold text-stone-900 my-4 tracking-tight">
                   {currentMathProblem.num1} {currentMathProblem.operation} {currentMathProblem.num2} = ?
@@ -980,13 +970,12 @@ export const FunZone: React.FC<FunZoneProps> = ({
                   <div
                     key={card.id}
                     onClick={() => handleCardClick(idx)}
-                    className={`h-28 sm:h-32 rounded-2xl border-2 flex flex-col items-center justify-center p-2 text-center cursor-pointer transition-all duration-300 transform select-none ${
-                      isMatched
+                    className={`h-28 sm:h-32 rounded-2xl border-2 flex flex-col items-center justify-center p-2 text-center cursor-pointer transition-all duration-300 transform select-none ${isMatched
                         ? 'bg-yellow-50 border-yellow-400 text-yellow-950 opacity-90 scale-95'
                         : isFlipped
-                        ? `${card.color} shadow-sm scale-100`
-                        : 'bg-yellow-400 border-yellow-700 hover:bg-yellow-700 text-white shadow-2xs hover:scale-102'
-                    }`}
+                          ? `${card.color} shadow-sm scale-100`
+                          : 'bg-yellow-400 border-yellow-700 hover:bg-yellow-700 text-white shadow-2xs hover:scale-102'
+                      }`}
                   >
                     {isFlipped ? (
                       <div className="space-y-1 animate-in zoom-in-75 duration-150">
@@ -1068,13 +1057,12 @@ export const FunZone: React.FC<FunZoneProps> = ({
                 return (
                   <div
                     key={idx}
-                    className={`w-12 h-14 rounded-2xl border-2 flex items-center justify-center font-mono font-extrabold text-2xl transition-all ${
-                      scrambleSolved
+                    className={`w-12 h-14 rounded-2xl border-2 flex items-center justify-center font-mono font-extrabold text-2xl transition-all ${scrambleSolved
                         ? 'bg-yellow-100 border-yellow-400 text-yellow-900'
                         : letter
-                        ? 'bg-yellow-50 border-yellow-400 text-yellow-900 shadow-xs'
-                        : 'bg-white border-dashed border-stone-300 text-stone-300'
-                    }`}
+                          ? 'bg-yellow-50 border-yellow-400 text-yellow-900 shadow-xs'
+                          : 'bg-white border-dashed border-stone-300 text-stone-300'
+                      }`}
                   >
                     {letter || ''}
                   </div>
@@ -1092,11 +1080,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
                       key={i}
                       disabled={tile.used}
                       onClick={() => handleTileClick(i)}
-                      className={`w-12 h-12 rounded-2xl font-mono font-bold text-xl border-2 shadow-2xs transition-all active:scale-90 ${
-                        tile.used
+                      className={`w-12 h-12 rounded-2xl font-mono font-bold text-xl border-2 shadow-2xs transition-all active:scale-90 ${tile.used
                           ? 'opacity-25 bg-stone-100 border-stone-200 text-stone-400 cursor-not-allowed'
                           : 'bg-white border-stone-300 hover:border-yellow-400 hover:bg-yellow-50 text-stone-900'
-                      }`}
+                        }`}
                     >
                       {tile.letter}
                     </button>
@@ -1158,18 +1145,17 @@ export const FunZone: React.FC<FunZoneProps> = ({
           <div className="py-8 flex flex-col items-center justify-center space-y-6">
             {/* Animated Pulsing Breathing Circle */}
             <div className="relative flex items-center justify-center w-64 h-64">
-              <div 
-                className={`absolute rounded-full transition-all duration-1000 ease-in-out ${
-                  breathActive
+              <div
+                className={`absolute rounded-full transition-all duration-1000 ease-in-out ${breathActive
                     ? breathPhase === 'Inhale'
                       ? 'w-56 h-56 bg-teal-200/60 scale-110'
                       : breathPhase === 'Hold'
-                      ? 'w-56 h-56 bg-yellow-200/60 scale-105'
-                      : breathPhase === 'Exhale'
-                      ? 'w-40 h-40 bg-amber-200/60 scale-90'
-                      : 'w-40 h-40 bg-teal-100/60 scale-95'
+                        ? 'w-56 h-56 bg-yellow-200/60 scale-105'
+                        : breathPhase === 'Exhale'
+                          ? 'w-40 h-40 bg-amber-200/60 scale-90'
+                          : 'w-40 h-40 bg-teal-100/60 scale-95'
                     : 'w-44 h-44 bg-stone-100'
-                }`}
+                  }`}
               />
 
               <div className="relative z-10 w-40 h-40 rounded-full bg-gradient-to-tr from-teal-500 to-yellow-500 text-white flex flex-col items-center justify-center shadow-lg">
@@ -1191,11 +1177,10 @@ export const FunZone: React.FC<FunZoneProps> = ({
             <div className="max-w-sm mx-auto space-y-3">
               <button
                 onClick={toggleBreathing}
-                className={`px-8 py-3.5 rounded-2xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 mx-auto ${
-                  breathActive
+                className={`px-8 py-3.5 rounded-2xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 mx-auto ${breathActive
                     ? 'bg-stone-900 text-white hover:bg-stone-800'
                     : 'bg-teal-600 hover:bg-teal-700 text-white'
-                }`}
+                  }`}
               >
                 {breathActive ? 'Pause Mind Reset' : 'Start 2-Minute Breathing Exercise'}
               </button>
